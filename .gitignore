@@ -1,0 +1,20 @@
+# Node/Angular
+**/node_modules
+**/dist
+**/.angular
+**/package-lock.json
+
+# .NET / C#
+**/bin
+**/obj
+**/.vs
+**/*.user
+**/*.suo
+
+# Ідеї редакторів
+.idea/
+.vscode/
+
+# ОС
+Thumbs.db
+.DS_Store
