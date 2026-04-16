@@ -1,0 +1,29 @@
+﻿using System;
+using System.Collections.Generic;
+
+namespace CineCoreBack.Models;
+
+public partial class Role
+{
+    public int Id { get; set; }
+
+    public int ProjectId { get; set; }
+
+    public string RoleName { get; set; } = null!;
+
+    public string? Description { get; set; }
+
+    public int? Age { get; set; }
+
+    public string? Characteristics { get; set; }
+
+    public string ColorHex { get; set; } = null!;
+
+    public virtual ICollection<Casting> Castings { get; set; } = new List<Casting>();
+
+    public virtual Resource IdNavigation { get; set; } = null!;
+
+    public virtual Project Project { get; set; } = null!;
+
+    public virtual ICollection<ScriptElement> ScriptElements { get; set; } = new List<ScriptElement>();
+}
