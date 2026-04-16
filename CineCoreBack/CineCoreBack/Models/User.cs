@@ -17,6 +17,8 @@ public partial class User
 
     public string? PhoneNum { get; set; }
 
+    public DateTime? Birthday { get; set; }
+
     public DateTime? RegisteredAt { get; set; }
 
     public virtual ICollection<CallSheet> CallSheets { get; set; } = new List<CallSheet>();

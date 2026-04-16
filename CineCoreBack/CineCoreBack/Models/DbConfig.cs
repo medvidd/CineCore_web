@@ -452,6 +452,8 @@ public partial class DbConfig : DbContext
             entity.Property(e => e.RegisteredAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnName("registered_at");
+            entity.Property(e => e.Birthday)
+                .HasColumnName("birthday");
         });
 
         OnModelCreatingPartial(modelBuilder);
