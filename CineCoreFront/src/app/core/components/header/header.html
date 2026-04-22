@@ -5,11 +5,25 @@
   </a>
 
   <nav class="nav-group">
-    @if (isDashboardPage) {
+    @if (isAuthPage) {
+      <a routerLink="/how-to-use" routerLinkActive="active-link" class="nav-link">How to Use</a>
+    }
+
+    @else if (isLoggedIn) {
+      @if (!isDashboardPage) {
+        <a routerLink="/how-to-use" routerLinkActive="active-link" class="nav-link">How to Use</a>
+      }
+
       <button class="btn btn-new-project">New Project</button>
+
+      <a routerLink="/account" class="user-profile-chip">
+        <div class="user-avatar-gradient">
+          {{ userInitials }}
+        </div>
+        <span class="user-name-text">{{ userData?.firstName }}</span>
+      </a>
     }
-    @else if (isAuthPage) {
-    }
+
     @else {
       <a routerLink="/how-to-use" routerLinkActive="active-link" class="nav-link">How to Use</a>
       <a routerLink="/login" routerLinkActive="active-link" class="nav-link">Log In</a>
