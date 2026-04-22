@@ -4,16 +4,10 @@
     "http": {
       "commandName": "Project",
       "dotnetRunMessages": true,
-<<<<<<< Updated upstream
       "launchBrowser": "swagger",
-=======
-<<<<<<< Updated upstream
       "launchBrowser": false,
-=======
       "launchBrowser": true,
       "launchUrl": "swagger",
->>>>>>> Stashed changes
->>>>>>> Stashed changes
       "applicationUrl": "http://localhost:5214",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
@@ -22,16 +16,10 @@
     "https": {
       "commandName": "Project",
       "dotnetRunMessages": true,
-<<<<<<< Updated upstream
       "launchBrowser": "swagger",
-=======
-<<<<<<< Updated upstream
       "launchBrowser": false,
-=======
       "launchBrowser": true,
       "launchUrl": "swagger",
->>>>>>> Stashed changes
->>>>>>> Stashed changes
       "applicationUrl": "https://localhost:7014;http://localhost:5214",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
