@@ -1,0 +1,166 @@
+$bg-main: #000B10;
+$bg-card: #1D1D1D;
+$teal: #3AB9A0;
+$yellow: #E9A60F;
+
+.page-background {
+  width: 100%; min-height: 100vh; background: $bg-main;
+  display: flex; justify-content: center; overflow-x: hidden;
+}
+
+.figma-canvas {
+  width: 1179px; position: relative; display: flex; flex-direction: column;
+}
+
+.text-teal { color: $teal; }
+.text-yellow { color: $yellow; }
+.text-white { color: white; }
+
+// --- DASHBOARD LAYOUT ---
+.dashboard-layout {
+  padding-top: 100px; // Відступ від хедера
+  padding-bottom: 60px;
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+// --- ЛІВА КОЛОНКА (САЙДБАР) ---
+.profile-sidebar {
+  width: 320px; // Акуратний розмір замість 380px
+  background: $bg-card;
+  border-radius: 24px;
+  outline: 0.80px solid rgba(255, 255, 255, 0.10);
+  padding: 32px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+
+  .edit-btn {
+    position: absolute; right: 24px; top: 24px;
+    background: transparent; border: none; color: rgba(255, 255, 255, 0.60);
+    cursor: pointer; width: 24px; height: 24px;
+    &:hover { color: white; }
+  }
+
+  .avatar-gradient {
+    width: 120px; height: 120px; // Зменшено зі 160px для гармонії
+    background: linear-gradient(135deg, $teal 0%, $yellow 100%);
+    border-radius: 50%;
+    display: flex; justify-content: center; align-items: center;
+    color: white; font-size: 48px; font-weight: 500;
+    margin-bottom: 24px;
+  }
+
+  .user-info {
+    text-align: center; margin-bottom: 32px;
+    .user-name { color: white; font-size: 24px; font-weight: 500; margin: 0 0 8px 0; }
+    .user-email { color: rgba(255, 255, 255, 0.60); font-size: 16px; margin: 0; }
+  }
+
+  .stats-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 16px; width: 100%;
+    margin-bottom: 40px;
+
+    .stat-card {
+      background: $bg-main; border-radius: 16px; padding: 16px;
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+
+      .stat-value { font-size: 24px; font-weight: 500; }
+      .stat-label { color: rgba(255, 255, 255, 0.60); font-size: 12px; }
+    }
+  }
+
+  .log-out-btn {
+    width: 100%; height: 48px;
+    background: rgba(255, 255, 255, 0.06); border-radius: 50px; border: none;
+    color: white; font-size: 16px; font-weight: 500; font-family: 'Space Grotesk', sans-serif;
+    display: flex; justify-content: center; align-items: center; gap: 12px;
+    cursor: pointer; transition: background 0.2s;
+
+    .logout-icon { width: 20px; height: 20px; }
+    &:hover { background: rgba(255, 255, 255, 0.1); }
+  }
+}
+
+// --- ПРАВА КОЛОНКА (КОНТЕНТ) ---
+.dashboard-content {
+  flex: 1; // Займає всю доступну ширину
+  display: flex; flex-direction: column; gap: 24px;
+
+  .content-block {
+    background: $bg-card;
+    border-radius: 24px;
+    outline: 0.80px solid rgba(255, 255, 255, 0.10);
+    padding: 32px;
+
+    .block-header {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;
+
+      h2 { color: white; font-size: 24px; font-weight: 500; margin: 0; }
+      .see-all { color: $teal; font-size: 14px; text-decoration: underline; cursor: pointer; }
+      .pending-badge { background: rgba(233, 166, 15, 0.20); color: $yellow; padding: 4px 12px; border-radius: 50px; font-size: 14px; }
+    }
+  }
+
+  // Projects Grid
+  .projects-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+
+    .project-card {
+      background: $bg-main; border-radius: 16px; outline: 0.80px solid rgba(255, 255, 255, 0.10);
+      overflow: hidden; display: flex; flex-direction: column;
+
+      .card-cover {
+        height: 120px; background: white; position: relative;
+        .badge {
+          position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+          background: rgba(0, 11, 16, 0.90); color: $teal; font-size: 12px;
+          padding: 4px 12px; border-radius: 50px; border: 0.8px solid rgba(58, 185, 160, 0.30);
+        }
+      }
+      .card-body {
+        padding: 16px;
+        h3 { color: white; font-size: 18px; font-weight: 500; margin: 0 0 4px 0; }
+        p { color: rgba(255, 255, 255, 0.60); font-size: 14px; margin: 0; }
+      }
+    }
+  }
+
+  // Invitations List
+  .invitations-list {
+    display: flex; flex-direction: column; gap: 16px;
+
+    .invitation-card {
+      background: $bg-main; border-radius: 16px; outline: 0.80px solid rgba(255, 255, 255, 0.10);
+      padding: 24px; display: flex; justify-content: space-between; align-items: center;
+
+      .inv-left {
+        display: flex; gap: 16px; align-items: center;
+
+        .inv-icon-box {
+          width: 48px; height: 48px; background: rgba(58, 185, 160, 0.10); border-radius: 16px;
+          display: flex; justify-content: center; align-items: center;
+          svg { width: 24px; height: 24px; }
+        }
+
+        .inv-info {
+          h3 { color: white; font-size: 18px; font-weight: 500; margin: 0 0 4px 0; }
+          p { color: rgba(255, 255, 255, 0.60); font-size: 14px; margin: 0 0 4px 0; }
+          small { color: rgba(255, 255, 255, 0.60); font-size: 12px; }
+        }
+      }
+
+      .inv-actions {
+        display: flex; gap: 8px;
+        .btn {
+          height: 36px; padding: 0 24px; border-radius: 50px; font-size: 14px; font-weight: 500; border: none; cursor: pointer; transition: opacity 0.2s;
+          &:hover { opacity: 0.8; }
+        }
+        .btn-accept { background: $teal; color: #000B10; }
+        .btn-decline { background: rgba(255, 255, 255, 0.06); color: white; }
+      }
+    }
+  }
+}

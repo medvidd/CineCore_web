@@ -1,0 +1,229 @@
+// Точні кольори з вашої Figma
+$bg-main: #000B10;
+$bg-card: #1D1D1D;
+$teal: #3AB9A0;
+$yellow: #E9A60F;
+
+// Цей клас центрує ваш макет по центру екрана, якщо екран більший за 1179px
+.page-background {
+  width: 100%;
+  min-height: 100vh;
+  background: $bg-main;
+  display: flex;
+  justify-content: center;
+  overflow-x: hidden;
+}
+
+// Це контейнер, який імітує ваш фрейм у Figma (точно 1179.20px)
+.figma-canvas {
+  width: 1179.20px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+// --- UTILITIES ---
+.text-white { color: white; }
+.text-teal { color: $teal; }
+.text-yellow { color: $yellow; }
+
+.btn {
+  border-radius: 26843500px; // З вашого коду :)
+  border: none;
+  font-family: 'Space Grotesk', sans-serif;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: opacity 0.2s;
+
+  &:hover { opacity: 0.8; }
+}
+
+// --- HERO SECTION ---
+.hero-section {
+  position: relative;
+  width: 100%;
+  padding-top: 144px; // Точний відступ з Фігми
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  .glow {
+    position: absolute;
+    width: 384px; height: 384px;
+    border-radius: 50%;
+    filter: blur(64px); // Точно як у вас
+    z-index: 0;
+
+    &-teal { background: rgba(58, 185, 160, 0.10); left: 294px; top: 182px; }
+    &-yellow { background: rgba(233, 166, 15, 0.10); left: 500px; top: 163px; }
+  }
+
+  // Точне відтворення вашого бейджа "Pre-Production..."
+  .badge-container {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 35px;
+    height: 40px;
+
+    .badge-dot-wrapper {
+      position: absolute;
+      left: -20px; // Виносимо крапку за межі тексту
+      width: 24px; height: 40px;
+      border-radius: 50px;
+      outline: 1.60px solid rgba(58, 185, 160, 0.50);
+      display: flex; justify-content: center; align-items: center;
+
+      .badge-dot { width: 4px; height: 8px; background: $teal; border-radius: 50px; }
+    }
+
+    .badge-text-wrapper {
+      height: 37.60px;
+      padding: 0 16px;
+      border-radius: 50px;
+      outline: 0.80px solid rgba(58, 185, 160, 0.30);
+      display: flex; justify-content: center; align-items: center;
+
+      .badge-text { color: $teal; font-size: 14px; }
+    }
+  }
+
+  .hero-title {
+    position: relative; z-index: 10;
+    text-align: center;
+    font-size: 96px; font-weight: 700; line-height: 96px;
+    margin: 0;
+  }
+
+  .hero-subtitle {
+    position: relative; z-index: 10;
+    width: 672px; text-align: center;
+    color: rgba(255, 255, 255, 0.60);
+    font-size: 20px; line-height: 32.50px;
+    margin: 24px 0 48px 0;
+  }
+
+  .hero-buttons {
+    position: relative; z-index: 10;
+    display: flex; gap: 16px;
+
+    .btn-primary {
+      width: 167.89px; height: 57.60px;
+      background: $teal; color: $bg-main; font-size: 16px;
+    }
+    .btn-outline {
+      width: 151.85px; height: 57.60px;
+      background: transparent; color: white; font-size: 16px;
+      outline: 0.80px solid rgba(255, 255, 255, 0.10);
+    }
+  }
+
+  .scroll-indicator {
+    width: 24px;
+    height: 40px;
+    border-radius: 50px;
+    outline: 1.60px solid rgba(58, 185, 160, 0.50);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding-top: 8px;
+
+    // Відступ зверху, щоб віддалити від кнопок
+    margin-top: 64px;
+
+    .scroll-dot {
+      width: 4px;
+      height: 8px;
+      background: $teal;
+      border-radius: 50px;
+    }
+  }
+}
+
+
+
+// --- FEATURES SECTION ---
+.features-section {
+  width: 100%;
+  padding: 100px 24px 0 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  .features-header {
+    text-align: center; margin-bottom: 80px;
+    .features-title { font-size: 48px; font-weight: 500; margin: 0 0 16px 0; }
+    .features-subtitle { color: rgba(255, 255, 255, 0.60); font-size: 18px; margin: 0; }
+  }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 361.06px); // Точна ширина карток
+    gap: 24px; // Точний відступ між ними
+
+    .feature-card {
+      width: 361.06px; height: 209.60px; // Точні розміри
+      background: $bg-card;
+      border-radius: 16px;
+      outline: 0.80px solid rgba(255, 255, 255, 0.10);
+      padding: 24.80px;
+
+      .card-icon-box {
+        width: 56px; height: 56px;
+        background: rgba(58, 185, 160, 0.10);
+        border-radius: 16px;
+        display: flex; justify-content: center; align-items: center;
+        margin-bottom: 16px;
+      }
+
+      .card-title { color: white; font-size: 20px; font-weight: 500; margin: 0 0 8px 0; }
+      .card-desc { color: rgba(255, 255, 255, 0.60); font-size: 16px; line-height: 26px; margin: 0; }
+    }
+  }
+}
+
+// --- CTA SECTION ---
+.cta-section {
+  width: 100%;
+  padding: 128px 141.60px 0 141.60px;
+
+  .cta-box {
+    width: 894.40px; height: 268px; // Точні розміри
+    background: #1D1D1D;
+    border-radius: 24px;
+    outline: 0.80px solid rgba(255, 255, 255, 0.10);
+    position: relative;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    overflow: hidden;
+
+    // Градієнт на фоні CTA
+    &::before {
+      content: ''; position: absolute; left: 0; top: 0; width: 100%; height: 100%;
+      background: linear-gradient(135deg, rgba(58, 185, 160, 0.05) 0%, rgba(233, 166, 15, 0.05) 100%);
+    }
+
+    .cta-title { position: relative; color: white; font-size: 36px; font-weight: 500; margin: 0 0 16px 0; }
+    .cta-subtitle { position: relative; color: rgba(255, 255, 255, 0.60); font-size: 18px; margin: 0 0 32px 0; }
+
+    .cta-btn {
+      position: relative; width: 184.46px; height: 56px;
+      background: $teal; color: $bg-main; font-size: 16px;
+    }
+  }
+}
+
+// --- FOOTER ---
+.footer {
+  width: 100%;
+  padding: 48.80px 24px 48px 24px;
+  margin-top: 116.80px;
+  border-top: 0.80px solid rgba(255, 255, 255, 0.10);
+
+  .footer-text {
+    color: rgba(255, 255, 255, 0.60); text-align: center; font-size: 14px; margin: 0;
+  }
+}

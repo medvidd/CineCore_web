@@ -3,9 +3,10 @@ import { RouterOutlet } from '@angular/router';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
+  standalone: true,
+  imports: [RouterOutlet], // Залишили тільки RouterOutlet
   templateUrl: './app.html',
-  styleUrl: './app.css'
+  styleUrl: './app.css' // або .scss, якщо ви змінили розширення
 })
 export class App {
   protected readonly title = signal('CineCoreFront');

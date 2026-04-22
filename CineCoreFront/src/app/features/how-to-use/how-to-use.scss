@@ -1,0 +1,101 @@
+// Variables
+$bg-main: #000B10;
+$bg-card: #1D1D1D;
+$teal: #3AB9A0;
+$yellow: #E9A60F;
+
+.page-background {
+  width: 100%; min-height: 100vh; background: $bg-main;
+  display: flex; justify-content: center; overflow-x: hidden;
+}
+
+.figma-canvas {
+  width: 1179.20px; position: relative;
+  display: flex; flex-direction: column;
+}
+
+// --- UTILITIES ---
+.text-white { color: white; }
+.text-teal { color: $teal; }
+.text-yellow { color: $yellow; }
+
+.btn {
+  border-radius: 26843500px; border: none; font-family: 'Space Grotesk', sans-serif;
+  cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px;
+  transition: opacity 0.2s;
+  &:hover { opacity: 0.8; }
+}
+
+.btn-primary {
+  width: 212.46px; height: 56px; background: $teal; color: $bg-main; font-size: 16px;
+}
+
+// --- MAIN CONTENT ---
+.content-section {
+  padding: 160px 141.60px 100px 141.60px;
+  display: flex; flex-direction: column; align-items: flex-start;
+
+  .page-header {
+    margin-bottom: 116px; // Відступ до кроків
+    .title { font-size: 60px; font-weight: 500; margin: 0 0 24px 0; line-height: 1; }
+    .subtitle { color: rgba(255, 255, 255, 0.60); font-size: 20px; margin: 0; padding-left: 70px; }
+  }
+
+  .steps-list {
+    display: flex; flex-direction: column; gap: 48px; width: 100%;
+    margin-bottom: 64px;
+
+    .step-item {
+      display: flex; gap: 24px; align-items: flex-start;
+
+      .step-number {
+        width: 64px; height: 64px; min-width: 64px;
+        background: rgba(58, 185, 160, 0.10); border: 0.80px solid rgba(58, 185, 160, 0.30);
+        border-radius: 16px; display: flex; justify-content: center; align-items: center;
+        color: $teal; font-family: 'Space Mono', monospace; font-size: 24px;
+      }
+
+      .step-text {
+        padding-top: 8px; display: flex; flex-direction: column; gap: 8px;
+        h2 { color: white; font-size: 24px; font-weight: 500; margin: 0; line-height: 32px; }
+        p { color: rgba(255, 255, 255, 0.60); font-size: 16px; margin: 0; line-height: 26px; max-width: 750px;}
+      }
+    }
+  }
+
+  // --- FEATURES BOX ---
+  .features-box {
+    width: 100%; background: $bg-card; border: 0.80px solid rgba(255, 255, 255, 0.10);
+    border-radius: 24px; padding: 32.80px; margin-bottom: 48px;
+
+    .features-title { color: white; font-size: 24px; font-weight: 500; margin: 0 0 24px 0; }
+
+    .features-grid {
+      display: grid; grid-template-columns: 1fr 1fr; row-gap: 16px; column-gap: 16px;
+
+      .feature-line {
+        display: flex; align-items: center; gap: 12px;
+        color: rgba(255, 255, 255, 0.60); font-size: 14px;
+        .check-icon { width: 20px; height: 20px; min-width: 20px;}
+      }
+    }
+  }
+
+  // --- CTA BOTTOM ---
+  .bottom-cta {
+    width: 100%; display: flex; flex-direction: column; align-items: center; gap: 24px;
+    padding-top: 48px;
+    p { color: rgba(255, 255, 255, 0.60); font-size: 16px; margin: 0; }
+  }
+}
+
+.footer {
+  width: 100%;
+  padding: 48.80px 24px 48px 24px;
+  margin-top: 116.80px;
+  border-top: 0.80px solid rgba(255, 255, 255, 0.10);
+
+  .footer-text {
+    color: rgba(255, 255, 255, 0.60); text-align: center; font-size: 14px; margin: 0;
+  }
+}

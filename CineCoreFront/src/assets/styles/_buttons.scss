@@ -1,0 +1,30 @@
+.btn {
+  font-family: var(--font-family);
+  cursor: pointer;
+  border: none;
+  background: none;
+  padding: 8px 24px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 400;
+  transition: all 0.3s ease;
+  display: inline-block;
+  text-align: center;
+
+  &-lg {
+    padding: 16px 48px;
+    font-size: 16px;
+  }
+
+  &-primary {
+    background-color: var(--primary-color);
+    color: var(--background-dark);
+    &:hover { opacity: 0.9; }
+  }
+
+  &-secondary {
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+    &:hover { background-color: var(--border-color); }
+  }
+}
