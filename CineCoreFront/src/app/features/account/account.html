@@ -1,0 +1,122 @@
+<div class="page-background">
+  <div class="figma-canvas">
+    <app-header></app-header>
+
+    <main class="dashboard-layout">
+      <aside class="profile-sidebar">
+        <button class="edit-btn">
+          <svg viewBox="0 0 20 20" fill="none"><path d="M2.5 17.5H17.5 M5.83 14.17L14.17 5.83" stroke="currentColor" stroke-width="1.67" stroke-linecap="round"/></svg>
+        </button>
+
+        <div class="avatar-gradient">JD</div>
+
+        <div class="user-info">
+          <h2 class="user-name">John Doe</h2>
+          <p class="user-email">tim@dot.com</p>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <span class="stat-value text-teal">3</span>
+            <span class="stat-label">Projects</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-value text-yellow">2</span>
+            <span class="stat-label">Invitations</span>
+          </div>
+        </div>
+
+        <button class="log-out-btn">
+          <svg viewBox="0 0 20 20" fill="none" class="logout-icon"><path d="M7.5 17.5H4.17C3.25 17.5 2.5 16.75 2.5 15.83V4.17C2.5 3.25 3.25 2.5 4.17 2.5H7.5 M13.33 14.17L17.5 10L13.33 5.83 M17.5 10H7.5" stroke="white" stroke-width="1.67" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Log Out
+        </button>
+      </aside>
+
+      <section class="dashboard-content">
+
+        <div class="content-block">
+          <div class="block-header">
+            <h2>My Projects</h2>
+            <a href="#" class="see-all">See all</a>
+          </div>
+
+          <div class="projects-grid">
+            <div class="project-card">
+              <div class="card-cover">
+                <span class="badge badge-teal">Pre-production</span>
+              </div>
+              <div class="card-body">
+                <h3>Midnight in Paris</h3>
+                <p>Drama</p>
+              </div>
+            </div>
+
+            <div class="project-card">
+              <div class="card-cover">
+                <span class="badge badge-teal">Casting</span>
+              </div>
+              <div class="card-body">
+                <h3>Neon Dreams</h3>
+                <p>Sci-Fi</p>
+              </div>
+            </div>
+
+            <div class="project-card">
+              <div class="card-cover">
+                <span class="badge badge-teal">Script Review</span>
+              </div>
+              <div class="card-body">
+                <h3>Silent Echo</h3>
+                <p>Thriller</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="content-block">
+          <div class="block-header">
+            <h2>Invitations</h2>
+            <span class="pending-badge">2 pending</span>
+          </div>
+
+          <div class="invitations-list">
+            <div class="invitation-card">
+              <div class="inv-left">
+                <div class="inv-icon-box">
+                  <svg viewBox="0 0 24 24" fill="none"><path d="M4 6H20 M4 12H20 M4 18H20" stroke="#3AB9A0" stroke-width="2" stroke-linecap="round"/></svg>
+                </div>
+                <div class="inv-info">
+                  <h3>Desert Winds</h3>
+                  <p>Role: <span class="text-white">Director of Photography</span></p>
+                  <small>From Sarah Johnson</small>
+                </div>
+              </div>
+              <div class="inv-actions">
+                <button class="btn btn-accept">Accept</button>
+                <button class="btn btn-decline">Decline</button>
+              </div>
+            </div>
+
+            <div class="invitation-card">
+              <div class="inv-left">
+                <div class="inv-icon-box">
+                  <svg viewBox="0 0 24 24" fill="none"><path d="M4 6H20 M4 12H20 M4 18H20" stroke="#3AB9A0" stroke-width="2" stroke-linecap="round"/></svg>
+                </div>
+                <div class="inv-info">
+                  <h3>Ocean's Call</h3>
+                  <p>Role: <span class="text-white">Producer</span></p>
+                  <small>From Michael Chen</small>
+                </div>
+              </div>
+              <div class="inv-actions">
+                <button class="btn btn-accept">Accept</button>
+                <button class="btn btn-decline">Decline</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+    </main>
+  </div>
+</div>
