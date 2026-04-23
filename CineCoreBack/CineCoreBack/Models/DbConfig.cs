@@ -45,9 +45,13 @@ public partial class DbConfig : DbContext
 
     public virtual DbSet<User> Users { get; set; }
 
-//    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-//#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-//        => optionsBuilder.UseNpgsql("Host=localhost;Database=cine_core_dbfirst;Username=postgres;Password=anavaz357");
+    public virtual DbSet<Genre> Genres { get; set; }
+
+    public virtual DbSet<ProjectGenre> ProjectGenres { get; set; }
+
+    //    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    //#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+    //        => optionsBuilder.UseNpgsql("Host=localhost;Database=cine_core_dbfirst;Username=postgres;Password=anavaz357");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -454,6 +458,38 @@ public partial class DbConfig : DbContext
                 .HasColumnName("registered_at");
             entity.Property(e => e.Birthday)
                 .HasColumnName("birthday");
+        });
+
+        modelBuilder.Entity<Genre>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("genres_pkey");
+
+            entity.ToTable("genres");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Name)
+                .HasMaxLength(100)
+                .HasColumnName("name");
+        });
+
+        modelBuilder.Entity<ProjectGenre>(entity =>
+        {
+            entity.HasKey(e => new { e.ProjectId, e.GenreId }).HasName("project_genres_pkey");
+
+            entity.ToTable("project_genres");
+
+            entity.Property(e => e.ProjectId).HasColumnName("project_id");
+            entity.Property(e => e.GenreId).HasColumnName("genre_id");
+
+            entity.HasOne(d => d.Genre).WithMany(p => p.ProjectGenres)
+                .HasForeignKey(d => d.GenreId)
+                .HasConstraintName("project_genres_genre_id_fkey")
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(d => d.Project).WithMany(p => p.ProjectGenres)
+                .HasForeignKey(d => d.ProjectId)
+                .HasConstraintName("project_genres_project_id_fkey")
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         OnModelCreatingPartial(modelBuilder);
