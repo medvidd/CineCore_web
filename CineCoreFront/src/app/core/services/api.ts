@@ -20,6 +20,15 @@ export class Api {
   getUserProfile(id: number): Observable<any> {
     return this.http.get(`${this.USERS_API_URL}/${id}`);
   }
+  updateUserProfile(id: number, userData: any): Observable<any> {
+    return this.http.put(`${this.USERS_API_URL}/${id}`, userData);
+  }
+  updateUserPassword(id: number, passwordData: any): Observable<any> {
+    return this.http.put(`${this.USERS_API_URL}/${id}/password`, passwordData);
+  }
+  deleteUserAccount(id: number): Observable<any> {
+    return this.http.delete(`${this.USERS_API_URL}/${id}`);
+  }
 
   // PROJECTS
   getGenres(): Observable<any[]> {
@@ -40,4 +49,5 @@ export class Api {
   deleteProject(projectId: number): Observable<any> {
     return this.http.delete(`${this.PROJECTS_API_URL}/${projectId}`);
   }
+
 }

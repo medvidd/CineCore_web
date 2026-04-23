@@ -21,6 +21,8 @@ public partial class User
 
     public DateTime? RegisteredAt { get; set; }
 
+    public string? AvatarTheme { get; set; }
+
     public virtual ICollection<CallSheet> CallSheets { get; set; } = new List<CallSheet>();
 
     public virtual ICollection<ProjectMember> ProjectMemberInvitedByUsers { get; set; } = new List<ProjectMember>();

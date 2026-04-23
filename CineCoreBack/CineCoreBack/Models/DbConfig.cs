@@ -458,6 +458,10 @@ public partial class DbConfig : DbContext
                 .HasColumnName("registered_at");
             entity.Property(e => e.Birthday)
                 .HasColumnName("birthday");
+            entity.Property(e => e.AvatarTheme)
+                .HasMaxLength(50)
+                .HasColumnName("avatar_theme")
+                .HasDefaultValueSql("'theme-teal'::character varying");
         });
 
         modelBuilder.Entity<Genre>(entity =>
