@@ -1,0 +1,16 @@
+<div class="project-list-card" [class.selected]="isSelected">
+  <div class="card-layout">
+    <div class="card-thumb"></div>
+    <div class="card-info">
+      <h3>{{ project.title }}</h3>
+      <p>{{ project.genre }}</p>
+
+      <span class="role-badge"
+            [style.color]="roleColor"
+            [style.borderColor]="roleColor + '4D'"
+            [style.backgroundColor]="roleColor + '1A'">
+        {{ project.role }}
+      </span>
+    </div>
+  </div>
+</div>

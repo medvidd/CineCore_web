@@ -23,7 +23,7 @@
 
       <div class="hero-buttons">
         @if (isLoggedIn) {
-          <button routerLink="/account" class="btn btn-primary">Go to Dashboard</button>
+          <button routerLink="/projects" class="btn btn-primary">My Projects</button>
         } @else {
         <button routerLink="/signup" class="btn btn-primary">Start</button>
         }
@@ -88,7 +88,7 @@
         <h2 class="cta-title">Ready to Get Started?</h2>
         <p class="cta-subtitle">Join CineCore and organize your film project professionally</p>
         @if (isLoggedIn) {
-          <button routerLink="/account" class="btn btn-primary cta-btn">Open Workspace</button>
+          <button routerLink="/projects" class="btn btn-primary cta-btn">Open Workspace</button>
         } @else {
           <button routerLink="/signup" class="btn btn-primary cta-btn">Create Account</button>
         }

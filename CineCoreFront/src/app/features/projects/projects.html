@@ -8,7 +8,7 @@
           <h1>Projects</h1>
           <p>Manage and explore your film projects</p>
         </div>
-        <button class="btn btn-primary btn-new">New Project</button>
+        <button class="btn btn-primary btn-new">Create New Project</button>
       </div>
 
       <div class="split-view">
@@ -30,108 +30,21 @@
 
           <div class="list-scroll-area">
             @for (project of filteredProjects; track project.id) {
-              <div class="project-list-card"
-                   [class.selected]="selectedProject?.id === project.id"
-                   (click)="selectProject(project)">
-
-                <div class="card-layout">
-                  <div class="card-thumb"></div>
-                  <div class="card-info">
-                    <h3>{{ project.title }}</h3>
-                    <p>{{ project.genre }}</p>
-                    <span class="status-badge" [style.color]="project.statusColor" [style.borderColor]="project.statusColor + '4D'" [style.backgroundColor]="project.statusColor + '33'">
-                      {{ project.status }}
-                    </span>
-                  </div>
-                </div>
+              <app-project-list-item
+                [project]="project"
+                [isSelected]="selectedProject?.id === project.id"
+                (click)="selectProject(project)">
+              </app-project-list-item>
+            } @empty {
+              <div style="text-align: center; padding: 32px; color: rgba(255,255,255,0.5);">
+                No projects found for this role.
               </div>
             }
-
-            <div class="list-footer">
-              Showing {{ filteredProjects.length }} of {{ allProjects.length }} projects
-            </div>
           </div>
         </aside>
 
         <section class="project-details-panel">
-          @if (selectedProject) {
-            <div class="details-scroll-area">
-
-              <div class="hero-banner">
-                <div class="banner-gradient"></div>
-                <div class="banner-content">
-                  <div class="banner-text">
-                    <h2>{{ selectedProject.title }}</h2>
-                    <p>{{ selectedProject.genre }}</p>
-                  </div>
-                  <span class="role-badge">{{ selectedProject.role }}</span>
-                </div>
-              </div>
-
-              <div class="stats-row">
-                <div class="stat-box">
-                  <div class="stat-icon"></div>
-                  <div class="stat-data">
-                    <small>Director</small>
-                    <span>{{ selectedProject.director }}</span>
-                  </div>
-                </div>
-                <div class="stat-box">
-                  <div class="stat-icon"></div>
-                  <div class="stat-data">
-                    <small>Start Date</small>
-                    <span>{{ selectedProject.startDate }}</span>
-                  </div>
-                </div>
-                <div class="stat-box">
-                  <div class="stat-icon"></div>
-                  <div class="stat-data">
-                    <small>Team size</small>
-                    <span>{{ selectedProject.teamSize }}</span>
-                  </div>
-                </div>
-                <div class="stat-box">
-                  <div class="stat-icon"></div>
-                  <div class="stat-data">
-                    <small>Duration</small>
-                    <span>{{ selectedProject.duration }}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div class="detail-section">
-                <div class="section-title">
-                  <div class="title-icon"></div>
-                  <h3>Synopsis</h3>
-                </div>
-                <p class="section-text">{{ selectedProject.synopsis }}</p>
-              </div>
-
-              <div class="detail-section">
-                <div class="section-title">
-                  <div class="title-icon"></div>
-                  <h3>Key Crew</h3>
-                </div>
-                <div class="crew-grid">
-                  @for (member of selectedProject.crew; track member.name) {
-                    <div class="crew-card">
-                      <small>{{ member.role }}</small>
-                      <span>{{ member.name }}</span>
-                    </div>
-                  }
-                </div>
-              </div>
-
-              <div class="action-footer">
-                <button class="btn btn-primary btn-block">Enter Workspace</button>
-              </div>
-
-            </div>
-          } @else {
-            <div class="empty-state">
-              <p>No projects found for this role.</p>
-            </div>
-          }
+          <app-project-details [project]="selectedProject"></app-project-details>
         </section>
       </div>
     </main>

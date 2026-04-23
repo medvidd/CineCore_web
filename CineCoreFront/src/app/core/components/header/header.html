@@ -14,7 +14,9 @@
         <a routerLink="/how-to-use" routerLinkActive="active-link" class="nav-link">How to Use</a>
       }
 
-      <button class="btn btn-new-project">New Project</button>
+      @if (!idProjectsPage) {
+        <button class="btn btn-new-project">Create New Project</button>
+      }
 
       <a routerLink="/account" class="user-profile-chip">
         <div class="user-avatar-gradient">

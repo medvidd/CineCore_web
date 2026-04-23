@@ -1,0 +1,27 @@
+$bg-main: #000B10;
+$teal: #3AB9A0;
+
+.project-card {
+  background: $bg-main; border-radius: 16px; outline: 0.80px solid rgba(255, 255, 255, 0.10);
+  overflow: hidden; display: flex; flex-direction: column; cursor: pointer; transition: 0.2s;
+
+  &:hover { outline-color: rgba(255, 255, 255, 0.3); }
+
+  .card-cover {
+    height: 120px; background: white; position: relative;
+
+    .role-badge {
+      position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+      font-size: 12px;
+      padding: 4px 12px;
+      border-radius: 50px;
+      border: 0.8px solid; // Колір підставиться з HTML
+      backdrop-filter: blur(4px); // Можна розкоментувати для ефекту розмиття, якщо фон буде картинкою
+    }
+  }
+  .card-body {
+    padding: 16px;
+    h3 { color: white; font-size: 18px; font-weight: 500; margin: 0 0 4px 0; }
+    p { color: rgba(255, 255, 255, 0.60); font-size: 14px; margin: 0; }
+  }
+}

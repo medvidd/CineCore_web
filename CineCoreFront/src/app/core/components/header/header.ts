@@ -37,4 +37,8 @@ export class Header {
   get isDashboardPage(): boolean {
     return this.router.url === '/account' || this.router.url === '/projects';
   }
+
+  get idProjectsPage(): boolean {
+    return this.router.url === '/projects';
+  }
 }

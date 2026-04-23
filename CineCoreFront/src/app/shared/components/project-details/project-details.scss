@@ -1,0 +1,96 @@
+$bg-main: #000B10;
+$bg-card: #1D1D1D;
+$teal: #3AB9A0;
+$yellow: #E9A60F;
+
+:host {
+  display: block;
+  height: 100%;
+}
+
+.details-scroll-area {
+  height: 100%;
+  overflow-y: auto; // СКРОЛ ТУТ
+  padding-bottom: 40px;
+
+  &::-webkit-scrollbar { width: 6px; }
+  &::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+}
+
+// БАНЕР
+.hero-banner {
+  height: 274px; position: relative; overflow: hidden; background: #000;
+  .banner-img { width: 100%; height: 100%; object-fit: cover; opacity: 0.5; }
+  .banner-gradient {
+    position: absolute; inset: 0; z-index: 1;
+    background: linear-gradient(0deg, $bg-card 0%, rgba(29, 29, 29, 0.2) 50%, transparent 100%);
+  }
+  .banner-content {
+    position: absolute; bottom: 32px; left: 32px; right: 32px; z-index: 2;
+    display: flex; justify-content: space-between; align-items: flex-end;
+
+    h2 { color: white; font-size: 36px; margin: 0 0 8px 0; font-weight: 500; }
+    p { color: rgba(255, 255, 255, 0.6); font-size: 18px; margin: 0; }
+    .role-badge { padding: 8px 20px; border-radius: 50px; border: 0.8px solid; font-size: 14px; }
+  }
+}
+
+// СТАТИСТИКА (GRID 2x2)
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr; // Дві колонки
+  gap: 16px;
+  padding: 32px;
+
+  .stat-box {
+    background: $bg-main; border-radius: 16px; padding: 16px;
+    display: flex; align-items: center; gap: 16px;
+    border: 0.8px solid rgba(255, 255, 255, 0.05);
+
+    .stat-icon { width: 48px; height: 48px; border-radius: 12px; background: rgba(255,255,255,0.05); }
+    .stat-data {
+      display: flex; flex-direction: column;
+      small { color: rgba(255, 255, 255, 0.6); font-size: 12px; margin-bottom: 4px; }
+      span { color: white; font-size: 16px; }
+    }
+  }
+}
+
+// СЕКЦІЇ (Synopsis, Crew)
+.info-section {
+  padding: 0 32px 32px 32px;
+
+  .section-title {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 16px;
+    .title-marker { width: 16px; height: 16px; border-radius: 4px; }
+    .marker-teal { background: $teal; }
+    .marker-yellow { background: $yellow; }
+    h3 { color: white; font-size: 24px; font-weight: 500; margin: 0; }
+  }
+
+  .synopsis-text { color: rgba(255, 255, 255, 0.6); font-size: 16px; line-height: 1.6; margin: 0; }
+
+  .crew-list {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    .crew-card {
+      background: $bg-main; padding: 16px; border-radius: 16px; border: 0.8px solid rgba(255, 255, 255, 0.1);
+      display: flex; flex-direction: column;
+      small { color: rgba(255, 255, 255, 0.6); font-size: 12px; margin-bottom: 4px; }
+      span { color: white; font-size: 14px; }
+    }
+  }
+}
+
+.action-area {
+  padding: 0 32px; display: flex; justify-content: center;
+  .btn-enter {
+    width: 100%; max-width: 350px; height: 48px; background: $teal; color: $bg-main;
+    border: none; border-radius: 50px; font-size: 16px; font-weight: 500;
+    cursor: pointer; transition: 0.2s; &:hover { opacity: 0.8; }
+  }
+}
+
+.empty-state {
+  height: 100%; display: flex; justify-content: center; align-items: center;
+  color: rgba(255,255,255,0.4); font-size: 18px;
+}
