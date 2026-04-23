@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -11,6 +11,12 @@ import { CommonModule } from '@angular/common';
 export class ProjectDetails {
   // Приймаємо об'єкт проекту з батьківського компонента
   @Input() project: any;
+  @Output() delete = new EventEmitter<number>(); // Подія видалення
+
+  isDeleteModalOpen = false;
+
+  openDeleteModal() { this.isDeleteModalOpen = true; }
+  closeDeleteModal() { this.isDeleteModalOpen = false; }
 
   // Логіка для кольору ролі (така ж, як у списку)
   get roleColor(): string {
@@ -20,5 +26,10 @@ export class ProjectDetails {
       case 'Actor': return '#51A2FF';         // Синій
       default: return '#C27AFF';              // Фіолетовий
     }
+  }
+
+  confirmDelete() {
+    this.delete.emit(this.project.id);
+    this.closeDeleteModal();
   }
 }

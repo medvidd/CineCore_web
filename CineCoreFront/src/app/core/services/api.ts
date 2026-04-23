@@ -28,4 +28,16 @@ export class Api {
   createProject(projectData: any): Observable<any> {
     return this.http.post(this.PROJECTS_API_URL, projectData);
   }
+  getUserProjects(ownerId: number, role: string = 'All'): Observable<any[]> {
+    // Якщо вибрано All, взагалі не чіпляємо параметр - бекенд підставить його сам
+    const url = role === 'All'
+      ? `${this.PROJECTS_API_URL}/user/${ownerId}`
+      : `${this.PROJECTS_API_URL}/user/${ownerId}?role=${encodeURIComponent(role)}`;
+
+    return this.http.get<any[]>(url);
+  }
+
+  deleteProject(projectId: number): Observable<any> {
+    return this.http.delete(`${this.PROJECTS_API_URL}/${projectId}`);
+  }
 }

@@ -19,11 +19,11 @@
 
           <div class="stats-grid">
             <div class="stat-card">
-              <span class="stat-value text-teal">3</span>
+              <span class="stat-value text-teal">{{ projectsCount }}</span>
               <span class="stat-label">Projects</span>
             </div>
             <div class="stat-card">
-              <span class="stat-value text-yellow">2</span>
+              <span class="stat-value text-yellow">{{ invitationsCount }}</span>
               <span class="stat-label">Invitations</span>
             </div>
           </div>
@@ -36,7 +36,6 @@
       }
 
       <section class="dashboard-content">
-
         <div class="content-block">
           <div class="block-header">
             <h2>My Projects</h2>
@@ -44,18 +43,32 @@
           </div>
 
           <div class="projects-grid">
-            @for (project of myProjects; track project.id) {
-              <app-project-card [project]="project"></app-project-card>
-            } @empty {
-              <div class="empty-state-box" style="grid-column: span 3; text-align: center; padding: 48px; background: #1D1D1D; border-radius: 16px; outline: 1px dashed rgba(255,255,255,0.1);">
-                <p style="color: rgba(255,255,255,0.6); margin-bottom: 16px;">You don't have any projects yet.</p>
-                <button class="btn btn-primary" style="padding: 8px 24px;">Create New Project</button>
+            @if (isLoading) {
+              <div class="loader-box" style="grid-column: span 3; text-align: center; padding: 40px;">
+                <div class="spinner"></div>
+                <p>Loading projects...</p>
               </div>
+            } @else {
+              @for (project of myProjects; track project.id) {
+                <app-project-card
+                  [project]="project"
+                  (click)="navigateToProject(project.id)"
+                  style="cursor: pointer;">
+                </app-project-card>
+              } @empty {
+                <div class="empty-state-box">No projects yet.</div>
+              }
             }
           </div>
         </div>
-
       </section>
     </main>
   </div>
 </div>
+
+
+<app-project-modal
+  [isOpen]="isModalOpen"
+  (close)="closeModal()"
+  (projectCreated)="onProjectCreated($event)">
+</app-project-modal>

@@ -1,0 +1,94 @@
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex; justify-content: center; align-items: center;
+  z-index: 1000;
+}
+
+.modal-container {
+  width: 100%; max-width: 500px;
+  background: #1D1D1D;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0px 10px 15px -3px rgba(0, 0, 0, 0.1);
+  padding: 32px;
+  font-family: 'Space Grotesk', sans-serif;
+  color: white;
+}
+
+.modal-header {
+  display: flex; align-items: center; gap: 16px; margin-bottom: 24px;
+
+  .icon-box {
+    width: 48px; height: 48px;
+    background: rgba(58, 185, 160, 0.1);
+    border-radius: 12px;
+    display: flex; justify-content: center; align-items: center;
+  }
+
+  .header-text {
+    h2 { margin: 0; font-size: 24px; font-weight: 500; }
+    p { margin: 4px 0 0 0; font-size: 14px; color: rgba(255, 255, 255, 0.6); }
+  }
+}
+
+.modal-form {
+  display: flex; flex-direction: column; gap: 20px;
+
+  .form-group {
+    display: flex; flex-direction: column; gap: 8px;
+    label { font-size: 14px; font-weight: 500; }
+  }
+
+  .form-control {
+    background: #000B10;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 12px 16px;
+    color: white;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 14px;
+    transition: border 0.2s;
+
+    &:focus { outline: none; border-color: #3AB9A0; }
+    &::placeholder { color: rgba(255, 255, 255, 0.4); }
+  }
+
+  .select-control {
+    appearance: none; cursor: pointer;
+    .custom-option { color: #3AB9A0; font-weight: bold; }
+  }
+
+  .custom-genre-row {
+    display: flex; gap: 12px;
+    input { flex: 1; }
+    .btn-back {
+      padding: 0 20px; background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 12px;
+      color: white; cursor: pointer; transition: 0.2s;
+      &:hover { border-color: #3AB9A0; color: #3AB9A0; }
+    }
+  }
+
+  textarea.form-control { resize: none; }
+
+  .form-actions {
+    display: flex; gap: 16px; margin-top: 12px;
+
+    button {
+      flex: 1; padding: 14px 0; border-radius: 50px;
+      font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 500;
+      cursor: pointer; transition: 0.2s;
+    }
+    .btn-cancel {
+      background: #000B10; border: 1px solid rgba(255, 255, 255, 0.1); color: white;
+      &:hover { border-color: rgba(255, 255, 255, 0.3); }
+    }
+    .btn-submit {
+      background: #3AB9A0; border: none; color: #000B10;
+      &:hover { background: #32a18b; }
+    }
+  }
+}

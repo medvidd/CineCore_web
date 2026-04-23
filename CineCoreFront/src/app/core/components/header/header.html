@@ -15,7 +15,7 @@
       }
 
       @if (!idProjectsPage) {
-        <button class="btn btn-new-project">Create New Project</button>
+        <button (click)="openModal()" class="btn btn-new-project">Create New Project</button>
       }
 
       <a routerLink="/account" class="user-profile-chip">
@@ -33,3 +33,9 @@
     }
   </nav>
 </header>
+
+<app-project-modal
+  [isOpen]="isModalOpen"
+  (close)="closeModal()"
+  (projectCreated)="onProjectCreated($event)">
+</app-project-modal>

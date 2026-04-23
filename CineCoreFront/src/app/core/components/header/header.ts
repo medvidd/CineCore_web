@@ -1,11 +1,12 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { ProjectModal } from '../../../shared/components/project-modal/project-modal';
 
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, CommonModule], // Обов'язково додаємо це сюди!
+  imports: [RouterLink, RouterLinkActive, CommonModule, ProjectModal], // Обов'язково додаємо це сюди!
   templateUrl: './header.html',
   styleUrl: './header.scss'
 })
@@ -15,6 +16,14 @@ export class Header {
   isLoggedIn = false;
   userData: any = null;
   userInitials = '';
+  isModalOpen = false;
+
+  openModal() { this.isModalOpen = true; }
+  closeModal() { this.isModalOpen = false; }
+
+  onProjectCreated(projectData: any) {
+    console.log('New project:', projectData);
+  }
 
   ngOnInit() {
     this.checkUserStatus();

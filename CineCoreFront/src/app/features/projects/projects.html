@@ -8,12 +8,11 @@
           <h1>Projects</h1>
           <p>Manage and explore your film projects</p>
         </div>
-        <button class="btn btn-primary btn-new">Create New Project</button>
+        <button (click)="openModal()" class="btn btn-primary btn-new">Create New Project</button>
       </div>
 
       <div class="split-view">
         <aside class="projects-list-panel">
-
           <div class="filter-header">
             <span class="filter-label">Filter by crew role</span>
             <div class="filter-pills">
@@ -29,24 +28,42 @@
           </div>
 
           <div class="list-scroll-area">
-            @for (project of filteredProjects; track project.id) {
-              <app-project-list-item
-                [project]="project"
-                [isSelected]="selectedProject?.id === project.id"
-                (click)="selectProject(project)">
-              </app-project-list-item>
-            } @empty {
-              <div style="text-align: center; padding: 32px; color: rgba(255,255,255,0.5);">
-                No projects found for this role.
+            @if (isLoading) {
+              <div class="loading-state">
+                <div class="spinner"></div>
+                <p>Loading projects...</p>
               </div>
+            } @else {
+              @for (project of allProjects; track project.id) {
+                <app-project-list-item
+                  [project]="project"
+                  [isSelected]="selectedProject?.id === project.id"
+                  (click)="selectProject(project)">
+                </app-project-list-item>
+              } @empty {
+                <div class="empty-msg">No projects found.</div>
+              }
             }
           </div>
         </aside>
 
         <section class="project-details-panel">
-          <app-project-details [project]="selectedProject"></app-project-details>
+          @if (isLoading) {
+            <div class="details-placeholder">Loading details...</div>
+          } @else {
+            <app-project-details
+              [project]="selectedProject"
+              (delete)="handleDeleteProject($event)">
+            </app-project-details>
+          }
         </section>
       </div>
     </main>
   </div>
 </div>
+
+<app-project-modal
+  [isOpen]="isModalOpen"
+  (close)="closeModal()"
+  (projectCreated)="onProjectCreated($event)">
+</app-project-modal>
