@@ -1,0 +1,153 @@
+$bg-main: #000B10;
+$bg-card: #1D1D1D;
+$teal: #3AB9A0;
+
+.page-background {
+  width: 100%; min-height: 100vh; background: $bg-main;
+  display: flex; justify-content: center; overflow: hidden; // Ховаємо загальний скрол
+}
+.figma-canvas {
+  width: 1179px; height: 100vh; position: relative; display: flex; flex-direction: column;
+}
+
+// Утиліти для кнопок
+.btn {
+  border-radius: 50px; border: none; font-family: 'Space Grotesk', sans-serif; cursor: pointer; transition: 0.2s;
+  &-primary { background: $teal; color: #000B10; font-weight: 500; &:hover { opacity: 0.8; } }
+}
+
+.projects-layout {
+  flex: 1; display: flex; flex-direction: column; gap: 32px;
+  padding: 100px 24px 24px 24px; // Відступ від хедера
+  height: 100%; // Займаємо всю висоту
+}
+
+// ЗАГОЛОВОК СТОРІНКИ
+.page-title-area {
+  display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;
+  .title-text {
+    h1 { color: white; font-size: 48px; font-weight: 500; margin: 0 0 8px 0; line-height: 1; }
+    p { color: rgba(255, 255, 255, 0.6); font-size: 16px; margin: 0; }
+  }
+  .btn-new { padding: 12px 24px; font-size: 16px; }
+}
+
+// РОЗДІЛЕНИЙ ВИГЛЯД
+.split-view {
+  display: flex; gap: 24px; flex: 1; min-height: 0; // Секрет скролу: min-height: 0 дозволяє flex-child скролитися
+}
+
+// --- ЛІВА ПАНЕЛЬ (СПИСОК) ---
+.projects-list-panel {
+  width: 450px; background: $bg-card; border-radius: 24px;
+  border: 0.8px solid rgba(255, 255, 255, 0.1);
+  display: flex; flex-direction: column; overflow: hidden;
+
+  .filter-header {
+    padding: 24px; border-bottom: 0.8px solid rgba(255, 255, 255, 0.1); flex-shrink: 0;
+    .filter-label { color: rgba(255, 255, 255, 0.6); font-size: 14px; display: block; margin-bottom: 16px; }
+    .filter-pills {
+      display: flex; gap: 8px; flex-wrap: wrap;
+      .filter-pill {
+        background: $bg-main; color: white; border: none; padding: 8px 16px; border-radius: 50px;
+        font-family: 'Space Grotesk'; font-size: 14px; cursor: pointer; transition: 0.2s;
+        &.active { background: $teal; color: $bg-main; }
+      }
+    }
+  }
+
+  .list-scroll-area {
+    flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px;
+
+    // Стилізація скроллбара
+    &::-webkit-scrollbar { width: 6px; }
+    &::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+
+    .project-list-card {
+      background: $bg-main; border-radius: 16px; padding: 16px; border: 0.8px solid rgba(255, 255, 255, 0.1);
+      cursor: pointer; transition: all 0.2s;
+
+      &:hover { border-color: rgba(255, 255, 255, 0.3); }
+      &.selected { border-color: $teal; box-shadow: 0 4px 15px rgba(58, 185, 160, 0.15); }
+
+      .card-layout {
+        display: flex; gap: 16px; align-items: center;
+        .card-thumb { width: 112px; height: 80px; background: #2a2a2a; border-radius: 16px; }
+        .card-info {
+          h3 { color: white; font-size: 18px; font-weight: 500; margin: 0 0 4px 0; }
+          p { color: rgba(255, 255, 255, 0.6); font-size: 14px; margin: 0 0 8px 0; }
+          .status-badge { display: inline-block; padding: 4px 12px; border-radius: 50px; font-size: 12px; border: 0.8px solid; }
+        }
+      }
+    }
+
+    .list-footer {
+      text-align: center; color: rgba(255, 255, 255, 0.6); font-size: 14px; padding: 16px 0;
+    }
+  }
+}
+
+// --- ПРАВА ПАНЕЛЬ (ДЕТАЛІ) ---
+.project-details-panel {
+  flex: 1; background: $bg-card; border-radius: 24px; border: 0.8px solid rgba(255, 255, 255, 0.1);
+  display: flex; flex-direction: column; overflow: hidden;
+
+  .details-scroll-area {
+    flex: 1; overflow-y: auto; padding-bottom: 32px;
+    &::-webkit-scrollbar { width: 6px; }
+    &::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+  }
+
+  .hero-banner {
+    height: 274px; position: relative; background: #2a2a2a;
+    .banner-gradient { position: absolute; inset: 0; background: linear-gradient(0deg, $bg-card 0%, transparent 100%); }
+    .banner-content {
+      position: absolute; bottom: 32px; left: 32px; right: 32px; display: flex; justify-content: space-between; align-items: flex-end;
+      .banner-text {
+        h2 { color: white; font-size: 36px; margin: 0 0 8px 0; }
+        p { color: rgba(255, 255, 255, 0.6); font-size: 18px; margin: 0; }
+      }
+      .role-badge { background: rgba(255, 105, 0, 0.2); color: #FF8904; border: 0.8px solid rgba(255, 105, 0, 0.3); padding: 8px 16px; border-radius: 50px; font-size: 14px; }
+    }
+  }
+
+  .stats-row {
+    display: flex; gap: 16px; padding: 32px;
+    .stat-box {
+      flex: 1; background: $bg-main; padding: 16px; border-radius: 16px; display: flex; align-items: center; gap: 16px;
+      .stat-icon { width: 48px; height: 48px; background: rgba(58, 185, 160, 0.1); border-radius: 16px; }
+      .stat-data {
+        display: flex; flex-direction: column; gap: 4px;
+        small { color: rgba(255, 255, 255, 0.6); font-size: 12px; }
+        span { color: white; font-size: 16px; }
+      }
+    }
+  }
+
+  .detail-section {
+    padding: 0 32px 32px 32px;
+    .section-title {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 16px;
+      .title-icon { width: 20px; height: 20px; background: $teal; border-radius: 4px; }
+      h3 { color: white; font-size: 24px; font-weight: 500; margin: 0; }
+    }
+    .section-text { color: rgba(255, 255, 255, 0.6); font-size: 16px; line-height: 1.6; margin: 0; }
+
+    .crew-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;
+      .crew-card {
+        background: $bg-main; padding: 16px; border-radius: 16px; border: 0.8px solid rgba(255, 255, 255, 0.1);
+        display: flex; flex-direction: column; gap: 4px;
+        small { color: rgba(255, 255, 255, 0.6); font-size: 12px; }
+        span { color: white; font-size: 16px; }
+      }
+    }
+  }
+
+  .action-footer {
+    padding: 0 32px; display: flex; justify-content: center;
+    .btn-block { width: 347px; padding: 12px 0; font-size: 16px; }
+  }
+
+  .empty-state { display: flex; justify-content: center; align-items: center; height: 100%; color: rgba(255, 255, 255, 0.5); }
+}

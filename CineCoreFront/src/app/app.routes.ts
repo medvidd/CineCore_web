@@ -4,6 +4,7 @@ import { HowToUse } from './features/how-to-use/how-to-use';
 import { Login } from './features/auth/login/login';
 import { Signup } from './features/auth/signup/signup';
 import { Account } from './features/account/account';
+import { Projects } from './features/projects/projects';
 
 export const routes: Routes = [
   {
@@ -30,6 +31,11 @@ export const routes: Routes = [
     path: 'account',
     component: Account,
     title: 'CineCore | My Account'
+  },
+  {
+    path: 'projects',
+    component: Projects,
+    title: 'CineCore | My Projects'
   },
   {
     path: '**',
