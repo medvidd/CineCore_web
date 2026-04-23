@@ -49,7 +49,8 @@ namespace CineCoreBack.Controllers
                 Id = user.Id,
                 Email = user.Email,
                 FirstName = user.FirstName,
-                LastName = user.LastName
+                LastName = user.LastName,
+                AvatarTheme = user.AvatarTheme
             });
         }
 
@@ -80,6 +81,7 @@ namespace CineCoreBack.Controllers
                 FirstName = registerDto.FirstName,
                 LastName = registerDto.LastName,
                 PhoneNum = registerDto.PhoneNum,
+                AvatarTheme = registerDto.AvatarTheme ?? "theme-teal",
                 RegisteredAt = DateTime.UtcNow
             };
 
@@ -91,8 +93,60 @@ namespace CineCoreBack.Controllers
                 Id = user.Id,
                 Email = user.Email,
                 FirstName = user.FirstName,
-                LastName = user.LastName
+                LastName = user.LastName,
+                AvatarTheme = user.AvatarTheme
             });
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateProfile(int id, UserUpdateDto updateDto)
+        {
+            var user = await _context.Users.FindAsync(id);
+            if (user == null) return NotFound();
+
+            user.FirstName = updateDto.FirstName;
+            user.LastName = updateDto.LastName;
+            user.Email = updateDto.Email;
+            user.PhoneNum = updateDto.PhoneNum;
+            user.AvatarTheme = updateDto.AvatarTheme;
+
+            await _context.SaveChangesAsync();
+            return Ok(user);
+        }
+
+        [HttpPut("{id}/password")]
+        public async Task<IActionResult> UpdatePassword(int id, UserPasswordUpdateDto passwordDto)
+        {
+            var user = await _context.Users.FindAsync(id);
+            if (user == null) return NotFound();
+
+            if (user.PasswordHash != passwordDto.CurrentPassword)
+                return BadRequest("Invalid current password");
+
+            user.PasswordHash = passwordDto.NewPassword;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Password updated successfully" });
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteAccount(int id)
+        {
+            var user = await _context.Users
+                .Include(u => u.Projects)
+                .FirstOrDefaultAsync(u => u.Id == id);
+
+            if (user == null) return NotFound();
+
+            if (user.Projects.Any())
+            {
+                _context.Projects.RemoveRange(user.Projects);
+            }
+
+            _context.Users.Remove(user);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
         }
     }
 }
