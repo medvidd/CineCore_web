@@ -5,11 +5,13 @@ import { CommonModule } from '@angular/common';
 import { ProjectCard } from '../../shared/components/project-card/project-card';
 import { ProjectModal } from '../../shared/components/project-modal/project-modal';
 import { Api } from '../../core/services/api'; // 1. Імпортуємо сервіс
+import { SettingsModal } from '../../shared/components/settings-modal/settings-modal';
+
 
 @Component({
   selector: 'app-account',
   standalone: true,
-  imports: [Header, CommonModule, RouterLink, ProjectCard, ProjectModal],
+  imports: [Header, CommonModule, RouterLink, ProjectCard, ProjectModal, SettingsModal],
   templateUrl: './account.html',
   styleUrl: './account.scss'
 })
@@ -22,6 +24,11 @@ export class Account implements OnInit {
   myProjects: any[] = [];
   isModalOpen = false;
   isLoading = false;
+
+  isSettingsOpen = false; // Змінна для відкриття вікна
+
+  openSettings() { this.isSettingsOpen = true; }
+  closeSettings() { this.isSettingsOpen = false; }
 
   ngOnInit() {
     const savedUser = localStorage.getItem('cinecore_user');
@@ -86,5 +93,26 @@ export class Account implements OnInit {
 
   navigateToProject(projectId: number) {
     this.router.navigate(['/projects'], { queryParams: { selectedId: projectId } });
+  }
+
+  onProfileUpdated(updatedUser: any) {
+    this.userData = updatedUser;
+  }
+
+  // Динамічний градієнт для аватара
+  // Динамічний градієнт для аватара
+  get avatarStyle(): string {
+    const theme = this.userData?.avatarTheme;
+    switch (theme) {
+      case 'theme-cyber': return 'linear-gradient(135deg, #51A2FF 0%, #C27AFF 100%)';
+      case 'theme-sunset': return 'linear-gradient(135deg, #FF8904 0%, #FF3B30 100%)';
+      case 'theme-mono': return 'linear-gradient(135deg, #8E8E93 0%, #3A3A3C 100%)';
+      case 'theme-ocean': return 'linear-gradient(135deg, #0A84FF 0%, #30D158 100%)';
+      case 'theme-lavender': return 'linear-gradient(135deg, #FF9A9E 0%, #C27AFF 100%)';
+      case 'theme-ruby': return 'linear-gradient(135deg, #D9138A 0%, #E2D111 100%)';
+      case 'theme-midnight': return 'linear-gradient(135deg, #1A2980 0%, #26D0CE 100%)';
+
+      default: return 'linear-gradient(135deg, #3AB9A0 0%, #E9A60F 100%)'; // theme-teal
+    }
   }
 }
