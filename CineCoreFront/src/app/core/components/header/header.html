@@ -19,7 +19,7 @@
       }
 
       <a routerLink="/account" class="user-profile-chip">
-        <div class="user-avatar-gradient">
+        <div class="user-avatar-gradient" [style.background]="avatarStyle">
           {{ userInitials }}
         </div>
         <span class="user-name-text">{{ userData?.firstName }}</span>

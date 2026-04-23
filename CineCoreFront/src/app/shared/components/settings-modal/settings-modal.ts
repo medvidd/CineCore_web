@@ -83,15 +83,16 @@ export class SettingsModal implements OnChanges {
   }
 
   saveProfile() {
-    // ТУТ БУДЕ ВАШ API ЗАПИТ (напр. this.api.updateUser(this.userData.id, this.formData).subscribe(...))
-    console.log('Збереження профілю:', this.formData);
+    this.api.updateUserProfile(this.userData.id, this.formData).subscribe({
+      next: (updatedUserFromDb) => {
+        const updatedUser = { ...this.userData, ...this.formData };
+        localStorage.setItem('cinecore_user', JSON.stringify(updatedUser));
 
-    // ТИМЧАСОВА ЛОГІКА ДЛЯ UI: Оновлюємо localStorage
-    const updatedUser = { ...this.userData, ...this.formData };
-    localStorage.setItem('cinecore_user', JSON.stringify(updatedUser));
-
-    this.profileUpdated.emit(updatedUser); // Повідомляємо Account компонент
-    this.closeModal();
+        this.profileUpdated.emit(updatedUser);
+        this.closeModal();
+      },
+      error: (err) => console.error('Помилка оновлення профілю', err)
+    });
   }
 
   changePassword() {
@@ -99,10 +100,19 @@ export class SettingsModal implements OnChanges {
       alert('New passwords do not match!');
       return;
     }
-    // ТУТ БУДЕ ВАШ API ЗАПИТ ДЛЯ ПАРОЛЯ
-    console.log('Пароль змінено!');
-    alert('Password successfully changed! (Mock)');
-    this.togglePasswordSection();
+
+    const payload = {
+      currentPassword: this.passwords.current,
+      newPassword: this.passwords.new
+    };
+
+    this.api.updateUserPassword(this.userData.id, payload).subscribe({
+      next: () => {
+        alert('Password successfully changed!');
+        this.togglePasswordSection();
+      },
+      error: (err) => alert('Error: ' + (err.error || 'Wrong current password'))
+    });
   }
 
   deleteAccount() {
@@ -110,9 +120,13 @@ export class SettingsModal implements OnChanges {
       alert('Please type DELETE to confirm.');
       return;
     }
-    // ТУТ БУДЕ ВАШ API ЗАПИТ ДЛЯ ВИДАЛЕННЯ (DELETE /api/users/{id})
-    console.log('Акаунт видалено!');
-    this.accountDeleted.emit(); // Повідомляємо Account компонент, щоб розлогінити
+
+    this.api.deleteUserAccount(this.userData.id).subscribe({
+      next: () => {
+        this.accountDeleted.emit();
+      },
+      error: (err) => console.error('Помилка видалення', err)
+    });
   }
 
   closeModal() {

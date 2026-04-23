@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, BehaviorSubject } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -9,6 +9,12 @@ export class Api {
   private http = inject(HttpClient);
   private readonly USERS_API_URL = 'http://localhost:5214/api/users';
   private readonly PROJECTS_API_URL = 'http://localhost:5214/api/projects';
+
+  private userSubject = new BehaviorSubject<any>(JSON.parse(localStorage.getItem('cinecore_user') || 'null'));
+  user$ = this.userSubject.asObservable();
+  updateUserStream(user: any) {
+    this.userSubject.next(user);
+  }
 
   // USERS
   login(credentials: any): Observable<any> {

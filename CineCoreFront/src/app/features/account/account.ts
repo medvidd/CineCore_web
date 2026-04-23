@@ -78,6 +78,7 @@ export class Account implements OnInit {
 
   logout() {
     localStorage.removeItem('cinecore_user');
+    this.api.updateUserStream(null); // Очищаємо потік при виході
     this.router.navigate(['/login']);
   }
 
@@ -97,6 +98,7 @@ export class Account implements OnInit {
 
   onProfileUpdated(updatedUser: any) {
     this.userData = updatedUser;
+    this.api.updateUserStream(updatedUser);
   }
 
   // Динамічний градієнт для аватара
