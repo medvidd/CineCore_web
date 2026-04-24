@@ -49,6 +49,8 @@ public partial class DbConfig : DbContext
 
     public virtual DbSet<ProjectGenre> ProjectGenres { get; set; }
 
+    public virtual DbSet<ProjectInvitation> ProjectInvitations { get; set; }
+
     //    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     //#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
     //        => optionsBuilder.UseNpgsql("Host=localhost;Database=cine_core_dbfirst;Username=postgres;Password=anavaz357");
@@ -222,6 +224,10 @@ public partial class DbConfig : DbContext
             entity.Property(e => e.InvitedEmail)
                 .HasMaxLength(255)
                 .HasColumnName("invited_email");
+            entity.Property(e => e.SysRole)
+                .HasColumnName("sys_role")
+                .HasMaxLength(50)
+                .HasDefaultValue("manager");
             entity.Property(e => e.Department)
                 .HasMaxLength(50)
                 .HasColumnName("department");
@@ -508,6 +514,39 @@ public partial class DbConfig : DbContext
                 .HasForeignKey(d => d.ProjectId)
                 .HasConstraintName("project_genres_project_id_fkey")
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<ProjectInvitation>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("project_invitations_pkey");
+            entity.ToTable("project_invitations");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.ProjectId).HasColumnName("project_id");
+            entity.Property(e => e.Email).HasColumnName("email").HasMaxLength(255);
+            entity.Property(e => e.FirstName).HasColumnName("first_name").HasMaxLength(100);
+            entity.Property(e => e.LastName).HasColumnName("last_name").HasMaxLength(100);
+            entity.Property(e => e.SysRole).HasColumnName("sys_role").HasMaxLength(50);
+            entity.Property(e => e.JobTitle).HasColumnName("job_title").HasMaxLength(100);
+            entity.Property(e => e.Department).HasColumnName("department").HasMaxLength(100);
+            entity.Property(e => e.Message).HasColumnName("message").HasColumnType("text");
+            entity.Property(e => e.InvitedById).HasColumnName("invited_by_id");
+            entity.Property(e => e.DateSent).HasColumnName("date_sent").HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.Token).HasColumnName("token");
+
+            // Зв'язок з Проектом
+            entity.HasOne(d => d.Project)
+                .WithMany(p => p.ProjectInvitations)
+                .HasForeignKey(d => d.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade) // Якщо видаляють проект, видаляються і всі запрошення
+                .HasConstraintName("project_invitations_project_id_fkey");
+
+            // Зв'язок з Користувачем (тим, хто запросив)
+            entity.HasOne(d => d.InvitedBy)
+                .WithMany()
+                .HasForeignKey(d => d.InvitedById)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("project_invitations_invited_by_id_fkey");
         });
 
         OnModelCreatingPartial(modelBuilder);

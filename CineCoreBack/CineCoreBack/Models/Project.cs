@@ -29,4 +29,5 @@ public partial class Project
 
     public virtual ICollection<ProjectGenre> ProjectGenres { get; set; } = new List<ProjectGenre>();
     public virtual ICollection<Resource> Resources { get; set; } = new List<Resource>();
+    public virtual ICollection<ProjectInvitation> ProjectInvitations { get; set; } = new List<ProjectInvitation>();
 }

@@ -11,6 +11,8 @@ public partial class ProjectMember
 
     public string InvitedEmail { get; set; } = null!;
 
+    public string SysRole { get; set; } = "actor";
+
     public string? JobTitle { get; set; }
 
     public string? Department { get; set; }

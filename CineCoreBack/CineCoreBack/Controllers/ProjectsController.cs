@@ -231,5 +231,18 @@ namespace CineCoreBack.Controllers
 
             return NoContent();
         }
+
+        // GET: api/projects/5/role/12
+        [HttpGet("{projectId}/role/{userId}")]
+        public async Task<ActionResult> GetUserRoleInProject(int projectId, int userId)
+        {
+            var project = await _context.Projects.FindAsync(projectId);
+            if (project?.OwnerId == userId) return Ok(new { role = "owner" });
+
+            var member = await _context.ProjectMembers
+                .FirstOrDefaultAsync(pm => pm.ProjectId == projectId && pm.UserId == userId);
+
+            return Ok(new { role = member?.SysRole ?? "none" });
+        }
     }
 }
