@@ -11,6 +11,7 @@ import { Crew } from './features/workspace/crew/crew';
 import { Resources } from './features/workspace/resources/resources';
 import { Casting } from './features/workspace/casting/casting';
 import { Planner } from './features/workspace/planner/planner';
+import { Script } from './features/workspace/script/script';
 
 
 export const routes: Routes = [
@@ -54,6 +55,7 @@ export const routes: Routes = [
       { path: 'resources', component: Resources, title: 'CineCore | Resources' },
       { path: 'casting', component: Casting, title: 'CineCore | Casting' },
       { path: 'planner', component: Planner, title: 'CineCore | Planner' },
+      { path: 'script', component: Script, title: 'CineCore | Script' },
     ]
   },
   {
