@@ -2,6 +2,7 @@
 {
     public class PropCreateUpdateDto
     {
+        public int ProjectId { get; set; }
         public string PropName { get; set; } = null!;
         public string? Description { get; set; }
         public string? AcquisitionType { get; set; }

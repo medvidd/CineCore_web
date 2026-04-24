@@ -133,15 +133,15 @@ namespace CineCoreBack.Controllers
             // 4. Мапимо дані (замінив userId на ownerId)
             var result = projects.Select(p =>
             {
-                var memberEntry = p.ProjectMembers.FirstOrDefault(pm => pm.UserId == ownerId);
-                var crewList = new List<CrewDto>
-        {
-            new CrewDto
+                    var memberEntry = p.ProjectMembers.FirstOrDefault(pm => pm.UserId == ownerId);
+                    var crewList = new List<CrewDto>
             {
-                Name = p.Owner != null ? $"{p.Owner.FirstName} {p.Owner.LastName}" : "Unknown",
-                Role = "Project owner"
-            }
-        };
+                new CrewDto
+                {
+                    Name = p.Owner != null ? $"{p.Owner.FirstName} {p.Owner.LastName}" : "Unknown",
+                    Role = "Project owner"
+                }
+            };
 
                 if (p.ProjectMembers != null)
                 {
@@ -180,6 +180,25 @@ namespace CineCoreBack.Controllers
             }).ToList();
 
             return Ok(result);
+        }
+
+        [HttpGet("{id}")]
+        public async Task<ActionResult<ProjectResponseDto>> GetProjectById(int id)
+        {
+            var project = await _context.Projects.FindAsync(id);
+
+            if (project == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(new ProjectResponseDto
+            {
+                Id = project.Id,
+                Title = project.Title,
+                Synopsis = project.Synopsis,
+                StartDate = project.StartDate
+            });
         }
 
         [HttpDelete("{id}")]

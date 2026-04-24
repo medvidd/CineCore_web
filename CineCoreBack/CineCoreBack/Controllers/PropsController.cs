@@ -18,23 +18,38 @@ namespace CineCoreBack.Controllers
 
         // GET: api/Props
         [HttpGet("project/{projectId}")]
-        public async Task<ActionResult<IEnumerable<PropResponseDto>>> GetPropsByProject(int projectId)
+        public async Task<ActionResult<IEnumerable<PropResponseDto>>> GetPropsByProject(
+    int projectId,
+    [FromQuery] string category = "All",
+    [FromQuery] string search = "")
         {
-            var props = await _context.Props
+            var query = _context.Props
                 .Include(p => p.IdNavigation)
-                    .ThenInclude(r => r.SceneResources)
-                .Where(p => p.IdNavigation.ProjectId == projectId) // ФІЛЬТР ЗА ПРОЕКТОМ
-                .Select(p => new PropResponseDto
-                {
-                    Id = p.Id,
-                    Name = p.PropName,
-                    Desc = p.Description,
-                    Category = p.PropType,
-                    Acquisition = p.AcquisitionType,
-                    Status = p.PropStatus,
-                    Scenes = p.IdNavigation.SceneResources.Count
-                })
-                .ToListAsync();
+                .Where(p => p.IdNavigation.ProjectId == projectId)
+                .AsQueryable();
+
+            if (category != "All" && !string.IsNullOrEmpty(category))
+            {
+                query = query.Where(p => p.PropType == category.ToLower());
+            }
+
+            if (!string.IsNullOrEmpty(search))
+            {
+                var s = search.ToLower();
+                query = query.Where(p => p.PropName.ToLower().Contains(s) ||
+                                        (p.Description != null && p.Description.ToLower().Contains(s)));
+            }
+
+            var props = await query.Select(p => new PropResponseDto
+            {
+                Id = p.Id,
+                Name = p.PropName,
+                Desc = p.Description,
+                Category = p.PropType,
+                Acquisition = p.AcquisitionType,
+                Status = p.PropStatus,
+                Scenes = p.IdNavigation.SceneResources.Count
+            }).ToListAsync();
 
             return Ok(props);
         }

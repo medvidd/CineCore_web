@@ -18,23 +18,43 @@ namespace CineCoreBack.Controllers
 
         // GET: api/Locations
         [HttpGet("project/{projectId}")]
-        public async Task<ActionResult<IEnumerable<LocationResponseDto>>> GetLocationsByProject(int projectId)
+        public async Task<ActionResult<IEnumerable<LocationResponseDto>>> GetLocationsByProject(
+    int projectId,
+    [FromQuery] string type = "All",
+    [FromQuery] string search = "")
         {
-            var locations = await _context.Locations
+            var query = _context.Locations
                 .Include(l => l.IdNavigation)
-                    .ThenInclude(r => r.SceneResources)
-                .Where(l => l.IdNavigation.ProjectId == projectId) // ФІЛЬТР ЗА ПРОЕКТОМ
-                .Select(l => new LocationResponseDto
-                {
-                    Id = l.Id,
-                    Name = l.LocationName,
-                    Desc = $"{l.Street}, {l.City}".Trim(new char[] { ' ', ',' }),
-                    Type = l.LocationType,
-                    Manager = l.ContactName,
-                    Phone = l.ContactPhone,
-                    Usage = l.IdNavigation.SceneResources.Count
-                })
-                .ToListAsync();
+                .Where(l => l.IdNavigation.ProjectId == projectId)
+                .AsQueryable();
+
+            // Фільтрація за типом (Enum)
+            if (type != "All" && !string.IsNullOrEmpty(type))
+            {
+                query = query.Where(l => l.LocationType == type.ToLower());
+            }
+
+            // Пошук за назвою або адресою
+            if (!string.IsNullOrEmpty(search))
+            {
+                var s = search.ToLower();
+                query = query.Where(l => l.LocationName.ToLower().Contains(s) ||
+                                        (l.City != null && l.City.ToLower().Contains(s)) ||
+                                        (l.Street != null && l.Street.ToLower().Contains(s)));
+            }
+
+            var locations = await query.Select(l => new LocationResponseDto
+            {
+                Id = l.Id,
+                Name = l.LocationName,
+                City = l.City,
+                Street = l.Street,
+                Desc = $"{l.Street}, {l.City}".Trim(new char[] { ' ', ',' }),
+                Type = l.LocationType,
+                Manager = l.ContactName,
+                Phone = l.ContactPhone,
+                Usage = l.IdNavigation.SceneResources.Count
+            }).ToListAsync();
 
             return Ok(locations);
         }

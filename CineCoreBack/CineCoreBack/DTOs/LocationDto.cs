@@ -2,6 +2,7 @@
 {
     public class LocationCreateUpdateDto
     {
+        public int ProjectId { get; set; }
         public string LocationName { get; set; } = null!;
         public string? City { get; set; }
         public string? Street { get; set; }
@@ -14,10 +15,14 @@
     {
         public int Id { get; set; }
         public string Name { get; set; } = null!;
-        public string? Desc { get; set; } // Комбінація City + Street для фронтенду
+        public string? Desc { get; set; }
+        // Додайте ці два рядки:
+        public string? City { get; set; }
+        public string? Street { get; set; }
+
         public string? Type { get; set; }
         public string? Manager { get; set; }
         public string? Phone { get; set; }
-        public int Usage { get; set; } // Кількість сцен, де задіяна локація
+        public int Usage { get; set; }
     }
 }

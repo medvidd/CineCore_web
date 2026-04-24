@@ -1,27 +1,42 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms'; // Обов'язково для [(ngModel)]
+import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { Api } from '../../../core/services/api';
 
 @Component({
   selector: 'app-resources',
   standalone: true,
-  imports: [CommonModule, FormsModule], // Додано FormsModule
+  imports: [CommonModule, FormsModule],
   templateUrl: './resources.html',
   styleUrl: './resources.scss'
 })
 export class Resources implements OnInit {
   private api = inject(Api);
+  private route = inject(ActivatedRoute);
+  private cdr = inject(ChangeDetectorRef);
 
   activeTab: 'locations' | 'props' = 'locations';
-  projectId: number = 1; // Замініть на реальне отримання ID проекту
+  projectId: number = 0;
 
+  // Основні масиви з БД
   locations: any[] = [];
   props: any[] = [];
 
   // ==========================================
-  // ENUMS З БЕКЕНДУ
+  // ПОШУК ТА ФІЛЬТРАЦІЯ
   // ==========================================
+  searchQuery: string = '';
+  filteredLocations: any[] = [];
+  filteredProps: any[] = [];
+
+  locationFilters = ['All', 'Interior', 'Exterior', 'Studio'];
+  activeLocationFilter = 'All';
+
+  propFilters = ['All', 'Action', 'Scenography', 'Functional'];
+  activePropFilter = 'All';
+
+  // ENUMS З БЕКЕНДУ ДЛЯ ФОРМ
   locationTypes = ['interior', 'exterior', 'studio'];
   propTypes = ['action', 'scenography', 'functional'];
   propStatuses = ['available', 'leased', 'unavailable'];
@@ -44,7 +59,7 @@ export class Resources implements OnInit {
   // ==========================================
   // СТАН ДЛЯ PROPS (Inline Table Editing)
   // ==========================================
-  editingPropId: number | null = null; // null - нічого не редагується, 0 - новий рядок
+  editingPropId: number | null = null;
   propForm = {
     id: null as number | null,
     propName: '',
@@ -55,45 +70,117 @@ export class Resources implements OnInit {
   };
 
   ngOnInit() {
-    this.loadData();
+    this.route.parent?.paramMap.subscribe(params => {
+      const id = params.get('id');
+      if (id) {
+        this.projectId = Number(id);
+        this.loadData();
+      }
+    });
   }
 
   loadData() {
-    this.api.getLocationsByProject(this.projectId).subscribe({
-      next: (data) => {
-        this.locations = data.map(loc => ({
-          ...loc,
-          typeColor: this.getColorForLocationType(loc.type)
-        }));
-      },
-      error: (err) => console.error('Failed to load locations', err)
-    });
+    // Завантажуємо локації (з урахуванням фільтрів та пошуку саме для локацій)
+    this.api.getLocationsByProject(this.projectId, this.activeLocationFilter, this.searchQuery)
+      .subscribe({
+        next: (data) => {
+          this.locations = data.map(loc => ({
+            ...loc,
+            typeColor: this.getColorForLocationType(loc.type)
+          }));
+          this.cdr.detectChanges();
+        },
+        error: (err) => console.error('Failed to load locations', err)
+      });
 
-    this.api.getPropsByProject(this.projectId).subscribe({
-      next: (data) => {
-        this.props = data.map(prop => ({
-          ...prop,
-          categoryColor: this.getColorForCategory(prop.category),
-          statusColor: this.getColorForStatus(prop.status)
-        }));
-      },
-      error: (err) => console.error('Failed to load props', err)
-    });
+    // Завантажуємо реквізит (з урахуванням фільтрів та пошуку саме для реквізиту)
+    this.api.getPropsByProject(this.projectId, this.activePropFilter, this.searchQuery)
+      .subscribe({
+        next: (data) => {
+          this.props = data.map(prop => ({
+            ...prop,
+            categoryColor: this.getColorForCategory(prop.category),
+            statusColor: this.getColorForStatus(prop.status)
+          }));
+          this.cdr.detectChanges();
+        },
+        error: (err) => console.error('Failed to load props', err)
+      });
   }
 
+  // ==========================================
+  // КОМПЛЕКСНА ФІЛЬТРАЦІЯ (ПОШУК + DROPDOWN)
+  // ==========================================
+  filterData() {
+    const q = this.searchQuery.toLowerCase().trim();
+
+    // Фільтруємо ЛОКАЦІЇ
+    this.filteredLocations = this.locations.filter(loc => {
+      // 1. Умова пошуку (співпадає ім'я АБО опис)
+      const matchesSearch = !q ||
+        loc.name?.toLowerCase().includes(q) ||
+        loc.desc?.toLowerCase().includes(q);
+
+      // 2. Умова випадаючого списку (тип приміщення)
+      const matchesFilter = this.activeLocationFilter === 'All' ||
+        loc.type?.toLowerCase() === this.activeLocationFilter.toLowerCase();
+
+      // Локація залишається, тільки якщо виконуються ОБИДВІ умови
+      return matchesSearch && matchesFilter;
+    });
+
+    // Фільтруємо РЕКВІЗИТ (PROPS)
+    this.filteredProps = this.props.filter(prop => {
+      const isNewRow = prop.id === 0; // Завжди показуємо рядок створення, якщо він відкритий
+
+      const matchesSearch = !q ||
+        prop.name?.toLowerCase().includes(q) ||
+        prop.desc?.toLowerCase().includes(q);
+
+      const matchesFilter = this.activePropFilter === 'All' ||
+        prop.category?.toLowerCase() === this.activePropFilter.toLowerCase();
+
+      return isNewRow || (matchesSearch && matchesFilter);
+    });
+
+    this.cdr.detectChanges(); // Примусово оновлюємо UI після фільтрації
+  }
+
+  onLocationFilterChange() {
+    this.filterData();
+  }
+
+  onPropFilterChange() {
+    this.filterData();
+  }
+
+  onSearch() {
+    this.loadData();
+  }
+
+  onFilterChange() {
+    this.loadData();
+  }
+
+  // При зміні вкладок теж оновлюємо дані
+  setTab(tab: 'locations' | 'props') {
+    this.activeTab = tab;
+    this.loadData();
+  }
+
+  // ==========================================
   // ГОЛОВНА КНОПКА "ADD RESOURCE"
+  // ==========================================
   openAddResourceModal() {
     if (this.activeTab === 'locations') {
       this.locationForm = { id: null, locationName: '', city: '', street: '', locationType: 'interior', contactName: '', contactPhone: '' };
       this.isLocationModalOpen = true;
     } else {
-      // Додаємо тимчасовий порожній об'єкт в масив для відображення рядка введення
       this.propForm = { id: null, propName: '', description: '', propType: 'action', acquisitionType: 'buy', propStatus: 'available' };
-      this.editingPropId = 0; // 0 означає "Новий"
-
-      // Перевіряємо, чи вже немає відкритого рядка створення
+      this.editingPropId = 0;
       if (!this.props.find(p => p.id === 0)) {
-        this.props.unshift({ id: 0 }); // Додаємо на початок таблиці
+        this.props.unshift({ id: 0 });
+        this.filterData(); // Оновлюємо таблицю, щоб показати новий порожній рядок
       }
     }
   }
@@ -101,34 +188,51 @@ export class Resources implements OnInit {
   // ==========================================
   // LOCATIONS CRUD
   // ==========================================
+  editLocation(loc: any) {
+    this.locationForm = {
+      id: loc.id,
+      locationName: loc.name,
+      city: loc.city || '',
+      street: loc.street || '',
+      locationType: loc.type ? loc.type.toLowerCase() : 'interior',
+      contactName: loc.manager || '',
+      contactPhone: loc.phone || ''
+    };
+    this.isLocationModalOpen = true;
+  }
+
   closeLocationModal() {
     this.isLocationModalOpen = false;
   }
 
   saveLocation() {
-    const payload = {
-      projectId: this.projectId,
-      ...this.locationForm
-    };
+    const payload = { projectId: this.projectId, ...this.locationForm };
 
     if (this.locationForm.id) {
-      // Оновлення (якщо захочете додати кнопку Edit для локації)
-      this.api.updateLocation(this.locationForm.id, payload).subscribe(() => {
-        this.loadData();
-        this.closeLocationModal();
+      this.api.updateLocation(this.locationForm.id, payload).subscribe({
+        next: () => { this.loadData(); this.closeLocationModal(); },
+        error: (err) => alert(err.error?.message || 'Error updating location')
       });
     } else {
-      // Створення
-      this.api.createLocation(payload).subscribe(() => {
-        this.loadData();
-        this.closeLocationModal();
+      this.api.createLocation(payload).subscribe({
+        next: () => { this.loadData(); this.closeLocationModal(); },
+        error: (err) => alert(err.error?.message || 'Error creating location. Name might exist.')
       });
     }
   }
 
   deleteLocation(id: number) {
     if(confirm('Are you sure you want to delete this location?')) {
-      this.api.deleteLocation(id).subscribe(() => this.loadData());
+      this.locations = this.locations.filter(loc => loc.id !== id);
+      this.filterData(); // Миттєве оновлення UI
+
+      this.api.deleteLocation(id).subscribe({
+        next: () => {},
+        error: (err) => {
+          console.error(err);
+          this.loadData(); // Повертаємо у разі помилки
+        }
+      });
     }
   }
 
@@ -136,49 +240,54 @@ export class Resources implements OnInit {
   // PROPS CRUD (Inline)
   // ==========================================
   editProp(prop: any) {
-    // Якщо був інший незбережений новий рядок, видаляємо його
     this.props = this.props.filter(p => p.id !== 0);
+    this.filterData();
 
     this.editingPropId = prop.id;
     this.propForm = {
       id: prop.id,
       propName: prop.name,
       description: prop.desc,
-      propType: prop.category || 'action',
-      acquisitionType: prop.acquisition || 'buy',
-      propStatus: prop.status || 'available'
+      propType: prop.category ? prop.category.toLowerCase() : 'action',
+      acquisitionType: prop.acquisition ? prop.acquisition.toLowerCase() : 'buy',
+      propStatus: prop.status ? prop.status.toLowerCase() : 'available'
     };
   }
 
   cancelPropEdit() {
     this.editingPropId = null;
-    this.props = this.props.filter(p => p.id !== 0); // Видаляємо рядок "нового", якщо скасували створення
+    this.props = this.props.filter(p => p.id !== 0);
+    this.filterData();
   }
 
   saveProp() {
-    const payload = {
-      projectId: this.projectId,
-      ...this.propForm
-    };
+    const payload = { projectId: this.projectId, ...this.propForm };
 
     if (this.propForm.id) {
-      // Оновлення
-      this.api.updateProp(this.propForm.id, payload).subscribe(() => {
-        this.editingPropId = null;
-        this.loadData();
+      this.api.updateProp(this.propForm.id, payload).subscribe({
+        next: () => { this.editingPropId = null; this.loadData(); },
+        error: (err) => alert(err.error?.message || 'Error updating prop')
       });
     } else {
-      // Створення
-      this.api.createProp(payload).subscribe(() => {
-        this.editingPropId = null;
-        this.loadData();
+      this.api.createProp(payload).subscribe({
+        next: () => { this.editingPropId = null; this.loadData(); },
+        error: (err) => alert(err.error?.message || 'Error creating prop. Name might exist.')
       });
     }
   }
 
   deleteProp(id: number) {
     if(confirm('Are you sure you want to delete this prop?')) {
-      this.api.deleteProp(id).subscribe(() => this.loadData());
+      this.props = this.props.filter(prop => prop.id !== id);
+      this.filterData(); // Миттєве оновлення UI
+
+      this.api.deleteProp(id).subscribe({
+        next: () => {},
+        error: (err) => {
+          console.error(err);
+          this.loadData(); // Повертаємо у разі помилки
+        }
+      });
     }
   }
 
@@ -189,20 +298,20 @@ export class Resources implements OnInit {
     const t = (type || '').toLowerCase();
     if (t === 'interior') return 'blue';
     if (t === 'exterior') return 'green';
-    return 'purple'; // studio
+    return 'purple';
   }
 
   getColorForStatus(status: string): string {
     const s = (status || '').toLowerCase();
     if (s === 'available') return 'green';
     if (s === 'leased') return 'yellow';
-    return 'red'; // unavailable
+    return 'red';
   }
 
   getColorForCategory(category: string): string {
     const c = (category || '').toLowerCase();
     if (c === 'action') return 'red';
     if (c === 'scenography') return 'blue';
-    return 'purple'; // functional
+    return 'purple';
   }
 }

@@ -1,13 +1,16 @@
 $bg-main: #000B10;
 $bg-card: #1D1D1D;
 $teal: #3AB9A0;
+$danger: #FF3B30;
 
 .resource-wrapper {
   display: flex; flex-direction: column; gap: 24px;
   color: white; font-family: 'Space Grotesk', sans-serif;
 }
 
-// ВЕРХНЯ КАРТКА (Схожа на Crew)
+// ==========================================
+// ВЕРХНЯ КАРТКА
+// ==========================================
 .resource-summary-card {
   background: $bg-card; border-radius: 24px; padding: 24px;
   border: 0.8px solid rgba(255, 255, 255, 0.1);
@@ -15,38 +18,63 @@ $teal: #3AB9A0;
 
   .summary-left {
     display: flex; align-items: center; gap: 16px;
-    .icon-box { width: 48px; height: 48px; background: rgba(58, 185, 160, 0.1); border-radius: 12px; display: flex; justify-content: center; align-items: center; svg { width: 24px; height: 24px; color: white; } }
+    .icon-box {
+      width: 48px; height: 48px; background: rgba(58, 185, 160, 0.1);
+      border-radius: 12px; display: flex; justify-content: center; align-items: center;
+      svg { width: 24px; height: 24px; color: white; }
+    }
     h1 { font-size: 24px; font-weight: 500; margin: 0; }
   }
 
   .summary-center {
     display: flex; gap: 16px;
-    .stat-badge { padding: 8px 16px; border-radius: 12px; font-size: 14px; background: $bg-card; border: 0.8px solid rgba(255,255,255,0.1); }
+    .stat-badge {
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+      padding: 8px 16px; border-radius: 50px; font-size: 14px;
+    }
   }
 
-  .btn-primary { background: $teal; color: $bg-main; border: none; padding: 12px 24px; border-radius: 50px; font-weight: 500; font-family: 'Space Grotesk'; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s; &:hover { opacity: 0.8; } .btn-icon { width: 16px; height: 16px; } }
+  .btn-primary {
+    background: $teal; color: $bg-main; border: none; border-radius: 50px;
+    padding: 12px 24px; font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 500;
+    display: flex; align-items: center; gap: 8px; cursor: pointer; transition: 0.2s;
+    &:hover { opacity: 0.8; transform: translateY(-2px); }
+    .btn-icon { width: 20px; height: 20px; }
+  }
 }
 
-// ВСТАВКИ (TABS)
+// ==========================================
+// ВКЛАДКИ (TABS)
+// ==========================================
 .tabs-container {
-  display: flex; gap: 24px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); margin-top: 8px;
+  display: flex; gap: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 1px;
 
   .tab-btn {
-    background: transparent; border: none; color: rgba(255,255,255,0.6); font-size: 16px; font-family: 'Space Grotesk'; font-weight: 500;
-    padding: 0 0 16px 0; cursor: pointer; display: flex; align-items: center; gap: 8px; position: relative; transition: 0.2s;
+    background: transparent; border: none; color: rgba(255, 255, 255, 0.6);
+    font-family: 'Space Grotesk', sans-serif; font-size: 16px; padding: 12px 24px;
+    cursor: pointer; position: relative; transition: 0.2s; display: flex; align-items: center; gap: 8px;
 
-    .badge { background: $bg-card; padding: 2px 8px; border-radius: 12px; font-size: 12px; }
+    .badge { background: rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 12px; font-size: 12px; }
+
+    &:hover { color: white; }
 
     &.active {
-      color: white;
-      &::after { content: ''; position: absolute; bottom: -1px; left: 0; width: 100%; height: 2px; background: $teal; }
+      color: $teal; font-weight: 500;
+      &::after {
+        content: ''; position: absolute; bottom: -1px; left: 0; width: 100%; height: 2px;
+        background: $teal; border-radius: 2px 2px 0 0;
+      }
+      .badge { background: rgba(58, 185, 160, 0.2); color: $teal; }
     }
   }
 }
 
-// ПОШУК
+// ==========================================
+// ACTIONS BAR (ПОШУК ТА ФІЛЬТРИ)
+// ==========================================
 .actions-bar {
-  display: flex; gap: 16px; justify-content: space-between;
+  display: flex; gap: 16px; justify-content: space-between; align-items: center;
+  margin-bottom: 8px;
 
   .search-input {
     flex: 1; max-width: 500px; background: $bg-card; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px;
@@ -55,47 +83,109 @@ $teal: #3AB9A0;
     input { flex: 1; background: transparent; border: none; color: white; padding: 14px 0; font-family: 'Space Grotesk'; font-size: 14px; &:focus { outline: none; } }
   }
 
-  .filter-actions {
-    display: flex; gap: 8px;
-    .btn-icon-square { background: $bg-card; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; width: 44px; height: 44px; display: flex; justify-content: center; align-items: center; color: white; cursor: pointer; &:hover { background: rgba(255,255,255,0.05); } svg { width: 20px; height: 20px; } }
-  }
-}
+  .filter-dropdown {
+    position: relative;
+    display: flex;
+    align-items: center;
 
-// КОЛЬОРИ ДЛЯ БЕЙДЖІВ (Універсальні класи)
-.color-green { color: #00A63E; background: rgba(0, 201, 80, 0.1); border-color: rgba(0, 201, 80, 0.2); }
-.color-red { color: #E7000B; background: rgba(251, 44, 54, 0.1); border-color: rgba(251, 44, 54, 0.2); }
-.color-yellow { color: #E9A60F; background: rgba(233, 166, 15, 0.1); border-color: rgba(233, 166, 15, 0.2); }
-.color-blue { color: #155DFC; background: rgba(43, 127, 255, 0.1); border-color: rgba(43, 127, 255, 0.2); }
-.color-purple { color: #9810FA; background: rgba(173, 70, 255, 0.1); border-color: rgba(173, 70, 255, 0.2); }
+    .filter-icon {
+      position: absolute;
+      left: 16px;
+      width: 16px;
+      height: 16px;
+      color: rgba(255, 255, 255, 0.6);
+      pointer-events: none;
+    }
 
-// --- СІТКА ЛОКАЦІЙ ---
-.locations-grid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px;
+    .custom-select {
+      background: $bg-card;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: white;
+      padding: 14px 16px 14px 40px;
+      border-radius: 16px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 14px;
+      cursor: pointer;
+      outline: none;
+      transition: border-color 0.2s;
+      appearance: none;
 
-  .location-card {
-    background: $bg-card; border-radius: 16px; border: 0.8px solid rgba(255,255,255,0.1); overflow: hidden;
-
-    .loc-image-placeholder { height: 160px; background: #2a2a2a; }
-
-    .loc-info {
-      padding: 20px; display: flex; flex-direction: column; gap: 12px;
-
-      .status-badge { display: inline-block; padding: 4px 12px; border-radius: 8px; font-size: 12px; width: max-content; border: 0.8px solid; }
-      h3 { margin: 0; font-size: 20px; font-weight: 500; }
-      .address { margin: 0; color: rgba(255,255,255,0.6); font-size: 14px; display: flex; align-items: center; gap: 8px; svg { width: 16px; height: 16px; } }
-
-      .loc-manager {
-        display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.05);
-        .manager-icon { width: 32px; height: 32px; background: rgba(255,255,255,0.05); border-radius: 8px; display: flex; justify-content: center; align-items: center; svg { width: 16px; height: 16px; } }
-        .manager-details { display: flex; flex-direction: column; .name { font-size: 14px; } .phone { font-size: 14px; color: $teal; } }
-      }
-
-      .loc-usage { display: flex; align-items: center; gap: 8px; color: rgba(255,255,255,0.6); font-size: 14px; svg { width: 16px; height: 16px; } }
+      &:hover, &:focus { border-color: $teal; }
+      option { background: $bg-card; color: white; padding: 8px; }
     }
   }
 }
 
-// --- ТАБЛИЦЯ ПРОПСІВ ---
+// ==========================================
+// LOCATIONS GRID (Скляні картки)
+// ==========================================
+.locations-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px;
+}
+
+.location-card {
+  background: rgba(29, 29, 29, 0.4);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  border: 0.8px solid rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  transition: transform 0.2s, border-color 0.2s;
+
+  &:hover {
+    border-color: $teal;
+    transform: translateY(-4px);
+  }
+
+  .loc-image-placeholder {
+    height: 160px;
+    background: transparent;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    &::after {
+      content: '📍';
+      font-size: 40px;
+      opacity: 0.2;
+    }
+
+    // Кнопки управління на картці
+    .card-actions {
+      position: absolute; top: 12px; right: 12px; display: flex; gap: 8px;
+
+      button {
+        width: 32px; height: 32px; border-radius: 50%; border: none; cursor: pointer;
+        display: flex; justify-content: center; align-items: center; transition: 0.2s;
+        background: rgba(0, 0, 0, 0.5); color: white;
+        &:hover { transform: scale(1.1); }
+      }
+      .btn-edit { &:hover { background: $teal; color: #000B10; } }
+      .btn-delete { &:hover { background: $danger; } }
+    }
+  }
+
+  .loc-info {
+    padding: 20px;
+    display: flex; flex-direction: column; gap: 12px;
+
+    .status-badge { align-self: flex-start; padding: 4px 12px; border-radius: 50px; font-size: 12px; font-weight: 500; border: 1px solid; text-transform: capitalize; }
+    h3 { margin: 0; font-size: 18px; font-weight: 500; }
+    .address { margin: 0; color: rgba(255,255,255,0.6); font-size: 14px; display: flex; align-items: center; gap: 6px; svg { width: 14px; height: 14px; } }
+
+    .loc-manager {
+      display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.02); padding: 12px; border-radius: 12px; margin-top: 4px;
+      .manager-details { display: flex; flex-direction: column; .name { font-size: 14px; } .phone { font-size: 14px; color: $teal; } }
+    }
+
+    .loc-usage { display: flex; align-items: center; gap: 8px; color: rgba(255,255,255,0.6); font-size: 14px; svg { width: 16px; height: 16px; } }
+  }
+}
+
+// ==========================================
+// ТАБЛИЦЯ ПРОПСІВ (PROPS)
+// ==========================================
 .table-container {
   background: $bg-card; border-radius: 24px; border: 0.8px solid rgba(255,255,255,0.1); overflow: hidden;
 
@@ -103,73 +193,81 @@ $teal: #3AB9A0;
     width: 100%; border-collapse: collapse; text-align: left;
 
     th { padding: 20px 24px; color: rgba(255,255,255,0.6); font-weight: 500; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.1); }
-    td { padding: 16px 24px; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.05); vertical-align: middle; }
-    tr:hover td { background: rgba(255,255,255,0.02); }
+    td { padding: 16px 24px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 14px; vertical-align: middle; }
     tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
 
-    strong { font-weight: 400; font-size: 16px; }
-    .desc-text { color: rgba(255,255,255,0.6); display: block; max-width: 250px; line-height: 1.4; }
-
-    .category-badge { padding: 6px 12px; border-radius: 8px; font-size: 12px; border: 0.8px solid; }
-
-    .scene-count { display: flex; align-items: center; gap: 8px; color: rgba(255,255,255,0.6); svg { width: 16px; height: 16px; } }
+    .desc-text { color: rgba(255,255,255,0.6); display: block; max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .category-badge { padding: 4px 12px; border-radius: 50px; font-size: 12px; border: 1px solid; text-transform: capitalize; display: inline-block; }
+    .scene-count { display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.05); padding: 4px 12px; border-radius: 50px; svg { width: 14px; height: 14px; } }
   }
 }
 
-/* Додайте до кінця вашого resources.scss */
-
-// --- СТИЛІ ДЛЯ INLINE РЕДАГУВАННЯ У ТАБЛИЦІ ---
+// --- Inline редагування в таблиці ---
 .table-input {
-  width: 100%;
-  background: #000B10;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: white;
-  padding: 8px;
-  border-radius: 8px;
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 14px;
-  box-sizing: border-box;
-
-  &:focus {
-    outline: none;
-    border-color: #3AB9A0;
-  }
+  width: 100%; background: #000B10; border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white; padding: 8px; border-radius: 8px; font-family: 'Space Grotesk', sans-serif;
+  font-size: 14px; box-sizing: border-box;
+  &:focus { outline: none; border-color: $teal; }
 }
 
-.select-input {
-  appearance: auto;
-  cursor: pointer;
-  padding: 8px 4px;
-}
+.select-input { appearance: auto; cursor: pointer; padding: 8px 4px; text-transform: capitalize; }
 
+// ==========================================
+// ОНОВЛЕНІ СТИЛІ КНОПОК У ТАБЛИЦІ (ПІД СТИЛЬ CREW)
+// ==========================================
 .inline-actions {
   display: flex;
-  gap: 8px;
+  gap: 8px; // Відступ як у crew.scss
+  align-items: center;
 
   .btn-save-sm {
-    background: #3AB9A0; border: none; color: #000B10; border-radius: 6px; padding: 6px 12px; cursor: pointer; font-weight: bold;
+    background: $teal; border: none; color: #000B10;
+    border-radius: 8px; padding: 6px 16px; cursor: pointer;
+    font-weight: bold; font-family: 'Space Grotesk';
   }
+
   .btn-cancel-sm {
-    background: transparent; border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 6px; padding: 6px 12px; cursor: pointer;
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+    color: white; border-radius: 8px; padding: 6px 16px; cursor: pointer;
   }
+
   .btn-edit-icon, .btn-delete-icon-tbl {
-    background: transparent; border: none; font-size: 16px; cursor: pointer; opacity: 0.7; transition: 0.2s;
-    &:hover { opacity: 1; transform: scale(1.1); }
+    background: transparent; // Прибираємо фон повністю
+    border: none;            // Прибираємо рамку
+    padding: 4px;            // Залишаємо невелику зону для кліку
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: rgba(255, 255, 255, 0.6);
+
+    svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    &:hover {
+      transform: translateY(-2px); // Ефект підняття замість масштабування
+    }
+  }
+
+  // Специфічні кольори при наведенні (Highlighting)
+  .btn-edit-icon:hover {
+    color: $teal;
+    background: transparent;
+  }
+
+  .btn-delete-icon-tbl:hover {
+    color: #E7000B; // Колір як у crew.scss для видалення
+    background: transparent;
   }
 }
 
-// --- КНОПКА ВИДАЛЕННЯ ЛОКАЦІЇ НА КАРТЦІ ---
-.loc-image-placeholder {
-  position: relative;
-  .btn-delete-icon {
-    position: absolute; top: 12px; right: 12px; width: 32px; height: 32px;
-    background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%;
-    cursor: pointer; font-weight: bold;
-    &:hover { background: #FF3B30; }
-  }
-}
-
-// --- СТИЛІ ДЛЯ МОДАЛЬНОГО ВІКНА (перевикористані з project-modal) ---
+// ==========================================
+// МОДАЛЬНЕ ВІКНО (Locations)
+// ==========================================
 .modal-overlay {
   position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
   background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px);
@@ -177,32 +275,38 @@ $teal: #3AB9A0;
 }
 
 .modal-container {
-  width: 100%; max-width: 500px; background: #1D1D1D; border-radius: 24px;
+  width: 100%; max-width: 500px; background: $bg-card; border-radius: 24px;
   border: 1px solid rgba(255, 255, 255, 0.1); padding: 32px;
-
   .modal-header h2 { margin: 0 0 24px 0; font-size: 24px; font-weight: 500; }
 }
 
 .modal-form {
   display: flex; flex-direction: column; gap: 16px;
-
   .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-
   .form-group {
     display: flex; flex-direction: column; gap: 8px;
     label { font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.8); }
   }
-
   .form-control {
     background: #000B10; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px;
     padding: 12px 16px; color: white; font-family: 'Space Grotesk', sans-serif;
-    &:focus { outline: none; border-color: #3AB9A0; }
+    text-transform: capitalize;
+    &:focus { outline: none; border-color: $teal; }
   }
 
   .form-actions {
     display: flex; gap: 16px; margin-top: 12px;
     button { flex: 1; padding: 14px 0; border-radius: 50px; font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 500; cursor: pointer; transition: 0.2s; }
     .btn-cancel { background: #000B10; border: 1px solid rgba(255, 255, 255, 0.1); color: white; &:hover { border-color: rgba(255, 255, 255, 0.3); } }
-    .btn-submit { background: #3AB9A0; border: none; color: #000B10; &:hover { background: #32a18b; } }
+    .btn-submit { background: $teal; border: none; color: #000B10; &:hover { background: #32a18b; } }
   }
 }
+
+// ==========================================
+// КОЛЬОРИ ДЛЯ БЕЙДЖІВ
+// ==========================================
+.color-green { color: #00A63E; background: rgba(0, 201, 80, 0.1); border-color: rgba(0, 201, 80, 0.2); }
+.color-red { color: $danger; background: rgba(251, 44, 54, 0.1); border-color: rgba(251, 44, 54, 0.2); }
+.color-yellow { color: #E9A60F; background: rgba(233, 166, 15, 0.1); border-color: rgba(233, 166, 15, 0.2); }
+.color-blue { color: #155DFC; background: rgba(43, 127, 255, 0.1); border-color: rgba(43, 127, 255, 0.2); }
+.color-purple { color: #9810FA; background: rgba(173, 70, 255, 0.1); border-color: rgba(173, 70, 255, 0.2); }

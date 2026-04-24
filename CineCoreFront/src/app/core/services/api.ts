@@ -57,11 +57,15 @@ export class Api {
   deleteProject(projectId: number): Observable<any> {
     return this.http.delete(`${this.PROJECTS_API_URL}/${projectId}`);
   }
+  getProjectById(projectId: number): Observable<any> {
+    return this.http.get(`${this.PROJECTS_API_URL}/${projectId}`);
+  }
 
 
   // LOCATIONS
-  getLocationsByProject(projectId: number): Observable<any[]> {
-    return this.http.get<any[]>(`${this.LOCATIONS_API_URL}/project/${projectId}`);
+  getLocationsByProject(projectId: number, type: string = 'All', search: string = ''): Observable<any[]> {
+    const url = `${this.LOCATIONS_API_URL}/project/${projectId}?type=${type}&search=${encodeURIComponent(search)}`;
+    return this.http.get<any[]>(url);
   }
 
   createLocation(locationData: any): Observable<any> {
@@ -77,9 +81,11 @@ export class Api {
   }
 
 
+
   // PROPS
-  getPropsByProject(projectId: number): Observable<any[]> {
-    return this.http.get<any[]>(`${this.PROPS_API_URL}/project/${projectId}`);
+  getPropsByProject(projectId: number, category: string = 'All', search: string = ''): Observable<any[]> {
+    const url = `${this.PROPS_API_URL}/project/${projectId}?category=${category}&search=${encodeURIComponent(search)}`;
+    return this.http.get<any[]>(url);
   }
 
   createProp(propData: any): Observable<any> {
