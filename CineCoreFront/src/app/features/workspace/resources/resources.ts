@@ -1,32 +1,208 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms'; // Обов'язково для [(ngModel)]
+import { Api } from '../../../core/services/api';
 
 @Component({
   selector: 'app-resources',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule], // Додано FormsModule
   templateUrl: './resources.html',
   styleUrl: './resources.scss'
 })
-export class Resources {
-  // Керування вкладками
+export class Resources implements OnInit {
+  private api = inject(Api);
+
   activeTab: 'locations' | 'props' = 'locations';
+  projectId: number = 1; // Замініть на реальне отримання ID проекту
 
-  // Мокові дані для локацій
-  locations = [
-    { name: 'Old Police Station', desc: '125 Main Street, Downtown', type: 'Approved', typeColor: 'green', manager: 'John Peterson', phone: '+1 555 123-4567', usage: '12 scenes' },
-    { name: 'Riverside Park', desc: 'River Road, North District', type: 'Approved', typeColor: 'green', manager: 'Sarah Mitchell', phone: '+1 555 234-5678', usage: '5 scenes' },
-    { name: 'Downtown Alley', desc: 'Between 5th & 6th Street', type: 'Approved', typeColor: 'green', manager: 'Lisa Anderson', phone: '+1 555 456-7890', usage: '3 scenes' },
-    { name: 'Historic Manor House', desc: '45 Oak Avenue, Suburbs', type: 'Scouting', typeColor: 'yellow', manager: 'Michael Brown', phone: '+1 555 345-6789', usage: '8 scenes' },
-    { name: 'City Hall', desc: '1 Government Plaza', type: 'Unavailable', typeColor: 'red', manager: 'Robert Chen', phone: '+1 555 567-8901', usage: '0 scenes' }
-  ];
+  locations: any[] = [];
+  props: any[] = [];
 
-  // Мокові дані для реквізиту (Props)
-  props = [
-    { name: 'Vintage Pistol (Replica)', desc: '1940s-style police revolver, fully functional replica with blanks capability', category: 'Action', categoryColor: 'red', acquisition: 'Rent', price: '$250', status: 'Available', statusColor: 'green', scenes: 8 },
-    { name: 'Detective\'s Desk', desc: 'Authentic wooden desk from the 1950s with drawers and vintage details', category: 'Scenography', categoryColor: 'blue', acquisition: 'Buy', price: '$1200', status: 'Leased', statusColor: 'yellow', scenes: 15 },
-    { name: 'Crime Scene Tape', desc: 'Authentic police barrier tape, 500 feet', category: 'Scenography', categoryColor: 'blue', acquisition: 'Buy', price: '$45', status: 'Available', statusColor: 'green', scenes: 4 },
-    { name: 'Police Car Light Bar', desc: 'Functional red and blue emergency lights for vehicle mounting', category: 'Functional', categoryColor: 'purple', acquisition: 'Rent', price: '$380', status: 'Available', statusColor: 'green', scenes: 5 },
-    { name: 'Case Files Stack', desc: 'Set of 50 vintage-looking police case files and folders', category: 'Scenography', categoryColor: 'blue', acquisition: 'Buy', price: '$95', status: 'Available', statusColor: 'green', scenes: 12 }
-  ];
+  // ==========================================
+  // ENUMS З БЕКЕНДУ
+  // ==========================================
+  locationTypes = ['interior', 'exterior', 'studio'];
+  propTypes = ['action', 'scenography', 'functional'];
+  propStatuses = ['available', 'leased', 'unavailable'];
+  acquisitionTypes = ['buy', 'rent'];
+
+  // ==========================================
+  // СТАН ДЛЯ LOCATIONS (Модалка)
+  // ==========================================
+  isLocationModalOpen = false;
+  locationForm = {
+    id: null as number | null,
+    locationName: '',
+    city: '',
+    street: '',
+    locationType: 'interior',
+    contactName: '',
+    contactPhone: ''
+  };
+
+  // ==========================================
+  // СТАН ДЛЯ PROPS (Inline Table Editing)
+  // ==========================================
+  editingPropId: number | null = null; // null - нічого не редагується, 0 - новий рядок
+  propForm = {
+    id: null as number | null,
+    propName: '',
+    description: '',
+    propType: 'action',
+    acquisitionType: 'buy',
+    propStatus: 'available'
+  };
+
+  ngOnInit() {
+    this.loadData();
+  }
+
+  loadData() {
+    this.api.getLocationsByProject(this.projectId).subscribe({
+      next: (data) => {
+        this.locations = data.map(loc => ({
+          ...loc,
+          typeColor: this.getColorForLocationType(loc.type)
+        }));
+      },
+      error: (err) => console.error('Failed to load locations', err)
+    });
+
+    this.api.getPropsByProject(this.projectId).subscribe({
+      next: (data) => {
+        this.props = data.map(prop => ({
+          ...prop,
+          categoryColor: this.getColorForCategory(prop.category),
+          statusColor: this.getColorForStatus(prop.status)
+        }));
+      },
+      error: (err) => console.error('Failed to load props', err)
+    });
+  }
+
+  // ГОЛОВНА КНОПКА "ADD RESOURCE"
+  openAddResourceModal() {
+    if (this.activeTab === 'locations') {
+      this.locationForm = { id: null, locationName: '', city: '', street: '', locationType: 'interior', contactName: '', contactPhone: '' };
+      this.isLocationModalOpen = true;
+    } else {
+      // Додаємо тимчасовий порожній об'єкт в масив для відображення рядка введення
+      this.propForm = { id: null, propName: '', description: '', propType: 'action', acquisitionType: 'buy', propStatus: 'available' };
+      this.editingPropId = 0; // 0 означає "Новий"
+
+      // Перевіряємо, чи вже немає відкритого рядка створення
+      if (!this.props.find(p => p.id === 0)) {
+        this.props.unshift({ id: 0 }); // Додаємо на початок таблиці
+      }
+    }
+  }
+
+  // ==========================================
+  // LOCATIONS CRUD
+  // ==========================================
+  closeLocationModal() {
+    this.isLocationModalOpen = false;
+  }
+
+  saveLocation() {
+    const payload = {
+      projectId: this.projectId,
+      ...this.locationForm
+    };
+
+    if (this.locationForm.id) {
+      // Оновлення (якщо захочете додати кнопку Edit для локації)
+      this.api.updateLocation(this.locationForm.id, payload).subscribe(() => {
+        this.loadData();
+        this.closeLocationModal();
+      });
+    } else {
+      // Створення
+      this.api.createLocation(payload).subscribe(() => {
+        this.loadData();
+        this.closeLocationModal();
+      });
+    }
+  }
+
+  deleteLocation(id: number) {
+    if(confirm('Are you sure you want to delete this location?')) {
+      this.api.deleteLocation(id).subscribe(() => this.loadData());
+    }
+  }
+
+  // ==========================================
+  // PROPS CRUD (Inline)
+  // ==========================================
+  editProp(prop: any) {
+    // Якщо був інший незбережений новий рядок, видаляємо його
+    this.props = this.props.filter(p => p.id !== 0);
+
+    this.editingPropId = prop.id;
+    this.propForm = {
+      id: prop.id,
+      propName: prop.name,
+      description: prop.desc,
+      propType: prop.category || 'action',
+      acquisitionType: prop.acquisition || 'buy',
+      propStatus: prop.status || 'available'
+    };
+  }
+
+  cancelPropEdit() {
+    this.editingPropId = null;
+    this.props = this.props.filter(p => p.id !== 0); // Видаляємо рядок "нового", якщо скасували створення
+  }
+
+  saveProp() {
+    const payload = {
+      projectId: this.projectId,
+      ...this.propForm
+    };
+
+    if (this.propForm.id) {
+      // Оновлення
+      this.api.updateProp(this.propForm.id, payload).subscribe(() => {
+        this.editingPropId = null;
+        this.loadData();
+      });
+    } else {
+      // Створення
+      this.api.createProp(payload).subscribe(() => {
+        this.editingPropId = null;
+        this.loadData();
+      });
+    }
+  }
+
+  deleteProp(id: number) {
+    if(confirm('Are you sure you want to delete this prop?')) {
+      this.api.deleteProp(id).subscribe(() => this.loadData());
+    }
+  }
+
+  // ==========================================
+  // HELPERS ДЛЯ КОЛЬОРІВ
+  // ==========================================
+  getColorForLocationType(type: string): string {
+    const t = (type || '').toLowerCase();
+    if (t === 'interior') return 'blue';
+    if (t === 'exterior') return 'green';
+    return 'purple'; // studio
+  }
+
+  getColorForStatus(status: string): string {
+    const s = (status || '').toLowerCase();
+    if (s === 'available') return 'green';
+    if (s === 'leased') return 'yellow';
+    return 'red'; // unavailable
+  }
+
+  getColorForCategory(category: string): string {
+    const c = (category || '').toLowerCase();
+    if (c === 'action') return 'red';
+    if (c === 'scenography') return 'blue';
+    return 'purple'; // functional
+  }
 }
