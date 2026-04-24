@@ -1,0 +1,117 @@
+$bg-main: #000B10;
+$bg-card: #1D1D1D;
+$teal: #3AB9A0;
+
+.resource-wrapper {
+  display: flex; flex-direction: column; gap: 24px;
+  color: white; font-family: 'Space Grotesk', sans-serif;
+}
+
+// ВЕРХНЯ КАРТКА (Схожа на Crew)
+.resource-summary-card {
+  background: $bg-card; border-radius: 24px; padding: 24px;
+  border: 0.8px solid rgba(255, 255, 255, 0.1);
+  display: flex; justify-content: space-between; align-items: center;
+
+  .summary-left {
+    display: flex; align-items: center; gap: 16px;
+    .icon-box { width: 48px; height: 48px; background: rgba(58, 185, 160, 0.1); border-radius: 12px; display: flex; justify-content: center; align-items: center; svg { width: 24px; height: 24px; color: white; } }
+    h1 { font-size: 24px; font-weight: 500; margin: 0; }
+  }
+
+  .summary-center {
+    display: flex; gap: 16px;
+    .stat-badge { padding: 8px 16px; border-radius: 12px; font-size: 14px; background: $bg-card; border: 0.8px solid rgba(255,255,255,0.1); }
+  }
+
+  .btn-primary { background: $teal; color: $bg-main; border: none; padding: 12px 24px; border-radius: 50px; font-weight: 500; font-family: 'Space Grotesk'; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s; &:hover { opacity: 0.8; } .btn-icon { width: 16px; height: 16px; } }
+}
+
+// ВСТАВКИ (TABS)
+.tabs-container {
+  display: flex; gap: 24px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); margin-top: 8px;
+
+  .tab-btn {
+    background: transparent; border: none; color: rgba(255,255,255,0.6); font-size: 16px; font-family: 'Space Grotesk'; font-weight: 500;
+    padding: 0 0 16px 0; cursor: pointer; display: flex; align-items: center; gap: 8px; position: relative; transition: 0.2s;
+
+    .badge { background: $bg-card; padding: 2px 8px; border-radius: 12px; font-size: 12px; }
+
+    &.active {
+      color: white;
+      &::after { content: ''; position: absolute; bottom: -1px; left: 0; width: 100%; height: 2px; background: $teal; }
+    }
+  }
+}
+
+// ПОШУК
+.actions-bar {
+  display: flex; gap: 16px; justify-content: space-between;
+
+  .search-input {
+    flex: 1; max-width: 500px; background: $bg-card; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px;
+    display: flex; align-items: center; padding: 0 16px; gap: 12px;
+    svg { width: 18px; height: 18px; color: rgba(255,255,255,0.6); }
+    input { flex: 1; background: transparent; border: none; color: white; padding: 14px 0; font-family: 'Space Grotesk'; font-size: 14px; &:focus { outline: none; } }
+  }
+
+  .filter-actions {
+    display: flex; gap: 8px;
+    .btn-icon-square { background: $bg-card; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; width: 44px; height: 44px; display: flex; justify-content: center; align-items: center; color: white; cursor: pointer; &:hover { background: rgba(255,255,255,0.05); } svg { width: 20px; height: 20px; } }
+  }
+}
+
+// КОЛЬОРИ ДЛЯ БЕЙДЖІВ (Універсальні класи)
+.color-green { color: #00A63E; background: rgba(0, 201, 80, 0.1); border-color: rgba(0, 201, 80, 0.2); }
+.color-red { color: #E7000B; background: rgba(251, 44, 54, 0.1); border-color: rgba(251, 44, 54, 0.2); }
+.color-yellow { color: #E9A60F; background: rgba(233, 166, 15, 0.1); border-color: rgba(233, 166, 15, 0.2); }
+.color-blue { color: #155DFC; background: rgba(43, 127, 255, 0.1); border-color: rgba(43, 127, 255, 0.2); }
+.color-purple { color: #9810FA; background: rgba(173, 70, 255, 0.1); border-color: rgba(173, 70, 255, 0.2); }
+
+// --- СІТКА ЛОКАЦІЙ ---
+.locations-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px;
+
+  .location-card {
+    background: $bg-card; border-radius: 16px; border: 0.8px solid rgba(255,255,255,0.1); overflow: hidden;
+
+    .loc-image-placeholder { height: 160px; background: #2a2a2a; }
+
+    .loc-info {
+      padding: 20px; display: flex; flex-direction: column; gap: 12px;
+
+      .status-badge { display: inline-block; padding: 4px 12px; border-radius: 8px; font-size: 12px; width: max-content; border: 0.8px solid; }
+      h3 { margin: 0; font-size: 20px; font-weight: 500; }
+      .address { margin: 0; color: rgba(255,255,255,0.6); font-size: 14px; display: flex; align-items: center; gap: 8px; svg { width: 16px; height: 16px; } }
+
+      .loc-manager {
+        display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.05);
+        .manager-icon { width: 32px; height: 32px; background: rgba(255,255,255,0.05); border-radius: 8px; display: flex; justify-content: center; align-items: center; svg { width: 16px; height: 16px; } }
+        .manager-details { display: flex; flex-direction: column; .name { font-size: 14px; } .phone { font-size: 14px; color: $teal; } }
+      }
+
+      .loc-usage { display: flex; align-items: center; gap: 8px; color: rgba(255,255,255,0.6); font-size: 14px; svg { width: 16px; height: 16px; } }
+    }
+  }
+}
+
+// --- ТАБЛИЦЯ ПРОПСІВ ---
+.table-container {
+  background: $bg-card; border-radius: 24px; border: 0.8px solid rgba(255,255,255,0.1); overflow: hidden;
+
+  .data-table {
+    width: 100%; border-collapse: collapse; text-align: left;
+
+    th { padding: 20px 24px; color: rgba(255,255,255,0.6); font-weight: 500; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    td { padding: 16px 24px; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.05); vertical-align: middle; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+    tr:last-child td { border-bottom: none; }
+
+    strong { font-weight: 400; font-size: 16px; }
+    .desc-text { color: rgba(255,255,255,0.6); display: block; max-width: 250px; line-height: 1.4; }
+
+    .category-badge { padding: 6px 12px; border-radius: 8px; font-size: 12px; border: 0.8px solid; }
+
+    .scene-count { display: flex; align-items: center; gap: 8px; color: rgba(255,255,255,0.6); svg { width: 16px; height: 16px; } }
+  }
+}
