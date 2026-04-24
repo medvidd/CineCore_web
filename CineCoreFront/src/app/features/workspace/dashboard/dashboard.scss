@@ -1,0 +1,152 @@
+$bg-main: #000B10;
+$bg-card: #1D1D1D;
+$teal: #3AB9A0;
+$yellow: #E9A60F;
+$green: #00C950;
+$purple: #9810FA;
+$pink: #F6339A;
+$blue: #2B7FFF;
+
+.dashboard-wrapper {
+  display: flex; flex-direction: column; gap: 32px;
+  color: white; font-family: 'Space Grotesk', sans-serif;
+}
+
+.project-summary-card {
+  background: $bg-card; border-radius: 24px; padding: 24px;
+  border: 0.8px solid rgba(255, 255, 255, 0.1);
+  display: flex; gap: 24px; align-items: center;
+
+  .poster-placeholder { width: 160px; height: 112px; background: #2a2a2a; border-radius: 16px; flex-shrink: 0; }
+  .summary-info {
+    flex: 1;
+    h1 { font-size: 30px; font-weight: 500; margin: 0 0 8px 0; }
+    p { color: rgba(255, 255, 255, 0.6); font-size: 16px; line-height: 1.6; margin: 0; }
+  }
+  .team-stat-box {
+    background: $bg-main; border-radius: 16px; border: 0.8px solid rgba(255, 255, 255, 0.1);
+    padding: 16px 24px; display: flex; flex-direction: column; min-width: 150px;
+    .stat-number { color: $teal; font-size: 24px; font-weight: 400; }
+    .stat-label { color: rgba(255, 255, 255, 0.6); font-size: 12px; }
+  }
+}
+
+.widgets-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; align-items: start;
+}
+.widget-col { display: flex; flex-direction: column; gap: 24px; }
+
+.widget-card {
+  background: $bg-card; border-radius: 24px; padding: 24px;
+  border: 0.8px solid rgba(255, 255, 255, 0.1);
+  display: flex; flex-direction: column; gap: 24px;
+
+  .widget-header {
+    display: flex; align-items: center; gap: 8px;
+    .header-icon { width: 20px; height: 20px; display: flex; justify-content: center; align-items: center; svg { width: 16px; height: 16px; } }
+    .script-icon { color: $teal; }
+    .casting-icon { color: $purple; }
+    .shoots-icon { color: $teal; }
+    h3 { font-size: 20px; font-weight: 500; margin: 0; }
+  }
+
+  .widget-link {
+    text-decoration: none; font-size: 14px; font-weight: 400; color: $teal;
+    text-align: center; padding-top: 16px; border-top: 0.8px solid rgba(255, 255, 255, 0.1);
+    transition: opacity 0.2s; &:hover { opacity: 0.8; }
+    &.text-purple { color: $purple; }
+  }
+}
+
+// 1. Script Progress
+.widget-script {
+  .progress-circle {
+    width: 112px; height: 112px; border-radius: 50%; background: $bg-card;
+    border: 6px solid $teal; display: flex; justify-content: center; align-items: center;
+    font-size: 30px; font-weight: 400; margin: 0 auto;
+  }
+  .progress-stats {
+    display: flex; flex-direction: column; gap: 12px;
+    .stat-row {
+      display: flex; justify-content: space-between; align-items: center;
+      small { color: rgba(255, 255, 255, 0.6); font-size: 16px; }
+      span { font-size: 16px; font-weight: 400; }
+      .text-green { color: $green; }
+      .text-yellow { color: $yellow; }
+    }
+    .total-row { padding-top: 12px; border-top: 0.8px solid rgba(255,255,255,0.1); }
+  }
+}
+
+// 2. Casting Widget (ОНОВЛЕНО)
+.widget-casting {
+  .cast-progress {
+    display: flex; flex-direction: column; gap: 8px;
+    .labels {
+      display: flex; justify-content: space-between; align-items: center;
+      small { color: rgba(255, 255, 255, 0.6); font-size: 14px; }
+      span { font-size: 18px; }
+    }
+    .progress-bar {
+      height: 16px; background: $bg-main; border-radius: 50px; overflow: hidden; padding-right: 75px;
+      .fill { height: 100%; background: $teal; border-radius: 50px; display: flex; justify-content: flex-end; align-items: center; padding-right: 8px; font-size: 12px; font-family: 'Space Mono'; }
+    }
+  }
+
+  .roles-status {
+    display: flex; flex-direction: column; gap: 12px;
+    .status-box {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 12px; border-radius: 16px;
+      .status-left { display: flex; align-items: center; gap: 8px; .status-icon { width: 16px; height: 16px; } span { font-size: 14px; } }
+      .status-count { font-size: 16px; }
+
+      &.cast { background: rgba(0, 201, 80, 0.1); border: 0.8px solid rgba(0, 201, 80, 0.2); .status-icon, span { color: $green; } .status-count { color: darken($green, 10%); } }
+      &.pending { background: rgba(233, 166, 15, 0.1); border: 0.8px solid rgba(233, 166, 15, 0.2); .status-icon, span { color: $yellow; } .status-count { color: $yellow; } }
+    }
+  }
+}
+
+// 3. Upcoming Shoots
+.widget-shoots {
+  .shoot-item {
+    background: $bg-main; border-radius: 16px; padding: 16px; border: 0.8px solid rgba(255, 255, 255, 0.1);
+    display: flex; flex-direction: column; gap: 12px;
+    .shoot-header { display: flex; justify-content: space-between; align-items: center; .shoot-date { font-size: 18px; font-weight: 500; } .shoot-year { color: rgba(255,255,255,0.6); font-size: 12px; } }
+    .shoot-details {
+      display: flex; flex-direction: column; gap: 8px;
+      p { color: rgba(255, 255, 255, 0.6); font-size: 14px; margin: 0; display: flex; align-items: center; gap: 8px; svg { width: 16px; height: 16px; } }
+    }
+  }
+}
+
+// 4. Quick Stats Section (НОВА СІТКА)
+.quick-stats-section {
+  display: flex; flex-direction: column; gap: 16px;
+  .section-title { font-size: 20px; font-weight: 500; margin: 0; }
+
+  .quick-stats-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
+
+    .stat-card {
+      background: $bg-card; border-radius: 16px; padding: 20px; border: 0.8px solid rgba(255, 255, 255, 0.1);
+      display: flex; flex-direction: column; gap: 8px; position: relative;
+
+      .icon-wrapper {
+        position: absolute; top: 20px; left: 20px; width: 40px; height: 40px; border-radius: 16px;
+        display: flex; justify-content: center; align-items: center;
+        svg { width: 20px; height: 20px; }
+
+        &.icon-teal { background: rgba(58, 185, 160, 0.1); color: $teal; }
+        &.icon-pink { background: rgba(246, 51, 154, 0.1); color: $pink; }
+        &.icon-green { background: rgba(0, 201, 80, 0.1); color: $green; }
+        &.icon-purple { background: rgba(173, 70, 255, 0.1); color: $purple; }
+        &.icon-yellow { background: rgba(233, 166, 15, 0.1); color: $yellow; }
+        &.icon-blue { background: rgba(43, 127, 255, 0.1); color: $blue; }
+      }
+
+      .stat-num { margin-top: 56px; font-size: 30px; font-weight: 400; }
+      .stat-label { color: rgba(255, 255, 255, 0.6); font-size: 12px; }
+    }
+  }
+}

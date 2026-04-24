@@ -5,6 +5,8 @@ import { Login } from './features/auth/login/login';
 import { Signup } from './features/auth/signup/signup';
 import { Account } from './features/account/account';
 import { Projects } from './features/projects/projects';
+import { WorkspaceLayout } from './features/workspace/workspace-layout/workspace-layout';
+import { Dashboard } from './features/workspace/dashboard/dashboard';
 
 export const routes: Routes = [
   {
@@ -36,6 +38,15 @@ export const routes: Routes = [
     path: 'projects',
     component: Projects,
     title: 'CineCore | My Projects'
+  },
+  {
+    path: 'workspace/:id',
+    component: WorkspaceLayout,
+    children: [
+      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+      { path: 'dashboard', component: Dashboard, title: 'CineCore | Dashboard' },
+      // Пізніше сюди додасте { path: 'script', component: ScriptComponent } і т.д.
+    ]
   },
   {
     path: '**',
