@@ -9,6 +9,8 @@ export class Api {
   private http = inject(HttpClient);
   private readonly USERS_API_URL = 'http://localhost:5214/api/users';
   private readonly PROJECTS_API_URL = 'http://localhost:5214/api/projects';
+  private readonly LOCATIONS_API_URL = 'http://localhost:5214/api/locations';
+  private readonly PROPS_API_URL = 'http://localhost:5214/api/props';
 
   private userSubject = new BehaviorSubject<any>(JSON.parse(localStorage.getItem('cinecore_user') || 'null'));
   user$ = this.userSubject.asObservable();
@@ -56,4 +58,39 @@ export class Api {
     return this.http.delete(`${this.PROJECTS_API_URL}/${projectId}`);
   }
 
+
+  // LOCATIONS
+  getLocationsByProject(projectId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.LOCATIONS_API_URL}/project/${projectId}`);
+  }
+
+  createLocation(locationData: any): Observable<any> {
+    return this.http.post(this.LOCATIONS_API_URL, locationData);
+  }
+
+  updateLocation(id: number, locationData: any): Observable<any> {
+    return this.http.put(`${this.LOCATIONS_API_URL}/${id}`, locationData);
+  }
+
+  deleteLocation(id: number): Observable<any> {
+    return this.http.delete(`${this.LOCATIONS_API_URL}/${id}`);
+  }
+
+
+  // PROPS
+  getPropsByProject(projectId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.PROPS_API_URL}/project/${projectId}`);
+  }
+
+  createProp(propData: any): Observable<any> {
+    return this.http.post(this.PROPS_API_URL, propData);
+  }
+
+  updateProp(id: number, propData: any): Observable<any> {
+    return this.http.put(`${this.PROPS_API_URL}/${id}`, propData);
+  }
+
+  deleteProp(id: number): Observable<any> {
+    return this.http.delete(`${this.PROPS_API_URL}/${id}`);
+  }
 }
