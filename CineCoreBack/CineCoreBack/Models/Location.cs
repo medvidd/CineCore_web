@@ -17,6 +17,8 @@ public partial class Location
 
     public string? ContactPhone { get; set; }
 
+    public string? LocationType { get; set; }
+
     public virtual Resource IdNavigation { get; set; } = null!;
 
     public virtual ICollection<ShootDay> ShootDays { get; set; } = new List<ShootDay>();

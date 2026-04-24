@@ -3,6 +3,7 @@ using System;
 using CineCoreBack.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace CineCoreBack.Migrations
 {
     [DbContext(typeof(DbConfig))]
-    partial class DbConfigModelSnapshot : ModelSnapshot
+    [Migration("20260424162947_AddLocAndPropEnumFields")]
+    partial class AddLocAndPropEnumFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -384,14 +387,8 @@ namespace CineCoreBack.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("ProjectId")
-                        .HasColumnType("integer")
-                        .HasColumnName("project_id");
-
                     b.HasKey("Id")
                         .HasName("resources_pkey");
-
-                    b.HasIndex("ProjectId");
 
                     b.ToTable("resources", (string)null);
                 });
@@ -819,18 +816,6 @@ namespace CineCoreBack.Migrations
                     b.Navigation("IdNavigation");
                 });
 
-            modelBuilder.Entity("CineCoreBack.Models.Resource", b =>
-                {
-                    b.HasOne("CineCoreBack.Models.Project", "Project")
-                        .WithMany("Resources")
-                        .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("resources_project_id_fkey");
-
-                    b.Navigation("Project");
-                });
-
             modelBuilder.Entity("CineCoreBack.Models.Role", b =>
                 {
                     b.HasOne("CineCoreBack.Models.Resource", "IdNavigation")
@@ -966,8 +951,6 @@ namespace CineCoreBack.Migrations
                     b.Navigation("ProjectGenres");
 
                     b.Navigation("ProjectMembers");
-
-                    b.Navigation("Resources");
 
                     b.Navigation("Roles");
 

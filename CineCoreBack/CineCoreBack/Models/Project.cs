@@ -28,4 +28,5 @@ public partial class Project
     public virtual ICollection<ShootDay> ShootDays { get; set; } = new List<ShootDay>();
 
     public virtual ICollection<ProjectGenre> ProjectGenres { get; set; } = new List<ProjectGenre>();
+    public virtual ICollection<Resource> Resources { get; set; } = new List<Resource>();
 }

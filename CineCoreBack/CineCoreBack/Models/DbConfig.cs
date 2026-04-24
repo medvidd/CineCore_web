@@ -179,6 +179,8 @@ public partial class DbConfig : DbContext
             entity.Property(e => e.Street)
                 .HasMaxLength(255)
                 .HasColumnName("street");
+            entity.Property(e => e.LocationType)
+                .HasColumnName("location_type");
 
             entity.HasOne(d => d.IdNavigation).WithOne(p => p.Location)
                 .HasForeignKey<Location>(d => d.Id)
@@ -263,6 +265,12 @@ public partial class DbConfig : DbContext
             entity.Property(e => e.PropName)
                 .HasMaxLength(150)
                 .HasColumnName("prop_name");
+            entity.Property(e => e.AcquisitionType)
+                .HasColumnName("acquisition_type");
+            entity.Property(e => e.PropStatus)
+                .HasColumnName("prop_status");
+            entity.Property(e => e.PropType)
+                .HasColumnName("prop_type");
 
             entity.HasOne(d => d.IdNavigation).WithOne(p => p.Prop)
                 .HasForeignKey<Prop>(d => d.Id)
@@ -272,10 +280,16 @@ public partial class DbConfig : DbContext
         modelBuilder.Entity<Resource>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("resources_pkey");
-
             entity.ToTable("resources");
-
             entity.Property(e => e.Id).HasColumnName("id");
+
+            entity.Property(e => e.ProjectId).HasColumnName("project_id");
+
+            entity.HasOne(d => d.Project)
+                .WithMany(p => p.Resources)
+                .HasForeignKey(d => d.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade) 
+                .HasConstraintName("resources_project_id_fkey");
         });
 
         modelBuilder.Entity<Role>(entity =>

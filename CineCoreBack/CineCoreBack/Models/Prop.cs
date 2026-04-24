@@ -11,5 +11,11 @@ public partial class Prop
 
     public string? Description { get; set; }
 
+    public string? AcquisitionType { get; set; }
+
+    public string? PropStatus { get; set; }
+
+    public string? PropType { get; set; }
+
     public virtual Resource IdNavigation { get; set; } = null!;
 }
