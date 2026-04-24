@@ -10,6 +10,8 @@ import { Dashboard } from './features/workspace/dashboard/dashboard';
 import { Crew } from './features/workspace/crew/crew';
 import { Resources } from './features/workspace/resources/resources';
 import { Casting } from './features/workspace/casting/casting';
+import { Planner } from './features/workspace/planner/planner';
+
 
 export const routes: Routes = [
   {
@@ -51,6 +53,7 @@ export const routes: Routes = [
       { path: 'crew', component: Crew, title: 'CineCore | Crew' },
       { path: 'resources', component: Resources, title: 'CineCore | Resources' },
       { path: 'casting', component: Casting, title: 'CineCore | Casting' },
+      { path: 'planner', component: Planner, title: 'CineCore | Planner' },
     ]
   },
   {
