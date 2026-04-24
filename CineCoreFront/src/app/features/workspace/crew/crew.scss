@@ -95,3 +95,26 @@ $teal: #3AB9A0;
     }
   }
 }
+
+// ... існуючі стилі ...
+
+.modal-subtitle {
+  color: rgba(255,255,255,0.6); font-size: 14px; margin-top: -16px; margin-bottom: 24px;
+}
+
+.form-divider {
+  font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.3);
+  letter-spacing: 1px; margin: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+  padding-bottom: 8px;
+}
+
+.input-info {
+  font-size: 12px; margin-top: 4px; display: block;
+  &.green { color: #3AB9A0; }
+  &.yellow { color: #E9A60F; }
+}
+
+input:disabled {
+  opacity: 0.6; cursor: not-allowed; background: rgba(255,255,255,0.02) !important;
+  border-color: rgba(58, 185, 160, 0.3) !important;
+}

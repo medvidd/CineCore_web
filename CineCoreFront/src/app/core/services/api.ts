@@ -11,6 +11,8 @@ export class Api {
   private readonly PROJECTS_API_URL = 'http://localhost:5214/api/projects';
   private readonly LOCATIONS_API_URL = 'http://localhost:5214/api/locations';
   private readonly PROPS_API_URL = 'http://localhost:5214/api/props';
+  private readonly CREW_API_URL = 'http://localhost:5214/api/crew';
+
 
   private userSubject = new BehaviorSubject<any>(JSON.parse(localStorage.getItem('cinecore_user') || 'null'));
   user$ = this.userSubject.asObservable();
@@ -98,5 +100,18 @@ export class Api {
 
   deleteProp(id: number): Observable<any> {
     return this.http.delete(`${this.PROPS_API_URL}/${id}`);
+  }
+
+  // CREW
+  getProjectCrew(projectId: number): Observable<any> {
+    return this.http.get<any>(`${this.CREW_API_URL}/project/${projectId}`);
+  }
+
+  searchUserByEmail(email: string): Observable<any> {
+    return this.http.get<any>(`${this.CREW_API_URL}/search-user?email=${encodeURIComponent(email)}`);
+  }
+
+  inviteProjectMember(inviteData: any): Observable<any> {
+    return this.http.post(this.CREW_API_URL + '/invite', inviteData);
   }
 }
