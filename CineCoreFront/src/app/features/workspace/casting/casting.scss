@@ -1,0 +1,161 @@
+$bg-main: #000B10;
+$bg-card: #1D1D1D;
+$teal: #3AB9A0;
+$purple: #9810FA;
+$yellow: #E9A60F;
+
+.casting-wrapper {
+  display: flex; flex-direction: column; gap: 24px;
+  height: 100%; // Займаємо всю висоту
+  color: white; font-family: 'Space Grotesk', sans-serif;
+}
+
+// --- ВЕРХНЯ КАРТКА ---
+.casting-header-card {
+  padding-bottom: 24px;
+  border-bottom: 0.8px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+
+  .header-left {
+    display: flex; align-items: center; gap: 16px;
+    .icon-box { width: 48px; height: 48px; background: rgba(58, 185, 160, 0.1); border-radius: 12px; display: flex; justify-content: center; align-items: center; svg { width: 24px; height: 24px; color: white; } }
+    .title-group {
+      display: flex; flex-direction: column; gap: 4px;
+      h1 { font-size: 24px; font-weight: 500; margin: 0; }
+      .stats-badges {
+        display: flex; gap: 12px;
+        .badge { background: $bg-card; padding: 4px 12px; border-radius: 12px; font-size: 12px; color: rgba(255,255,255,0.6); }
+      }
+    }
+  }
+}
+
+// --- РОЗДІЛЕНИЙ ЕКРАН ---
+.casting-split-view {
+  display: flex; gap: 24px; flex: 1; min-height: 0; // Для скролу
+}
+
+// --- ЛІВА ПАНЕЛЬ (СПИСОК РОЛЕЙ) ---
+.roles-list-panel {
+  width: 320px;
+  display: flex; flex-direction: column; gap: 16px;
+  border-right: 0.8px solid rgba(255, 255, 255, 0.1);
+  padding-right: 24px;
+
+  .btn-add-role {
+    background: $bg-card; color: white; border: none; padding: 14px; border-radius: 16px;
+    font-size: 16px; font-weight: 500; font-family: 'Space Grotesk'; cursor: pointer;
+    display: flex; justify-content: center; align-items: center; gap: 8px; transition: 0.2s;
+    svg { width: 18px; height: 18px; }
+    &:hover { background: rgba(255,255,255,0.1); }
+  }
+
+  .roles-scroll {
+    flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;
+    padding-right: 8px;
+    &::-webkit-scrollbar { width: 4px; }
+    &::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+  }
+
+  .role-list-card {
+    background: $bg-card; border-radius: 16px; padding: 16px;
+    border: 1px solid rgba(255,255,255,0.05); cursor: pointer; transition: 0.2s;
+
+    &:hover { border-color: rgba(255,255,255,0.2); }
+    &.active { border-color: $teal; background: rgba(58, 185, 160, 0.05); }
+
+    .card-top {
+      display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;
+      h3 { font-size: 18px; font-weight: 500; margin: 0; line-height: 1.2; }
+      .status-icon { width: 20px; height: 20px; svg { width: 16px; height: 16px; } }
+      .casted { color: #00C950; }
+      .pending { color: $yellow; }
+    }
+  }
+}
+
+// --- УНІВЕРСАЛЬНІ БЕЙДЖІ ---
+.type-badge { padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500; border: 0.8px solid; display: inline-block; width: max-content; }
+.badge-lead { color: $purple; background: rgba(152, 16, 250, 0.1); border-color: rgba(152, 16, 250, 0.2); }
+.badge-supporting { color: #155DFC; background: rgba(43, 127, 255, 0.1); border-color: rgba(43, 127, 255, 0.2); }
+.badge-extra { color: rgba(255,255,255,0.6); background: #000B10; border-color: rgba(255,255,255,0.1); }
+
+
+// --- ПРАВА ПАНЕЛЬ (ДЕТАЛІ) ---
+.role-details-panel {
+  flex: 1; display: flex; flex-direction: column; overflow: hidden;
+
+  .details-scroll {
+    flex: 1; overflow-y: auto; padding-right: 16px;
+    &::-webkit-scrollbar { width: 6px; }
+    &::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+  }
+
+  // Заголовок
+  .role-header {
+    display: flex; flex-direction: column; gap: 16px; margin-bottom: 40px;
+
+    .header-main { display: flex; justify-content: space-between; align-items: center; h2 { font-size: 32px; font-weight: 500; margin: 0; } }
+    .role-tags { display: flex; gap: 12px; align-items: center; .tag { background: $bg-card; padding: 6px 16px; border-radius: 12px; font-size: 14px; } }
+    .role-desc { color: rgba(255, 255, 255, 0.6); font-size: 16px; line-height: 1.5; margin: 0; }
+  }
+
+  .section-block {
+    margin-bottom: 40px;
+    .section-title { font-size: 20px; font-weight: 500; margin: 0 0 16px 0; }
+  }
+
+  // Картка затвердженого актора
+  .cast-actor-card {
+    background: rgba(0, 201, 80, 0.05); border: 1px solid rgba(0, 201, 80, 0.2);
+    border-radius: 24px; padding: 24px; display: flex; flex-direction: column; gap: 24px;
+
+    .actor-profile {
+      display: flex; gap: 24px; align-items: center;
+      .avatar { width: 80px; height: 80px; background: linear-gradient(135deg, $teal, $yellow); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 24px; font-weight: 500; }
+      .info {
+        flex: 1; display: flex; flex-direction: column; gap: 4px;
+        .name-row { display: flex; justify-content: space-between; align-items: center; h4 { font-size: 20px; font-weight: 500; margin: 0; } }
+        .age { color: rgba(255,255,255,0.6); font-size: 14px; margin-bottom: 12px; display: block; }
+        .contacts { display: flex; gap: 24px; p { margin: 0; font-size: 14px; display: flex; align-items: center; gap: 8px; svg { width: 16px; height: 16px; } } }
+      }
+    }
+
+    .actor-bio { color: rgba(255,255,255,0.6); font-size: 14px; line-height: 1.5; margin: 0; }
+
+    .actor-actions {
+      display: flex; gap: 12px;
+      button { padding: 8px 16px; border-radius: 16px; background: $bg-main; font-family: 'Space Grotesk'; cursor: pointer; transition: 0.2s; }
+      .btn-outline { border: 1px solid rgba(255,255,255,0.1); color: white; &:hover { background: rgba(255,255,255,0.1); } }
+      .btn-outline-danger { border: 1px solid rgba(231, 0, 11, 0.3); color: #E7000B; &:hover { background: rgba(231, 0, 11, 0.1); } }
+    }
+  }
+
+  .status-badge.approved { background: rgba(0, 201, 80, 0.1); color: #00A63E; border: 1px solid rgba(0, 201, 80, 0.2); padding: 4px 12px; border-radius: 12px; font-size: 12px; }
+
+  // Пустий стан
+  .empty-cast-state {
+    background: rgba(233, 166, 15, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 24px; height: 180px; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 16px;
+    p { color: rgba(255,255,255,0.6); margin: 0; }
+  }
+
+  // Кандидати
+  .candidates-block {
+    .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+
+    .candidates-list {
+      display: flex; flex-direction: column; gap: 12px;
+      .candidate-card {
+        background: $bg-card; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 16px;
+        display: flex; justify-content: space-between; align-items: center;
+        .cand-info { display: flex; align-items: center; gap: 16px; .avatar { width: 48px; height: 48px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: 500; } h4 { margin: 0 0 4px 0; font-size: 16px; font-weight: 500; } span { color: rgba(255,255,255,0.6); font-size: 14px; } }
+      }
+    }
+  }
+
+  // Утиліти для кнопок
+  .btn-dark { background: $bg-card; color: white; border: none; padding: 12px 24px; border-radius: 16px; display: flex; align-items: center; gap: 8px; cursor: pointer; font-family: 'Space Grotesk'; font-weight: 500; svg { width: 16px; height: 16px; } &:hover { background: #2a2a2a; } }
+  .btn-dark-small { @extend .btn-dark; padding: 8px 16px; font-size: 14px; border: 1px solid rgba(255,255,255,0.1); background: $bg-main; }
+  .btn-icon { background: transparent; border: none; color: white; font-size: 20px; cursor: pointer; display: flex; align-items: center; }
+}

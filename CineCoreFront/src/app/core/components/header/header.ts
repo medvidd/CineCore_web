@@ -50,15 +50,18 @@ export class Header implements OnInit {
   }
 
   get isAuthPage(): boolean {
-    return this.router.url === '/login' || this.router.url === '/signup';
+    const path = this.router.url.split('?')[0]; // Беремо лише шлях без параметрів
+    return path === '/login' || path === '/signup';
   }
 
   get isDashboardPage(): boolean {
-    return this.router.url === '/account' || this.router.url === '/projects';
+    const path = this.router.url.split('?')[0];
+    return path === '/account' || path === '/projects';
   }
 
   get idProjectsPage(): boolean {
-    return this.router.url === '/projects';
+    const path = this.router.url.split('?')[0];
+    return path === '/projects';
   }
 
   get avatarStyle(): string {
