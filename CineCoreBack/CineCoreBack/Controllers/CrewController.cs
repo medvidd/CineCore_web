@@ -133,5 +133,69 @@ namespace CineCoreBack.Controllers
                 PendingInvites = pendingInvites
             });
         }
+
+        // Додайте ці методи в CrewController.cs
+
+        // 4. РЕДАГУВАННЯ ДАНИХ УЧАСНИКА (Тільки для Owner/Manager)
+        [HttpPut("project/{projectId}/member/{targetUserId}")]
+        public async Task<IActionResult> UpdateMember(int projectId, int targetUserId, [FromQuery] int currentUserId, [FromBody] UpdateMemberDto dto)
+        {
+            // Перевірка прав того, хто редагує
+            var currentUserRole = await GetUserRoleInProject(projectId, currentUserId);
+            if (currentUserRole != "owner" && currentUserRole != "manager")
+            {
+                return Forbid("You don't have permission to edit members.");
+            }
+
+            var member = await _context.ProjectMembers
+                .FirstOrDefaultAsync(pm => pm.ProjectId == projectId && pm.UserId == targetUserId);
+
+            if (member == null) return NotFound();
+
+            member.JobTitle = dto.JobTitle;
+            member.Department = dto.Department;
+            member.SysRole = dto.SysRole; // Можна також змінити системну роль
+
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
+        // 5. ВИДАЛЕННЯ УЧАСНИКА (Тільки для Owner/Manager)
+        [HttpDelete("project/{projectId}/member/{targetUserId}")]
+        public async Task<IActionResult> RemoveMember(int projectId, int targetUserId, [FromQuery] int currentUserId)
+        {
+            var currentUserRole = await GetUserRoleInProject(projectId, currentUserId);
+            if (currentUserRole != "owner" && currentUserRole != "manager")
+            {
+                return Forbid();
+            }
+
+            // Не можна видалити власника проекту
+            var project = await _context.Projects.FindAsync(projectId);
+            if (project?.OwnerId == targetUserId) return BadRequest("Cannot remove the project owner.");
+
+            var member = await _context.ProjectMembers
+                .FirstOrDefaultAsync(pm => pm.ProjectId == projectId && pm.UserId == targetUserId);
+
+            if (member != null)
+            {
+                _context.ProjectMembers.Remove(member);
+                await _context.SaveChangesAsync();
+            }
+
+            return NoContent();
+        }
+
+        // Хелпер для визначення ролі
+        private async Task<string> GetUserRoleInProject(int projectId, int userId)
+        {
+            var project = await _context.Projects.FindAsync(projectId);
+            if (project?.OwnerId == userId) return "owner";
+
+            var member = await _context.ProjectMembers
+                .FirstOrDefaultAsync(pm => pm.ProjectId == projectId && pm.UserId == userId);
+
+            return member?.SysRole ?? "none";
+        }
     }
 }

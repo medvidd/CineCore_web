@@ -46,4 +46,12 @@
         public string? Department { get; set; }
         public DateTime JoinedDate { get; set; }
     }
+
+    // DTO для редагування даних учасника проекту
+    public class UpdateMemberDto
+    {
+        public string? JobTitle { get; set; }
+        public string? Department { get; set; }
+        public string SysRole { get; set; } = null!;
+    }
 }
