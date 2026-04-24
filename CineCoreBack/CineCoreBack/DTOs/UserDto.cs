@@ -7,6 +7,8 @@
         public string FirstName { get; set; } = null!;
         public string LastName { get; set; } = null!;
         public string? AvatarTheme { get; set; }
+        public string? PhoneNum { get; set; }
+        public DateTime? Birthday { get; set; }
     }
 
     public class UserProfileDto

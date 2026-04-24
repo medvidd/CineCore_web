@@ -93,6 +93,39 @@ $teal: #3AB9A0;
       button { background: rgba(255,255,255,0.05); border: none; width: 22px; height: 22px; border-radius: 8px; display: flex; justify-content: center; align-items: center; color: white; cursor: pointer; transition: 0.2s; &:hover { background: rgba(255,255,255,0.1); } }
       .btn-delete:hover { background: rgba(231, 0, 11, 0.2); color: #E7000B; }
     }
+
+    // Додаємо в блок .data-table або в корінь файлу
+    .contact-links {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+
+      .contact-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #3AB9A0; // Ваш основний колір Teal
+        text-decoration: none;
+        font-size: 12px;
+        font-weight: 400;
+        transition: 0.2s;
+
+        &:hover {
+          opacity: 0.7;
+          text-decoration: underline;
+        }
+
+        &.pointer {
+          cursor: pointer;
+        }
+        
+        .contact-icon {
+          width: 12px;
+          height: 12px;
+          stroke: #3AB9A0;
+        }
+      }
+    }
   }
 }
 

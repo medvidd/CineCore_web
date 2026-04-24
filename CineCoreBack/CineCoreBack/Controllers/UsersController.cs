@@ -50,7 +50,9 @@ namespace CineCoreBack.Controllers
                 Email = user.Email,
                 FirstName = user.FirstName,
                 LastName = user.LastName,
-                AvatarTheme = user.AvatarTheme
+                AvatarTheme = user.AvatarTheme,
+                PhoneNum = user.PhoneNum, // Додано
+                Birthday = user.Birthday  // Додано
             });
         }
 
@@ -81,6 +83,7 @@ namespace CineCoreBack.Controllers
                 FirstName = registerDto.FirstName,
                 LastName = registerDto.LastName,
                 PhoneNum = registerDto.PhoneNum,
+                Birthday = registerDto.Birthday,
                 AvatarTheme = registerDto.AvatarTheme ?? "theme-teal",
                 RegisteredAt = DateTime.UtcNow
             };
@@ -94,7 +97,9 @@ namespace CineCoreBack.Controllers
                 Email = user.Email,
                 FirstName = user.FirstName,
                 LastName = user.LastName,
-                AvatarTheme = user.AvatarTheme
+                AvatarTheme = user.AvatarTheme,
+                PhoneNum = user.PhoneNum, // Додано
+                Birthday = user.Birthday  // Додано
             });
         }
 

@@ -5,6 +5,7 @@ import { ActivatedRoute } from '@angular/router';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { Api } from '../../../core/services/api';
+import { Clipboard} from '@angular/cdk/clipboard';
 
 @Component({
   selector: 'app-crew',
@@ -17,6 +18,7 @@ export class Crew implements OnInit {
   private api = inject(Api);
   private route = inject(ActivatedRoute);
   private cdr = inject(ChangeDetectorRef);
+  private clipboard = inject(Clipboard);
 
   projectId: number = 0;
   currentUserId: number = 0; // Нам потрібен ID того, хто запрошує
@@ -245,6 +247,16 @@ export class Crew implements OnInit {
     }
   }
 
+  copyToClipboard(text: string, label: string) {
+    if (!text) return;
+
+    // Використовуємо CDK або стандартний браузерний API
+    navigator.clipboard.writeText(text).then(() => {
+      alert(`${label} скопійовано: ${text}`);
+    }).catch(err => {
+      console.error('Помилка копіювання', err);
+    });
+  }
   // ==========================================
   // HELPERS (Класи для бейджів)
   // ==========================================
