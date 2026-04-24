@@ -90,7 +90,7 @@ $teal: #3AB9A0;
 
     .action-icons {
       display: flex; gap: 12px;
-      button { background: rgba(255,255,255,0.05); border: none; width: 32px; height: 32px; border-radius: 8px; display: flex; justify-content: center; align-items: center; color: white; cursor: pointer; transition: 0.2s; &:hover { background: rgba(255,255,255,0.1); } }
+      button { background: rgba(255,255,255,0.05); border: none; width: 22px; height: 22px; border-radius: 8px; display: flex; justify-content: center; align-items: center; color: white; cursor: pointer; transition: 0.2s; &:hover { background: rgba(255,255,255,0.1); } }
       .btn-delete:hover { background: rgba(231, 0, 11, 0.2); color: #E7000B; }
     }
   }
