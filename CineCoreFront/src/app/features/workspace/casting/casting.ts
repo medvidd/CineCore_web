@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Api} from '../../../core/services/api';
 
 @Component({
   selector: 'app-casting',
@@ -9,9 +10,26 @@ import { CommonModule } from '@angular/common';
   styleUrl: './casting.scss'
 })
 export class Casting {
+  private api = inject(Api);
+  private cdr = inject(ChangeDetectorRef);
+
   // Статистика
   totalRoles = 6;
   castRoles = 1;
+
+  currentUserRole: string = 'none';
+  canEdit: boolean = false;
+
+  ngOnInit() {
+    // 1. Підписуємося на роль (БЕЗ ДОДАТКОВИХ HTTP ЗАПИТІВ!)
+    this.api.currentRole$.subscribe(role => {
+      this.currentUserRole = role;
+      this.canEdit = (role === 'owner' || role === 'manager');
+      this.cdr.detectChanges();
+    });
+
+    // ... ваша існуюча підписка на paramMap для отримання projectId
+  }
 
   // Мокові дані для ролей (Ліва панель)
   roles = [

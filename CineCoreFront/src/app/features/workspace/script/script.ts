@@ -1,6 +1,7 @@
-import { Component, ElementRef, ViewChild, OnInit } from '@angular/core';
+import { Component, ElementRef, ViewChild, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Api } from '../../../core/services/api';
 
 type BlockType = 'scene_heading' | 'action' | 'character' | 'dialogue' | 'parenthetical' | 'transition' | 'shot';
 type ViewMode = 'edit' | 'breakdown' | 'read';
@@ -23,6 +24,8 @@ interface ScriptBlock {
 })
 export class Script implements OnInit {
   @ViewChild('scriptPaper') scriptPaper!: ElementRef;
+  private api = inject(Api);
+  private cdr= inject(ChangeDetectorRef);
 
   // --- СТАНИ UI ---
   isLeftOpen = true;
@@ -35,9 +38,18 @@ export class Script implements OnInit {
   rawScriptText = '';     // Текст для Write (edit) режиму
   openTypeMenuId: string | null = null;
 
+  currentUserRole: string = 'none';
+  canEdit: boolean = false;
+
   @ViewChild('rawEditor') rawEditorRef!: ElementRef;
 
   ngOnInit() {
+    this.api.currentRole$.subscribe(role => {
+      this.currentUserRole = role;
+      this.canEdit = (role === 'owner' || role === 'manager');
+      this.cdr.detectChanges();
+    });
+
     // Якщо починаємо з режиму редагування, генеруємо текст
     if (this.viewMode === 'edit') {
       this.buildRawTextFromBlocks();

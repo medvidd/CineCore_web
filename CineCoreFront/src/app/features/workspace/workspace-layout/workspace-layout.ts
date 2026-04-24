@@ -19,16 +19,38 @@ export class WorkspaceLayout implements OnInit {
   projectId: string = '';
   projectName: string = 'Loading...';
 
+  isOwner: boolean = false;
+  canEdit: boolean = false;
+
   ngOnInit() {
-    // Спочатку беремо ID синхронно
     this.projectId = this.route.snapshot.paramMap.get('id') || '';
 
-    // Підписка для оновлення при зміні роута
     this.route.paramMap.subscribe(params => {
       const id = params.get('id');
       if (id) {
         this.projectId = id;
-        this.fetchProjectDetails(Number(id)); // 2. Викликаємо метод завантаження
+        this.fetchProjectDetails(Number(id));
+        this.determineUserRole(Number(id)); // ВИКЛИКАЄМО ВИЗНАЧЕННЯ РОЛІ
+      }
+    });
+  }
+
+  determineUserRole(projectId: number) {
+    // Спочатку беремо ID поточного користувача з user$
+    this.api.user$.subscribe(user => {
+      if (user) {
+        // Робимо запит на бекенд
+        this.api.getProjectRole(projectId, user.id).subscribe({
+          next: (res) => {
+            this.api.setProjectRole(res.role);
+
+            // 2. Встановлюємо локальні прапорці для меню
+            this.isOwner = res.role === 'owner';
+            this.canEdit = res.role === 'owner' || res.role === 'manager';
+            this.cdr.detectChanges();
+          },
+          error: () => this.api.setProjectRole('none')
+        });
       }
     });
   }

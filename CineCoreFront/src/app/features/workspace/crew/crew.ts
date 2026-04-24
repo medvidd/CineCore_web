@@ -25,6 +25,9 @@ export class Crew implements OnInit {
   activeMembers: any[] = [];
   pendingInvites: any[] = [];
 
+  currentUserRole: string = 'none';
+  canEdit: boolean = false;
+
   // ==========================================
   // СТАН МОДАЛЬНОГО ВІКНА ЗАПРОШЕННЯ
   // ==========================================
@@ -47,7 +50,12 @@ export class Crew implements OnInit {
   private emailSearchSubject = new Subject<string>();
 
   ngOnInit() {
-    // Отримуємо поточного користувача (щоб знати, хто відправляє запрошення)
+    this.api.currentRole$.subscribe(role => {
+      this.currentUserRole = role;
+      this.canEdit = (role === 'owner' || role === 'manager');
+      this.cdr.detectChanges();
+    });
+
     this.api.user$.subscribe(user => {
       if (user) this.currentUserId = user.id;
     });

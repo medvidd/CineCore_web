@@ -13,6 +13,12 @@ export class Api {
   private readonly PROPS_API_URL = 'http://localhost:5214/api/props';
   private readonly CREW_API_URL = 'http://localhost:5214/api/crew';
 
+  private roleSubject = new BehaviorSubject<string>('none');
+  currentRole$ = this.roleSubject.asObservable();
+
+  setProjectRole(role: string) {
+    this.roleSubject.next(role);
+  }
 
   private userSubject = new BehaviorSubject<any>(JSON.parse(localStorage.getItem('cinecore_user') || 'null'));
   user$ = this.userSubject.asObservable();
@@ -55,12 +61,14 @@ export class Api {
 
     return this.http.get<any[]>(url);
   }
-
   deleteProject(projectId: number): Observable<any> {
     return this.http.delete(`${this.PROJECTS_API_URL}/${projectId}`);
   }
   getProjectById(projectId: number): Observable<any> {
     return this.http.get(`${this.PROJECTS_API_URL}/${projectId}`);
+  }
+  getProjectRole(projectId: number, userId: number): Observable<any> {
+    return this.http.get(`${this.PROJECTS_API_URL}/${projectId}/role/${userId}`);
   }
 
 
@@ -113,5 +121,15 @@ export class Api {
 
   inviteProjectMember(inviteData: any): Observable<any> {
     return this.http.post(this.CREW_API_URL + '/invite', inviteData);
+  }
+
+  updateProjectMember(projectId: number, targetUserId: number, currentUserId: number, updateData: any): Observable<any> {
+    const url = `${this.CREW_API_URL}/project/${projectId}/member/${targetUserId}?currentUserId=${currentUserId}`;
+    return this.http.put(url, updateData);
+  }
+
+  removeProjectMember(projectId: number, targetUserId: number, currentUserId: number): Observable<any> {
+    const url = `${this.CREW_API_URL}/project/${projectId}/member/${targetUserId}?currentUserId=${currentUserId}`;
+    return this.http.delete(url);
   }
 }

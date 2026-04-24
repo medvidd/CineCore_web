@@ -23,6 +23,8 @@ export class Resources implements OnInit {
   locations: any[] = [];
   props: any[] = [];
 
+  currentUserRole: string = 'none';
+  canEdit: boolean = false;
   // ==========================================
   // ПОШУК ТА ФІЛЬТРАЦІЯ
   // ==========================================
@@ -70,6 +72,12 @@ export class Resources implements OnInit {
   };
 
   ngOnInit() {
+    this.api.currentRole$.subscribe(role => {
+      this.currentUserRole = role;
+      this.canEdit = (role === 'owner' || role === 'manager');
+      this.cdr.detectChanges();
+    });
+
     this.route.parent?.paramMap.subscribe(params => {
       const id = params.get('id');
       if (id) {

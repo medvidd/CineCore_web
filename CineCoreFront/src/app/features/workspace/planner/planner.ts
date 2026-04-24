@@ -1,7 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DragDropModule, CdkDragDrop, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
+import { Api} from '../../../core/services/api';
 
 @Component({
   selector: 'app-planner',
@@ -11,6 +12,12 @@ import { DragDropModule, CdkDragDrop, moveItemInArray, transferArrayItem } from 
   styleUrl: './planner.scss'
 })
 export class Planner implements OnInit {
+  private api = inject(Api);
+  private cdr = inject(ChangeDetectorRef);
+
+  currentUserRole: string = 'none';
+  canEdit: boolean = false;
+
   isModalOpen = false;
 
   newDayForm = {
@@ -25,6 +32,12 @@ export class Planner implements OnInit {
 
   ngOnInit() {
     // Ініціалізуємо поточний місяць
+    this.api.currentRole$.subscribe(role => {
+      this.currentUserRole = role;
+      this.canEdit = (role === 'owner' || role === 'manager');
+      this.cdr.detectChanges();
+    });
+
     const today = new Date();
     this.displayMonth = today.getMonth();
     this.displayYear = today.getFullYear();
