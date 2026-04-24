@@ -7,6 +7,7 @@ import { Account } from './features/account/account';
 import { Projects } from './features/projects/projects';
 import { WorkspaceLayout } from './features/workspace/workspace-layout/workspace-layout';
 import { Dashboard } from './features/workspace/dashboard/dashboard';
+import { Crew } from './features/workspace/crew/crew';
 
 export const routes: Routes = [
   {
@@ -45,7 +46,7 @@ export const routes: Routes = [
     children: [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard', component: Dashboard, title: 'CineCore | Dashboard' },
-      // Пізніше сюди додасте { path: 'script', component: ScriptComponent } і т.д.
+      { path: 'crew', component: Crew, title: 'CineCore | Crew' },
     ]
   },
   {

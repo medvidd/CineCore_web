@@ -1,0 +1,117 @@
+<div class="crew-wrapper">
+
+  <div class="crew-summary-card">
+    <div class="summary-left">
+      <div class="icon-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+      </div>
+      <h1>Project Crew</h1>
+    </div>
+
+    <div class="summary-center">
+      <div class="stat-badge active-stat">6 Active Members</div>
+      <div class="stat-badge pending-stat">3 Pending Invitations</div>
+    </div>
+
+    <button class="btn btn-primary">
+      <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+      Invite Member
+    </button>
+  </div>
+
+  <div class="tabs-container">
+    <button class="tab-btn" [class.active]="activeTab === 'active'" (click)="activeTab = 'active'">
+      Active Crew <span class="badge">6</span>
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'pending'" (click)="activeTab = 'pending'">
+      Pending Invites <span class="badge">3</span>
+    </button>
+  </div>
+
+  <div class="actions-bar">
+    <div class="search-input">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      <input type="text" placeholder="Search by name, role, or email...">
+    </div>
+    <button class="btn-filter">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+    </button>
+  </div>
+
+  <div class="table-container">
+
+    @if (activeTab === 'active') {
+      <table class="data-table">
+        <thead>
+        <tr>
+          <th>Name</th>
+          <th>System Role</th>
+          <th>Job Title</th>
+          <th>Department</th>
+          <th>Contact</th>
+          <th>Joined</th>
+          <th width="50"></th>
+        </tr>
+        </thead>
+        <tbody>
+          @for (member of activeMembers; track member.email) {
+            <tr>
+              <td>
+                <div class="user-cell">
+                  <div class="avatar">{{ member.initials }}</div>
+                  <div class="user-info">
+                    <strong>{{ member.name }}</strong>
+                    <span>{{ member.email }}</span>
+                  </div>
+                </div>
+              </td>
+              <td><span class="sys-role-badge" [ngClass]="getRoleClass(member.sysRole)">{{ member.sysRole }}</span></td>
+              <td>{{ member.jobTitle }}</td>
+              <td>{{ member.dept }}</td>
+              <td>
+                <div class="contact-links">
+                  <a href="#">Email</a>
+                  <a href="#">Call</a>
+                </div>
+              </td>
+              <td>{{ member.joined }}</td>
+              <td><button class="btn-more">⋮</button></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    } @else {
+      <table class="data-table">
+        <thead>
+        <tr>
+          <th>Email Address</th>
+          <th>Invited As</th>
+          <th>Job Title</th>
+          <th>Department</th>
+          <th>Invited By</th>
+          <th>Date Sent</th>
+          <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+          @for (invite of pendingInvites; track invite.email) {
+            <tr>
+              <td><strong>{{ invite.email }}</strong></td>
+              <td><span class="sys-role-badge" [ngClass]="getRoleClass(invite.sysRole)">{{ invite.sysRole }}</span></td>
+              <td>{{ invite.jobTitle }}</td>
+              <td>{{ invite.dept }}</td>
+              <td>{{ invite.invitedBy }}</td>
+              <td>{{ invite.dateSent }}</td>
+              <td>
+                <div class="action-icons">
+                  <button class="btn-resend" title="Resend Invite"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><polyline points="23 20 23 14 17 14"></polyline><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path></svg></button>
+                  <button class="btn-delete" title="Cancel Invite"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </div>
+</div>

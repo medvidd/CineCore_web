@@ -1,13 +1,16 @@
 <div class="workspace-container">
 
-  <aside class="sidebar">
+  <aside class="sidebar" [class.sidebar-locked]="isDashboardPage">
     <div class="sidebar-header">
       <div class="logo-group">
         <div class="logo-icon"><div class="logo-inner-square"></div></div>
-        <div class="logo-text">CineCore</div>
+        <span class="sidebar-text logo-text">CineCore</span>
       </div>
 
-      <a routerLink="/projects" class="btn-back">← Back to Projects</a>
+      <a routerLink="/projects" class="btn-back">
+        <span class="back-icon">←</span>
+        <span class="sidebar-text">Back to Projects</span>
+      </a>
     </div>
 
     <nav class="sidebar-nav">
@@ -18,7 +21,7 @@
           <rect x="14" y="12" width="7" height="9" rx="1"></rect>
           <rect x="3" y="16" width="7" height="5" rx="1"></rect>
         </svg>
-        Dashboard
+        <span class="sidebar-text">Dashboard</span>
       </a>
 
       <a [routerLink]="['/workspace', projectId, 'crew']" routerLinkActive="active-menu" class="nav-item">
@@ -28,7 +31,7 @@
           <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
           <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
         </svg>
-        Crew
+        <span class="sidebar-text">Crew</span>
       </a>
 
       <a [routerLink]="['/workspace', projectId, 'script']" routerLinkActive="active-menu" class="nav-item">
@@ -39,21 +42,21 @@
           <line x1="16" y1="17" x2="8" y2="17"></line>
           <polyline points="10 9 9 9 8 9"></polyline>
         </svg>
-        Script
+        <span class="sidebar-text">Script</span>
       </a>
 
       <a [routerLink]="['/workspace', projectId, 'resources']" routerLinkActive="active-menu" class="nav-item">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
         </svg>
-        Resources
+        <span class="sidebar-text">Resources</span>
       </a>
 
       <a [routerLink]="['/workspace', projectId, 'casting']" routerLinkActive="active-menu" class="nav-item">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
         </svg>
-        Casting
+        <span class="sidebar-text">Casting</span>
       </a>
 
       <a [routerLink]="['/workspace', projectId, 'planner']" routerLinkActive="active-menu" class="nav-item">
@@ -63,7 +66,7 @@
           <line x1="8" y1="2" x2="8" y2="6"></line>
           <line x1="3" y1="10" x2="21" y2="10"></line>
         </svg>
-        Planner
+        <span class="sidebar-text">Planner</span>
       </a>
     </nav>
   </aside>
