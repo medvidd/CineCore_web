@@ -123,13 +123,16 @@ export class Api {
     return this.http.post(this.CREW_API_URL + '/invite', inviteData);
   }
 
-  updateProjectMember(projectId: number, targetUserId: number, currentUserId: number, updateData: any): Observable<any> {
-    const url = `${this.CREW_API_URL}/project/${projectId}/member/${targetUserId}?currentUserId=${currentUserId}`;
-    return this.http.put(url, updateData);
+  // Відправляє PUT-запит на редагування
+  updateProjectMember(projectId: number, targetUserId: number, currentUserId: number, data: any) {
+    return this.http.put(`${this.CREW_API_URL}/project/${projectId}/member/${targetUserId}?currentUserId=${currentUserId}`, data);
   }
 
-  removeProjectMember(projectId: number, targetUserId: number, currentUserId: number): Observable<any> {
-    const url = `${this.CREW_API_URL}/project/${projectId}/member/${targetUserId}?currentUserId=${currentUserId}`;
-    return this.http.delete(url);
+  removeProjectMember(projectId: number, targetUserId: number, currentUserId: number) {
+    return this.http.delete(`${this.CREW_API_URL}/project/${projectId}/member/${targetUserId}?currentUserId=${currentUserId}`);
   }
+  deleteProjectInvite(inviteId: number) {
+    return this.http.delete(`${this.CREW_API_URL}/invites/${inviteId}`);
+  }
+
 }

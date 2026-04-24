@@ -28,6 +28,16 @@ export class Crew implements OnInit {
   currentUserRole: string = 'none';
   canEdit: boolean = false;
 
+  // Стан активної вкладки
+  activeTab: 'members' | 'pending' = 'members';
+
+  // Метод для перемикання вкладок
+  switchTab(tab: 'members' | 'pending') {
+    this.activeTab = tab;
+  }
+
+  isEditModalOpen = false;
+  editingMember: any = null;
   // ==========================================
   // СТАН МОДАЛЬНОГО ВІКНА ЗАПРОШЕННЯ
   // ==========================================
@@ -44,6 +54,12 @@ export class Crew implements OnInit {
     jobTitle: '',
     department: '',
     message: ''
+  };
+
+  editForm = {
+    sysRole: 'actor',
+    jobTitle: '',
+    department: ''
   };
 
   // Subject для затримки пошуку при введенні email
@@ -140,22 +156,93 @@ export class Crew implements OnInit {
   }
 
   sendInvite() {
+    // Формуємо payload. Назви полів мають точно збігатися з CreateInvitationDto
     const payload = {
       projectId: this.projectId,
       invitedById: this.currentUserId,
-      ...this.inviteForm
+      email: this.inviteForm.email,
+      firstName: this.inviteForm.firstName,
+      lastName: this.inviteForm.lastName,
+      sysRole: this.inviteForm.sysRole,
+      jobTitle: this.inviteForm.jobTitle,
+      department: this.inviteForm.department,
+      message: this.inviteForm.message
     };
 
     this.api.inviteProjectMember(payload).subscribe({
       next: (res) => {
-        console.log('Invite sent!', res);
-        this.loadCrewData(); // Оновлюємо таблиці
+        this.loadCrewData(); // Оновлюємо таблиці (користувач одразу з'явиться в Active або Pending)
         this.closeInviteModal();
       },
       error: (err) => {
         alert(err.error?.message || 'Error sending invitation');
       }
     });
+  }
+
+  deleteInvite(inviteId: number) {
+    if (confirm('Are you sure you want to cancel this invitation?')) {
+      this.api.deleteProjectInvite(inviteId).subscribe({
+        next: () => {
+          this.pendingInvites = this.pendingInvites.filter(i => i.id !== inviteId);
+          this.cdr.detectChanges();
+        },
+        error: (err) => alert('Failed to delete invitation')
+      });
+    }
+  }
+
+  openEditModal(member: any) {
+    this.editingMember = member;
+    // Заповнюємо форму поточними даними учасника
+    this.editForm = {
+      sysRole: member.sysRole || 'actor',
+      jobTitle: member.jobTitle || '',
+      department: member.department || ''
+    };
+    this.isEditModalOpen = true;
+  }
+
+  closeEditModal() {
+    this.isEditModalOpen = false;
+    this.editingMember = null;
+  }
+
+  saveMemberChanges() {
+    if (!this.editingMember) return;
+
+    const payload = {
+      sysRole: this.editForm.sysRole,
+      jobTitle: this.editForm.jobTitle,
+      department: this.editForm.department
+    };
+
+    // Викликаємо наш новий метод з api.ts
+    this.api.updateProjectMember(this.projectId, this.editingMember.userId, this.currentUserId, payload).subscribe({
+      next: () => {
+        this.loadCrewData(); // Оновлюємо таблицю, щоб побачити зміни
+        this.closeEditModal();
+      },
+      error: (err) => alert(err.error?.message || 'Failed to update member')
+    });
+  }
+
+  removeMember(member: any) {
+    // Власника видаляти не можна (бекенд це теж перевіряє, але краще зупинити відразу на фронті)
+    if (member.sysRole === 'owner') {
+      alert('Cannot remove the project owner.');
+      return;
+    }
+
+    if (confirm(`Are you sure you want to remove ${member.fullName} from this project?`)) {
+      this.api.removeProjectMember(this.projectId, member.userId, this.currentUserId).subscribe({
+        next: () => {
+          // Оновлюємо дані таблиці після успішного видалення
+          this.loadCrewData();
+        },
+        error: (err) => alert(err.error?.message || 'Failed to remove member')
+      });
+    }
   }
 
   // ==========================================

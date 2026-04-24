@@ -103,7 +103,6 @@ namespace CineCoreBack.Controllers
         [HttpGet("user/{ownerId}")]
         public async Task<ActionResult<IEnumerable<ProjectResponseDto>>> GetProjectsByUser(int ownerId, [FromQuery] string role = "All")
         {
-            // 1. Починаємо формувати запит до БД (ще не виконуємо)
             var query = _context.Projects
                 .Include(p => p.Owner)
                 .Include(p => p.ProjectMembers)
@@ -112,36 +111,36 @@ namespace CineCoreBack.Controllers
                     .ThenInclude(pg => pg.Genre)
                 .AsQueryable();
 
-            // 2. ФІЛЬТРАЦІЯ НА РІВНІ БАЗИ ДАНИХ
+            // 1. ПРАВИЛЬНА ФІЛЬТРАЦІЯ (тепер по SysRole, а не JobTitle)
             if (role == "Project owner")
             {
                 query = query.Where(p => p.OwnerId == ownerId);
             }
             else if (role != "All" && !string.IsNullOrEmpty(role))
             {
-                query = query.Where(p => p.ProjectMembers.Any(pm => pm.UserId == ownerId && pm.JobTitle == role));
+                // Переводимо в нижній регістр для точного порівняння з БД
+                string searchRole = role.ToLower();
+                query = query.Where(p => p.ProjectMembers.Any(pm => pm.UserId == ownerId && pm.SysRole.ToLower() == searchRole));
             }
             else
             {
-                // "All"
                 query = query.Where(p => p.OwnerId == ownerId || p.ProjectMembers.Any(pm => pm.UserId == ownerId));
             }
 
-            // 3. Виконуємо запит
             var projects = await query.OrderByDescending(p => p.Id).ToListAsync();
 
-            // 4. Мапимо дані (замінив userId на ownerId)
+            // 2. МАПІНГ ДАНИХ
             var result = projects.Select(p =>
             {
-                    var memberEntry = p.ProjectMembers.FirstOrDefault(pm => pm.UserId == ownerId);
-                    var crewList = new List<CrewDto>
-            {
-                new CrewDto
+                var memberEntry = p.ProjectMembers.FirstOrDefault(pm => pm.UserId == ownerId);
+                var crewList = new List<CrewDto>
                 {
-                    Name = p.Owner != null ? $"{p.Owner.FirstName} {p.Owner.LastName}" : "Unknown",
-                    Role = "Project owner"
-                }
-            };
+                    new CrewDto
+                    {
+                        Name = p.Owner != null ? $"{p.Owner.FirstName} {p.Owner.LastName}" : "Unknown",
+                        Role = "Project owner"
+                    }
+                };
 
                 if (p.ProjectMembers != null)
                 {
@@ -150,7 +149,7 @@ namespace CineCoreBack.Controllers
                         crewList.Add(new CrewDto
                         {
                             Name = member.User != null ? $"{member.User.FirstName} {member.User.LastName}" : member.InvitedEmail,
-                            Role = member.JobTitle ?? "Crew"
+                            Role = member.JobTitle ?? member.SysRole
                         });
                     }
                 }
@@ -159,9 +158,15 @@ namespace CineCoreBack.Controllers
                     ? string.Join(", ", p.ProjectGenres.Select(pg => pg.Genre.Name))
                     : "No genre";
 
-                string userRole = p.OwnerId == ownerId
+                // Формуємо System Role (для списку і фільтрів) - робимо першу літеру великою
+                string sysRole = p.OwnerId == ownerId
                     ? "Project owner"
-                    : (memberEntry?.JobTitle ?? "Actor");
+                    : (memberEntry?.SysRole != null ? char.ToUpper(memberEntry.SysRole[0]) + memberEntry.SysRole.Substring(1) : "Actor");
+
+                // Формуємо конкретну посаду (для деталей)
+                string jobTitle = p.OwnerId == ownerId
+                    ? "Creator"
+                    : (memberEntry?.JobTitle ?? "—");
 
                 return new ProjectResponseDto
                 {
@@ -169,7 +174,8 @@ namespace CineCoreBack.Controllers
                     Title = p.Title,
                     Synopsis = string.IsNullOrEmpty(p.Synopsis) ? "No synopsis provided." : p.Synopsis,
                     StartDate = p.StartDate,
-                    Role = userRole,
+                    Role = sysRole,          // Це поле Angular покаже в списку зліва
+                    JobTitle = jobTitle,     // Це поле ми використаємо в правій панелі
                     Genre = genres,
                     Director = p.Owner != null ? $"{p.Owner.FirstName} {p.Owner.LastName}" : "None",
                     TeamSize = (p.ProjectMembers?.Count ?? 0) + 1,

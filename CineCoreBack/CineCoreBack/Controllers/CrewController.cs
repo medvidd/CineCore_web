@@ -39,53 +39,72 @@ namespace CineCoreBack.Controllers
             return Ok(user);
         }
 
-        // 2. СТВОРЕННЯ ЗАПРОШЕННЯ
+        // 2. СТВОРЕННЯ ЗАПРОШЕННЯ АБО ДОДАВАННЯ УЧАСНИКА
         // POST: api/Crew/invite
         [HttpPost("invite")]
         public async Task<IActionResult> InviteMember(CreateInvitationDto dto)
         {
-            // Перевіряємо, чи цей email вже не є в цьому проекті як активний учасник
-            var existingMember = await _context.ProjectMembers
+            // 1. Перевіряємо, чи користувач ВЖЕ Є АКТИВНИМ учасником цього проекту
+            var isAlreadyMember = await _context.ProjectMembers
                 .Include(pm => pm.User)
                 .AnyAsync(pm => pm.ProjectId == dto.ProjectId && pm.User.Email.ToLower() == dto.Email.ToLower());
 
-            if (existingMember) return BadRequest(new { message = "This user is already a member of the project." });
+            if (isAlreadyMember) return BadRequest(new { message = "This user is already a member of the project." });
 
-            // Перевіряємо, чи немає вже активного запрошення для цього email
-            var existingInvite = await _context.ProjectInvitations
-                .AnyAsync(pi => pi.ProjectId == dto.ProjectId && pi.Email.ToLower() == dto.Email.ToLower());
+            // 2. Шукаємо, чи зареєстрований такий email у системі загалом
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == dto.Email.ToLower());
 
-            if (existingInvite) return BadRequest(new { message = "An invitation has already been sent to this email." });
-
-            // Створюємо запрошення
-            var invite = new ProjectInvitation
+            if (user != null)
             {
-                ProjectId = dto.ProjectId,
-                Email = dto.Email,
-                FirstName = dto.FirstName,
-                LastName = dto.LastName,
-                SysRole = dto.SysRole.ToLower(),
-                JobTitle = dto.JobTitle,
-                Department = dto.Department,
-                Message = dto.Message,
-                InvitedById = dto.InvitedById,
-                DateSent = DateTime.UtcNow,
-                Token = Guid.NewGuid() // Генеруємо унікальний токен для посилання
-            };
+                // СЦЕНАРІЙ А: Акаунт існує -> Додаємо одразу в ProjectMembers
+                var newMember = new ProjectMember
+                {
+                    ProjectId = dto.ProjectId,
+                    UserId = user.Id,
+                    SysRole = dto.SysRole.ToLower(),
+                    JobTitle = dto.JobTitle,
+                    Department = dto.Department,
+                    JoinedAt = DateTime.UtcNow,
+                    InvitedEmail = user.Email
+                };
+                _context.ProjectMembers.Add(newMember);
+            }
+            else
+            {
+                // СЦЕНАРІЙ Б: Акаунта немає -> Створюємо Invitation (без перевірки на дублікати, щоб можна було слати ще раз)
+                var invite = new ProjectInvitation
+                {
+                    ProjectId = dto.ProjectId,
+                    Email = dto.Email,
+                    FirstName = dto.FirstName,
+                    LastName = dto.LastName,
+                    SysRole = dto.SysRole.ToLower(),
+                    JobTitle = dto.JobTitle,
+                    Department = dto.Department,
+                    Message = dto.Message,
+                    InvitedById = dto.InvitedById,
+                    DateSent = DateTime.UtcNow,
+                    Token = Guid.NewGuid()
+                };
+                _context.ProjectInvitations.Add(invite);
+            }
 
-            _context.ProjectInvitations.Add(invite);
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Invitation processed successfully." });
+        }
+
+        // 3. ВИДАЛЕННЯ ЗАПРОШЕННЯ
+        // DELETE: api/Crew/invites/5
+        [HttpDelete("invites/{id}")]
+        public async Task<IActionResult> DeleteInvite(int id)
+        {
+            var invite = await _context.ProjectInvitations.FindAsync(id);
+            if (invite == null) return NotFound();
+
+            _context.ProjectInvitations.Remove(invite);
             await _context.SaveChangesAsync();
 
-            // TODO: ТУТ БУДЕ ЛОГІКА ВІДПРАВКИ EMAIL
-            // Наприклад: await _emailService.SendInviteEmail(invite.Email, invite.Token, ...);
-
-            // Тимчасово для тестування повертаємо токен у відповіді, щоб бачити, що він згенерувався
-            return Ok(new
-            {
-                message = "Invitation created successfully.",
-                inviteId = invite.Id,
-                previewToken = invite.Token // ТІЛЬКИ ДЛЯ ДЕБАГУ, потім приберемо
-            });
+            return NoContent();
         }
 
         // 3. ОТРИМАННЯ СПИСКІВ УЧАСНИКІВ ТА ЗАПРОШЕНЬ

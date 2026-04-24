@@ -118,3 +118,128 @@ input:disabled {
   opacity: 0.6; cursor: not-allowed; background: rgba(255,255,255,0.02) !important;
   border-color: rgba(58, 185, 160, 0.3) !important;
 }
+
+// ==========================================
+// МОДАЛЬНЕ ВІКНО ЗАПРОШЕННЯ (OVERLAY ТА КОНТЕЙНЕР)
+// ==========================================
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 11, 16, 0.85); // Темний фон з прозорістю
+  backdrop-filter: blur(4px); // Гарний ефект розмиття заднього фону
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-container {
+  background: $bg-card;
+  width: 100%;
+  max-width: 500px;
+  border-radius: 24px;
+  padding: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4);
+}
+
+.modal-header {
+  h2 { margin: 0 0 8px 0; font-size: 24px; font-weight: 500; }
+}
+
+// ==========================================
+// СТИЛІ ФОРМИ ТА ІНПУТІВ
+// ==========================================
+.modal-form {
+  display: flex;
+  flex-direction: column;
+
+  label {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 16px;
+  }
+
+  .form-row {
+    display: flex; gap: 16px;
+    .form-group { flex: 1; } // Щоб поля в одному рядку ділили місце порівну
+  }
+
+  .form-control {
+    background: $bg-main;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 14px 16px;
+    color: white;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 14px;
+    transition: all 0.2s ease;
+
+    &:focus {
+      outline: none;
+      border-color: $teal;
+      box-shadow: 0 0 0 2px rgba(58, 185, 160, 0.2);
+    }
+
+    &::placeholder { color: rgba(255, 255, 255, 0.3); }
+  }
+
+  // Кастомний вигляд для Select (випадаючого списку)
+  select.form-control {
+    appearance: none; // Ховаємо дефолтну стрілку браузера
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.6)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+    background-size: 16px;
+    padding-right: 40px;
+    cursor: pointer;
+
+    option { background: $bg-card; color: white; }
+  }
+
+  textarea.form-control {
+    resize: vertical; // Дозволяємо розтягувати тільки вниз
+    min-height: 80px;
+  }
+
+  // ==========================================
+  // КНОПКИ ДІЙ (CANCEL / SUBMIT)
+  // ==========================================
+  .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 16px;
+    margin-top: 24px;
+
+    button {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      padding: 12px 24px;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .btn-cancel {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: white;
+      &:hover { background: rgba(255, 255, 255, 0.05); }
+    }
+
+    .btn-submit {
+      background: $teal;
+      border: none;
+      color: $bg-main;
+      &:hover { opacity: 0.8; box-shadow: 0 4px 12px rgba(58, 185, 160, 0.3); }
+    }
+  }
+}

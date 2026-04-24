@@ -17,8 +17,9 @@
         public string? Synopsis { get; set; }
         public DateOnly? StartDate { get; set; }
 
-        // Додані поля для project-details
-        public string Role { get; set; } = null!;
+        public string Role { get; set; } = null!; // Тут буде SysRole (для списку)
+        public string JobTitle { get; set; } = null!; // ДОДАНО: Тут буде Job Title (для деталей)
+
         public string Genre { get; set; } = null!;
         public string Director { get; set; } = null!;
         public int TeamSize { get; set; }
