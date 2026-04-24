@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild, AfterViewChecked } from '@angular/core';
+import { Component, ElementRef, ViewChild, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -21,20 +21,70 @@ interface ScriptBlock {
   templateUrl: './script.html',
   styleUrl: './script.scss'
 })
-export class Script implements AfterViewChecked {
+export class Script implements OnInit {
   @ViewChild('scriptPaper') scriptPaper!: ElementRef;
 
   // --- СТАНИ UI ---
   isLeftOpen = true;
   isRightOpen = true;
   viewMode: ViewMode = 'breakdown'; // Режими: edit, breakdown, read
-  sceneViewMode: SceneViewMode = 'single'; // Режими перегляду: Одна сцена або Всі
+  sceneViewMode: SceneViewMode = 'single';
 
-  // Стан для відкритого меню типу блоку
+  // Додаткові стани
+  showLinesInRead = true; // Перемикач ліній у режимі читання
+  rawScriptText = '';     // Текст для Write (edit) режиму
   openTypeMenuId: string | null = null;
+
+  @ViewChild('rawEditor') rawEditorRef!: ElementRef;
+
+  ngOnInit() {
+    // Якщо починаємо з режиму редагування, генеруємо текст
+    if (this.viewMode === 'edit') {
+      this.buildRawTextFromBlocks();
+    }
+  }
 
   toggleLeft() { this.isLeftOpen = !this.isLeftOpen; }
   toggleRight() { this.isRightOpen = !this.isRightOpen; }
+
+  onRawInput(event: Event) {
+    const el = event.target as HTMLElement;
+    // textContent не додає зайвих \n від div/br
+    this.rawScriptText = el.innerText
+      .replace(/\n{3,}/g, '\n\n'); // не більше одного порожнього рядка
+  }
+
+  setViewMode(mode: ViewMode) {
+    if (this.viewMode === 'edit' && mode !== 'edit') {
+      // Читаємо актуальний текст з DOM перед переключенням
+      if (this.rawEditorRef?.nativeElement) {
+        this.rawScriptText = this.rawEditorRef.nativeElement.innerText
+          .replace(/\n{3,}/g, '\n\n');
+      }
+      this.parseRawTextToBlocks();
+    } else if (this.viewMode !== 'edit' && mode === 'edit') {
+      this.buildRawTextFromBlocks();
+    }
+
+    this.viewMode = mode;
+
+    if (mode === 'edit') {
+      setTimeout(() => {
+        if (this.rawEditorRef?.nativeElement) {
+          const el = this.rawEditorRef.nativeElement;
+          // Очищаємо HTML повністю і пишемо plain text
+          el.textContent = this.rawScriptText;
+        }
+      }, 0);
+    }
+  }
+
+  // Функція, яка робить textarea "гумовою"
+  autoResize(textarea: HTMLTextAreaElement | null) {
+    if (!textarea) return;
+    textarea.style.height = 'auto'; // Важливо спочатку скинути
+    textarea.style.height = (textarea.scrollHeight) + 'px'; // Встановити висоту контенту
+  }
 
   // --- ДАНІ ---
   scenes = [
@@ -49,7 +99,6 @@ export class Script implements AfterViewChecked {
     { id: 'char-3', initials: 'D', name: 'DETECTIVE CHEN', type: 'Lead', color: '#8B5CF6' }
   ];
 
-  // Сценарій
   blocks: ScriptBlock[] = [
     { id: 'b1', type: 'scene_heading', content: 'EXT. NIGHT STREET' },
     { id: 'b2', type: 'action', content: 'Джон виходить з кафе. Вулиця покрита дощем, відблиски вогнів у калюжах.' },
@@ -60,61 +109,64 @@ export class Script implements AfterViewChecked {
     { id: 'b7', type: 'action', content: 'Він кидає недопалок на землю і йде нічною вулицею.' },
     { id: 'b8', type: 'character', content: 'SARAH', charId: 'char-2', color: '#E9A60F' },
     { id: 'b9', type: 'dialogue', content: 'Джон? Я тебе погано чую, зв\'язок переривається.', color: '#E9A60F' },
-    { id: 'b10', type: 'transition', content: 'CUT TO:' }
+    { id: 'b10', type: 'transition', content: 'CUT TO:' },
+    { id: 'b11', type: 'shot', content: 'CLOSE UP ON PHONE' }
   ];
 
-  // --- ЛОГІКА ---
-
-  // Авто-висота для textarea в режимі Edit
-  ngAfterViewChecked() {
-    if (this.viewMode === 'edit') {
-      const textareas = this.scriptPaper?.nativeElement.querySelectorAll('textarea');
-      textareas?.forEach((ta: HTMLTextAreaElement) => {
-        ta.style.height = 'auto';
-        ta.style.height = ta.scrollHeight + 'px';
-      });
-    }
+  // --- ЛОГІКА ПЕРЕТВОРЕННЯ (WRITE MODE) ---
+  buildRawTextFromBlocks() {
+    this.rawScriptText = this.blocks.map(b => b.content).join('\n\n');
   }
 
-  onInputResize(event: any) {
-    event.target.style.height = 'auto';
-    event.target.style.height = event.target.scrollHeight + 'px';
+  parseRawTextToBlocks() {
+    // Розділяємо текст по подвійному Enter
+    const paragraphs = this.rawScriptText.split(/\n\s*\n/).filter(p => p.trim() !== '');
+
+    this.blocks = paragraphs.map((text, i) => {
+      const existing = this.blocks[i];
+      let t = text.trim();
+      let autoType: BlockType = 'action';
+
+      // Простенька авторозмітка для зручності
+      if (t.startsWith('INT.') || t.startsWith('EXT.')) autoType = 'scene_heading';
+      else if (t.startsWith('(') && t.endsWith(')')) autoType = 'parenthetical';
+      else if (t === t.toUpperCase() && t.length < 35 && !t.includes('CUT')) autoType = 'character';
+      else if (t.endsWith('TO:') || t.endsWith('IN:')) autoType = 'transition';
+
+      return {
+        id: existing?.id || 'b-' + Math.random().toString(36).substring(2, 9),
+        type: (existing && existing.content === t) ? existing.type : autoType,
+        content: t,
+        color: existing?.color || '#444'
+      };
+    });
   }
 
-  // Керування меню типів
+  // --- ЛОГІКА UI БЛОКІВ ---
   toggleTypeMenu(blockId: string) {
     this.openTypeMenuId = this.openTypeMenuId === blockId ? null : blockId;
   }
 
   setBlockType(block: ScriptBlock, newType: BlockType) {
     block.type = newType;
-    this.openTypeMenuId = null; // Закрити меню
+    this.openTypeMenuId = null;
   }
 
-  // Магія стилів (Лінії строго збоку)
-  getBlockStyle(block: ScriptBlock) {
-    if (this.viewMode === 'read') return {}; // В режимі читання ліній немає
-
-    const color = block.color || '#444'; // Якщо немає кольору, ставимо сірий
+  // Вибір класу лінії в залежності від типу блоку
+  getBlockLineClass(block: ScriptBlock): string {
+    if (this.viewMode === 'read' && !this.showLinesInRead) return 'line-none';
 
     switch (block.type) {
-      case 'character':
-      case 'dialogue':
-        return { 'border-left-color': color, 'border-left-width': '4px', 'border-left-style': 'solid' };
-      case 'parenthetical':
-        return { 'border-left-color': color, 'border-left-width': '4px', 'border-left-style': 'dashed' };
-      case 'action':
-        return { 'border-left-color': 'transparent' };
-      case 'scene_heading':
-        return { 'border-left-color': '#fff', 'border-left-width': '4px', 'border-left-style': 'solid' };
-      case 'transition':
-        return { 'border-right-color': '#fff', 'border-right-width': '4px', 'border-right-style': 'dotted', 'border-left-color': 'transparent' };
-      default:
-        return {};
+      case 'character': return 'line-solid';
+      case 'dialogue': return 'line-wavy';         // Хвилька
+      case 'parenthetical': return 'line-dashed';  // Пунктир
+      case 'transition': return 'line-zigzag';     // Зигзаг
+      case 'scene_heading': return 'line-double';  // Подвійна
+      case 'shot': return 'line-dotted';           // Крапочки
+      case 'action': default: return 'line-none';  // Без лінії
     }
   }
 
-  // Отримання іконки для меню
   getTypeIcon(type: BlockType): string {
     switch(type) {
       case 'scene_heading': return '🎬';
@@ -123,7 +175,9 @@ export class Script implements AfterViewChecked {
       case 'dialogue': return '💬';
       case 'parenthetical': return '()';
       case 'transition': return '✂️';
+      case 'shot': return '🎥';
       default: return '📄';
     }
   }
+
 }

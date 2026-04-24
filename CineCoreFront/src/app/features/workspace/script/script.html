@@ -1,34 +1,35 @@
-<div class="script-wrapper" (click)="openTypeMenuId = null"> <aside class="left-panel" [class.closed]="!isLeftOpen" (click)="$event.stopPropagation()">
-  <div class="panel-header">
-    <h2>Scenes</h2>
-    <button class="btn-icon" (click)="toggleLeft()">◀</button>
-  </div>
+<div class="script-wrapper" (click)="openTypeMenuId = null">
+  <aside class="left-panel" [class.closed]="!isLeftOpen" (click)="$event.stopPropagation()">
+    <div class="panel-header">
+      <h2>Scenes</h2>
+      <button class="btn-icon" (click)="toggleLeft()">◀</button>
+    </div>
 
-  <div class="scene-view-toggle">
-    <button [class.active]="sceneViewMode === 'single'" (click)="sceneViewMode = 'single'">Single</button>
-    <button [class.active]="sceneViewMode === 'all'" (click)="sceneViewMode = 'all'">Full Script</button>
-  </div>
+    <div class="scene-view-toggle">
+      <button [class.active]="sceneViewMode === 'single'" (click)="sceneViewMode = 'single'">Single</button>
+      <button [class.active]="sceneViewMode === 'all'" (click)="sceneViewMode = 'all'">Full Script</button>
+    </div>
 
-  <div class="add-scene-btn">
-    <span class="plus-icon">+</span> Add Scene Heading
-  </div>
+    <div class="add-scene-btn">
+      <span class="plus-icon">+</span> Add Scene Heading
+    </div>
 
-  <div class="scenes-list">
-    @for (scene of scenes; track scene.id) {
-      <div class="scene-item" [class.active]="scene.isActive">
-        <div class="scene-top">
-          <span class="scene-id">{{ scene.id }}</span>
-          @if (scene.isActive) { <div class="dot-active"></div> }
+    <div class="scenes-list">
+      @for (scene of scenes; track scene.id) {
+        <div class="scene-item" [class.active]="scene.isActive">
+          <div class="scene-top">
+            <span class="scene-id">{{ scene.id }}</span>
+            @if (scene.isActive) { <div class="dot-active"></div> }
+          </div>
+          <div class="scene-title">{{ scene.heading }}</div>
+          <div class="scene-meta">
+            <span>{{ scene.pages }}</span>
+            <span>• {{ scene.time }}</span>
+          </div>
         </div>
-        <div class="scene-title">{{ scene.heading }}</div>
-        <div class="scene-meta">
-          <span>{{ scene.pages }}</span>
-          <span>• {{ scene.time }}</span>
-        </div>
-      </div>
-    }
-  </div>
-</aside>
+      }
+    </div>
+  </aside>
 
   <main class="center-panel" [class.zen-mode]="!isLeftOpen && !isRightOpen" (click)="$event.stopPropagation()">
 
@@ -39,70 +40,91 @@
 
       <div class="toolbar-center">
         <div class="mode-tabs">
-          <button [class.active]="viewMode === 'edit'" (click)="viewMode = 'edit'">
+          <button [class.active]="viewMode === 'edit'" (click)="setViewMode('edit')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg> Write
           </button>
-          <button [class.active]="viewMode === 'breakdown'" (click)="viewMode = 'breakdown'">
+          <button [class.active]="viewMode === 'breakdown'" (click)="setViewMode('breakdown')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg> Breakdown
           </button>
-          <button [class.active]="viewMode === 'read'" (click)="viewMode = 'read'">
+          <button [class.active]="viewMode === 'read'" (click)="setViewMode('read')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg> Read
           </button>
         </div>
       </div>
 
-      <div class="toolbar-right">
+      <div class="toolbar-right" style="display: flex; gap: 16px; align-items: center;">
+        <!-- Перемикач ліній у режимі Read -->
+        @if (viewMode === 'read') {
+          <label class="toggle-switch">
+            <input type="checkbox" [(ngModel)]="showLinesInRead">
+            <span>Lines</span>
+          </label>
+        }
         @if (!isRightOpen) { <button class="btn-toggle" (click)="toggleRight()" title="Open Details">◀ Details</button> }
       </div>
     </div>
 
-    <div class="script-content-area">
-      <div class="script-paper" #scriptPaper>
+    <div class="script-content-area"
+         [class.write-mode]="viewMode === 'edit'"
+         [class.left-closed]="!isLeftOpen"
+         [class.right-closed]="!isRightOpen">
+      <div class="script-paper" #scriptPaper [class.write-mode]="viewMode === 'edit'">
 
-        @if (sceneViewMode === 'all') {
+        @if (sceneViewMode === 'all' && viewMode !== 'edit') {
           <div class="scene-divider"><span>SC-001</span></div>
         }
 
-        <div class="scene-divider"><span>SC-002</span></div>
+        <div class="scene-divider" [class.write-mode-divider]="viewMode === 'edit'">
+          <span>SC-002</span>
+        </div>
 
-        @for (block of blocks; track block.id) {
-          <div class="script-block"
-               [ngClass]="'type-' + block.type + ' mode-' + viewMode"
-               [ngStyle]="getBlockStyle(block)">
+        @if (viewMode === 'edit') {
+          <div class="write-hint">
+            💡 Tip: Use double Enter to divide text into blocks.
+          </div>
+          <div #rawEditor
+               class="raw-editor"
+               contenteditable="true"
+               (input)="onRawInput($event)"
+               data-placeholder="Start typing...">
+          </div>
+        }
+        @else {
+          @for (block of blocks; track block.id) {
+            <div class="script-block"
+                 [ngClass]="'type-' + block.type + ' mode-' + viewMode + ' ' + getBlockLineClass(block)"
+                 [style.--line-color]="block.color || '#444'">
 
-            @if (viewMode !== 'read') {
-              <div class="block-controls">
-                <button class="btn-type-selector" (click)="toggleTypeMenu(block.id); $event.stopPropagation()">
-                  {{ getTypeIcon(block.type) }}
-                </button>
+              @if (viewMode === 'breakdown') {
+                <div class="block-controls">
+                  <button class="btn-type-selector" (click)="toggleTypeMenu(block.id); $event.stopPropagation()">
+                    {{ getTypeIcon(block.type) }}
+                  </button>
 
-                @if (openTypeMenuId === block.id) {
-                  <div class="type-menu">
-                    <button (click)="setBlockType(block, 'scene_heading')">🎬 Scene Heading</button>
-                    <button (click)="setBlockType(block, 'action')">📝 Action</button>
-                    <button (click)="setBlockType(block, 'character')">👤 Character</button>
-                    <button (click)="setBlockType(block, 'dialogue')">💬 Dialogue</button>
-                    <button (click)="setBlockType(block, 'parenthetical')">() Parenthetical</button>
-                    <button (click)="setBlockType(block, 'transition')">✂️ Transition</button>
-                  </div>
-                }
-              </div>
-            }
+                  @if (openTypeMenuId === block.id) {
+                    <div class="type-menu">
+                      <button (click)="setBlockType(block, 'scene_heading')">🎬 Scene Heading</button>
+                      <button (click)="setBlockType(block, 'action')">📝 Action</button>
+                      <button (click)="setBlockType(block, 'character')">👤 Character</button>
+                      <button (click)="setBlockType(block, 'dialogue')">💬 Dialogue</button>
+                      <button (click)="setBlockType(block, 'parenthetical')">() Parenthetical</button>
+                      <button (click)="setBlockType(block, 'transition')">✂️ Transition</button>
+                      <button (click)="setBlockType(block, 'shot')">🎥 Shot</button>
+                    </div>
+                  }
+                </div>
+              }
 
-            <div class="text-content">
-              @if (viewMode === 'edit') {
-                <textarea [(ngModel)]="block.content" (input)="onInputResize($event)" rows="1" spellcheck="false"></textarea>
-              } @else {
+              <div class="text-content">
                 <span>
                   {{ block.type === 'parenthetical' && !block.content.startsWith('(') ? '(' + block.content + ')' : block.content }}
                 </span>
-              }
+              </div>
             </div>
-
-          </div>
+          }
         }
 
-        @if (sceneViewMode === 'all') {
+        @if (sceneViewMode === 'all' && viewMode !== 'edit') {
           <div class="scene-divider"><span>SC-003</span></div>
         }
 
@@ -117,22 +139,88 @@
     </div>
 
     <div class="details-scroll">
+
       <div class="detail-section">
-        <div class="section-title"><h3>Characters</h3> <button class="btn-add">+</button></div>
-        <div class="char-list">
+        <div class="section-title">
+          <h3>Characters</h3>
+          <button class="btn-icon-small">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          </button>
+        </div>
+
+        <div class="items-list">
           @for (char of activeCharacters; track char.name) {
-            <div class="char-item">
-              <div class="char-avatar" [style.background]="char.color">{{ char.initials }}</div>
-              <div class="char-info"><h4>{{ char.name }}</h4><span>{{ char.type }}</span></div>
+            <div class="tag-card">
+              <div class="card-left">
+                <div class="avatar" [style.background]="char.color">{{ char.initials }}</div>
+                <div class="info">
+                  <h4>{{ char.name }}</h4>
+                  <span>{{ char.type }}</span>
+                </div>
+              </div>
+              <div class="menu-dots">
+                <div class="dot"></div>
+                <div class="dot"></div>
+              </div>
             </div>
           }
         </div>
       </div>
+
       <div class="detail-section">
-        <div class="section-title"><h3>Location</h3> <span class="text-teal action-link">Change</span></div>
-        <div class="location-card"><h4>St. John Street</h4><p>Exterior • Center</p></div>
+        <div class="section-title">
+          <h3>Location</h3>
+          <span class="action-link">Change</span>
+        </div>
+        <div class="location-card">
+          <h4>St. John Street</h4>
+          <p>Exterior</p>
+          <span class="loc-meta">center</span>
+        </div>
       </div>
+
+      <div class="detail-section">
+        <div class="section-title">
+          <h3>Props</h3>
+          <button class="btn-icon-small">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          </button>
+        </div>
+
+        <div class="items-list">
+          <div class="tag-card">
+            <div class="card-left">
+              <div class="info"><h4>Phone (iPhone)</h4></div>
+            </div>
+            <div class="menu-dots"><div class="dot"></div><div class="dot"></div></div>
+          </div>
+          <div class="tag-card">
+            <div class="card-left">
+              <div class="info"><h4>Coffee Cup</h4></div>
+            </div>
+            <div class="menu-dots"><div class="dot"></div><div class="dot"></div></div>
+          </div>
+          <div class="tag-card">
+            <div class="card-left">
+              <div class="info"><h4>Vintage Revolver</h4></div>
+            </div>
+            <div class="menu-dots"><div class="dot"></div><div class="dot"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="detail-section">
+        <div class="section-title">
+          <h3>Notes</h3>
+          <button class="btn-icon-small">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          </button>
+        </div>
+        <div class="notes-card">
+          No notes yet
+        </div>
+      </div>
+
     </div>
   </aside>
-
 </div>
