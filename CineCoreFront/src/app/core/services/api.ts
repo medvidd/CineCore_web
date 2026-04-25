@@ -227,4 +227,7 @@ export class Api {
   updateActorCharacteristics(userId: number, characteristicsJson: string): Observable<any> {
     return this.http.put<any>(`${this.ACTORS_API_URL}/${userId}/characteristics`, { characteristics: characteristicsJson });
   }
+  getActorCastingsInProject(projectId: number, userId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.PROJECTS_API_URL}/${projectId}/actors/${userId}/my-castings`);
+  }
 }

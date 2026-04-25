@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Api } from '../../../core/services/api';
 import { Subject} from 'rxjs';
 import { debounceTime } from 'rxjs/operators';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 
 
@@ -35,6 +35,8 @@ export class Script implements OnInit {
   private api = inject(Api);
   private cdr= inject(ChangeDetectorRef);
   private route = inject(ActivatedRoute);
+  private router = inject(Router); // Додайте цей ін'єкт
+
 
   projectId: number = 0;
   sceneId: number = 0;
@@ -60,8 +62,7 @@ export class Script implements OnInit {
   activeCharacters: any[] = [];
   blocks: ScriptBlock[] = [];
 
-  sceneLocations: any[] = [];
-  sceneProps: any[] = [];
+  myApprovedRoleIds: Set<number> = new Set(); // Може бути кілька затверджених ролей
 
   // --- РЕСУРСИ (Права панель) ---
   linkedRoles: any[] = [];
@@ -84,39 +85,48 @@ export class Script implements OnInit {
   ngOnInit() {
     this.api.currentRole$.subscribe(role => {
       this.currentUserRole = role;
-      const normalizedRole = role?.toLowerCase();
       this.canEdit = (role === 'owner' || role === 'manager');
+
+      // ПРИМУСОВИЙ РЕЖИМ ДЛЯ АКТОРІВ
+      if (this.currentUserRole === 'actor') {
+        this.viewMode = 'read';
+        this.sceneViewMode = 'all'; // Акторам зручніше бачити весь скрипт
+        // ✅ findMyApprovedRole викликається в paramMap підписці, коли projectId вже є
+        if (this.projectId) {
+          this.findMyApprovedRole();
+          this.loadData();
+        }
+      }
       this.cdr.detectChanges();
     });
 
-    // 1. Отримуємо ID проекту та сцени (припустимо, вони є в URL)
+    // Залишаємо ТІЛЬКИ ОДНУ підписку на paramMap!
     this.route.parent?.paramMap.subscribe(params => {
       const pid = params.get('id');
       if (pid) {
         this.projectId = Number(pid);
-        this.loadScenesList();
+        this.loadScenesList(); // Це викличе selectScene, який тепер правильно завантажить дані
+
         this.api.getProjectResources(this.projectId).subscribe({
           next: (res) => this.availableResources = res
         });
+
+        // ✅ Викликаємо тут, коли projectId вже встановлено
+        if (this.currentUserRole === 'actor') {
+          this.findMyApprovedRole();
+        }
       }
     });
 
-    // Для тесту можемо взяти першу сцену з вашого хардкодного списку
-    this.route.parent?.paramMap.subscribe(params => {
-      const pid = params.get('id');
-      if (pid) {
-        this.projectId = Number(pid);
-        this.loadScenesList(); // Завантажуємо ліву панель!
-      }
-    });
-
-    // 2. НАЛАШТУВАННЯ АВТОЗБЕРЕЖЕННЯ (чекає 3 секунди після зупинки вводу)
+    // НАЛАШТУВАННЯ АВТОЗБЕРЕЖЕННЯ
     this.autosaveSubject.pipe(debounceTime(3000)).subscribe(() => {
       this.performAutosave();
     });
 
     this.notesAutosaveSubject.pipe(debounceTime(2000)).subscribe((notes) => {
-      this.api.updateSceneNotes(this.sceneId, notes).subscribe();
+      if (this.canEdit) { // Зберігаємо нотатки тільки якщо є права
+        this.api.updateSceneNotes(this.sceneId, notes).subscribe();
+      }
     });
   }
 
@@ -133,18 +143,28 @@ export class Script implements OnInit {
     });
   }
 
+  // script.ts
+
   selectScene(id: number) {
+    // Перевіряємо, чи це перше завантаження (коли sceneId ще 0)
+    const isInitialLoad = this.sceneId === 0;
+    this.sceneId = id;
+
     if (this.sceneViewMode === 'all') {
-      this.sceneId = id; // Тільки підсвічуємо
-      this.scrollToScene(id); // Скролимо
+      // ВИПРАВЛЕННЯ: Якщо це старт або блоки ще не завантажені — вантажимо дані,
+      // а не просто скролимо в пустоту
+      if (isInitialLoad || this.blocks.length === 0) {
+        this.loadData();
+      } else {
+        this.scrollToScene(id);
+      }
       return;
     }
 
-    if (this.canEdit && this.sceneId !== 0) {
+    if (this.canEdit && !isInitialLoad) {
       this.performManualSave();
     }
 
-    this.sceneId = id;
     this.loadData();
   }
 
@@ -659,4 +679,26 @@ export class Script implements OnInit {
     }
   }
 
+  goToCasting(roleId: number) {
+    // Перехід на вкладку кастингу з передачею ID ролі
+    this.router.navigate(['../casting'], {
+      relativeTo: this.route,
+      queryParams: { roleId: roleId }
+    });
+  }
+
+  findMyApprovedRole() {
+    const user = JSON.parse(localStorage.getItem('cinecore_user') || '{}');
+    if (!user.id || !this.projectId) return;
+
+    this.api.getActorCastingsInProject(this.projectId, user.id).subscribe(castings => {
+      // ✅ Збираємо ВСІ затверджені ролі (може бути кілька)
+      this.myApprovedRoleIds = new Set(
+        castings
+          .filter((c: any) => c.status === 'approved' || c.castStatus === 'approved')
+          .map((c: any) => c.roleId)
+      );
+      this.cdr.detectChanges();
+    });
+  }
 }

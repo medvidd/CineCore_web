@@ -64,104 +64,106 @@
   <main class="center-panel" [class.zen-mode]="!isLeftOpen && !isRightOpen" (click)="$event.stopPropagation()">
 
     @if (sceneId !==0) {
-    <div class="editor-toolbar">
-      <div class="toolbar-left">
-        @if (!isLeftOpen) { <button class="btn-toggle" (click)="toggleLeft()" title="Open Scenes">▶ Scenes</button> }
-      </div>
+      <div class="editor-toolbar">
+        <div class="toolbar-left">
+          @if (!isLeftOpen) { <button class="btn-toggle" (click)="toggleLeft()" title="Open Scenes">▶ Scenes</button> }
+        </div>
 
-      <div class="toolbar-center">
-        <div class="mode-tabs">
-          <button [class.active]="viewMode === 'edit'" (click)="setViewMode('edit')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg> Write
-          </button>
-          <button [class.active]="viewMode === 'breakdown'" (click)="setViewMode('breakdown')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg> Breakdown
-          </button>
-          <button [class.active]="viewMode === 'read'" (click)="setViewMode('read')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg> Read
-          </button>
+        <div class="toolbar-center">
+          <div class="mode-tabs">
+            @if (canEdit) {
+              <button [class.active]="viewMode === 'edit'" (click)="setViewMode('edit')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg> Write
+              </button>
+              <button [class.active]="viewMode === 'breakdown'" (click)="setViewMode('breakdown')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg> Breakdown
+              </button>
+            }
+            <button [class.active]="viewMode === 'read'" (click)="setViewMode('read')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg> Read
+            </button>
+          </div>
+        </div>
+
+        <div class="toolbar-right" style="display: flex; gap: 16px; align-items: center;">
+          <!-- Перемикач ліній у режимі Read -->
+          @if (viewMode === 'read') {
+            <label class="toggle-switch">
+              <input type="checkbox" [(ngModel)]="showLinesInRead">
+              <span>Lines</span>
+            </label>
+          }
+          @if (!isRightOpen) { <button class="btn-toggle" (click)="toggleRight()" title="Open Details">◀ Details</button> }
         </div>
       </div>
 
-      <div class="toolbar-right" style="display: flex; gap: 16px; align-items: center;">
-        <!-- Перемикач ліній у режимі Read -->
-        @if (viewMode === 'read') {
-          <label class="toggle-switch">
-            <input type="checkbox" [(ngModel)]="showLinesInRead">
-            <span>Lines</span>
-          </label>
-        }
-        @if (!isRightOpen) { <button class="btn-toggle" (click)="toggleRight()" title="Open Details">◀ Details</button> }
-      </div>
-    </div>
+      <div class="script-content-area"
+           (scroll)="onScroll($event)"
+           [class.write-mode]="viewMode === 'edit'"
+           [class.left-closed]="!isLeftOpen"
+           [class.right-closed]="!isRightOpen">
+        <div class="script-paper" #scriptPaper [class.write-mode]="viewMode === 'edit'">
 
-    <div class="script-content-area"
-         (scroll)="onScroll($event)"
-         [class.write-mode]="viewMode === 'edit'"
-         [class.left-closed]="!isLeftOpen"
-         [class.right-closed]="!isRightOpen">
-      <div class="script-paper" #scriptPaper [class.write-mode]="viewMode === 'edit'">
+          @if (viewMode === 'edit') {
+            <div class="scene-divider write-mode-divider">
+              <span>{{ currentSceneCode }}</span>
+            </div>
 
-        @if (viewMode === 'edit') {
-          <div class="scene-divider write-mode-divider">
-            <span>{{ currentSceneCode }}</span>
-          </div>
+            <div class="write-hint">
+              💡 Tip: Use double Enter to divide text into blocks.
+            </div>
+            <div #rawEditor
+                 class="raw-editor"
+                 contenteditable="true"
+                 (input)="onRawInput($event)"
+                 data-placeholder="Start typing...">
+            </div>
+          }
+          @else {
+            @for (block of blocks; track block.id; let i = $index) {
 
-          <div class="write-hint">
-            💡 Tip: Use double Enter to divide text into blocks.
-          </div>
-          <div #rawEditor
-               class="raw-editor"
-               contenteditable="true"
-               (input)="onRawInput($event)"
-               data-placeholder="Start typing...">
-          </div>
-        }
-        @else {
-          @for (block of blocks; track block.id; let i = $index) {
-
-            @if (block.type === 'scene_heading') {
-              <div class="scene-divider" [id]="'scene-anchor-' + block.sceneId">
-                <span>{{ block.sceneCode || currentSceneCode }}</span>
-              </div>
-            }
-
-            <div class="script-block"
-                 [ngClass]="'type-' + block.type + ' mode-' + viewMode + ' ' + getBlockLineClass(block)"
-                 [class.highlighted-line]="block.charName === highlightedCharName && highlightedCharName !== null"
-                 [style.--line-color]="block.color || '#444444'"
-                 [style.backgroundColor]="block.charName === highlightedCharName && highlightedCharName !== null ? (block.color + '25') : 'transparent'">
-
-              @if (viewMode === 'breakdown') {
-                <div class="block-controls">
-                  <button class="btn-type-selector" (click)="toggleTypeMenu(block.id); $event.stopPropagation()">
-                    {{ getTypeIcon(block.type) }}
-                  </button>
-
-                  @if (openTypeMenuId === block.id) {
-                    <div class="type-menu">
-                      <button (click)="setBlockType(block, 'scene_heading')">🎬 Scene Heading</button>
-                      <button (click)="setBlockType(block, 'action')">📝 Action</button>
-                      <button (click)="setBlockType(block, 'character')">👤 Character</button>
-                      <button (click)="setBlockType(block, 'dialogue')">💬 Dialogue</button>
-                      <button (click)="setBlockType(block, 'parenthetical')">() Parenthetical</button>
-                      <button (click)="setBlockType(block, 'transition')">✂️ Transition</button>
-                      <button (click)="setBlockType(block, 'shot')">🎥 Shot</button>
-                    </div>
-                  }
+              @if (block.type === 'scene_heading') {
+                <div class="scene-divider" [id]="'scene-anchor-' + block.sceneId">
+                  <span>{{ block.sceneCode || currentSceneCode }}</span>
                 </div>
               }
 
-              <div class="text-content">
+              <div class="script-block"
+                   [ngClass]="'type-' + block.type + ' mode-' + viewMode + ' ' + getBlockLineClass(block)"
+                   [class.highlighted-line]="block.charName === highlightedCharName && highlightedCharName !== null"
+                   [style.--line-color]="block.color || '#444444'"
+                   [style.backgroundColor]="block.charName === highlightedCharName && highlightedCharName !== null ? (block.color + '25') : 'transparent'">
+
+                @if (viewMode === 'breakdown') {
+                  <div class="block-controls">
+                    <button class="btn-type-selector" (click)="toggleTypeMenu(block.id); $event.stopPropagation()">
+                      {{ getTypeIcon(block.type) }}
+                    </button>
+
+                    @if (openTypeMenuId === block.id) {
+                      <div class="type-menu">
+                        <button (click)="setBlockType(block, 'scene_heading')">🎬 Scene Heading</button>
+                        <button (click)="setBlockType(block, 'action')">📝 Action</button>
+                        <button (click)="setBlockType(block, 'character')">👤 Character</button>
+                        <button (click)="setBlockType(block, 'dialogue')">💬 Dialogue</button>
+                        <button (click)="setBlockType(block, 'parenthetical')">() Parenthetical</button>
+                        <button (click)="setBlockType(block, 'transition')">✂️ Transition</button>
+                        <button (click)="setBlockType(block, 'shot')">🎥 Shot</button>
+                      </div>
+                    }
+                  </div>
+                }
+
+                <div class="text-content">
                 <span>
                   {{ block.type === 'parenthetical' && !block.content.startsWith('(') ? '(' + block.content + ')' : block.content }}
                 </span>
+                </div>
               </div>
-            </div>
+            }
           }
-        }
+        </div>
       </div>
-    </div>
     } @else {
       <div class="empty-state" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: rgba(255,255,255,0.4);">
         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 16px; opacity: 0.5;"><path d="M12 5v14M5 12h14"/></svg>
@@ -193,8 +195,8 @@
             @for (char of activeCharacters; track char.name) {
               <div class="tag-card"
                    [class.highlighted-card]="highlightedCharName === char.name"
-                   (click)="toggleHighlight(char.name)"
-                   style="cursor: pointer;">
+                   [class.my-approved-role]="myApprovedRoleIds.has(char.id)"
+                   (click)="toggleHighlight(char.name)">
                 <div class="card-left">
                   <div class="avatar" [style.background]="char.color">{{ char.initials }}</div>
                   <div class="info">
@@ -203,25 +205,29 @@
                   </div>
                 </div>
 
-                <div class="menu-container">
-                  <div class="menu-dots" (click)="toggleCharMenu($event, char.id); $event.stopPropagation()">
-                    <div class="dot"></div><div class="dot"></div>
-                  </div>
-
-                  @if (openCharMenuId === char.id) {
-                    <div class="popover-menu"
-                         [style.top.px]="menuTop"
-                         [style.right.px]="menuRight"
-                         (click)="$event.stopPropagation()">
-
-                      <label class="color-picker-label">
-                        <span>Change Color</span>
-                        <input type="color" [value]="char.color" (change)="onColorChange(char.id, $event)">
-                      </label>
-                      <button>Edit Details</button>
+                @if (canEdit){
+                  <div class="menu-container">
+                    <div class="menu-dots" (click)="toggleCharMenu($event, char.id); $event.stopPropagation()">
+                      <div class="dot"></div><div class="dot"></div>
                     </div>
-                  }
-                </div>
+
+                    @if (openCharMenuId === char.id) {
+                      <div class="popover-menu"
+                           [style.top.px]="menuTop"
+                           [style.right.px]="menuRight"
+                           (click)="$event.stopPropagation()">
+
+                        <label class="color-picker-label">
+                          <span>Change Color</span>
+                          <input type="color" [value]="char.color" (change)="onColorChange(char.id, $event)">
+                        </label>
+                        <button class="btn-ghost-mini" (click)="goToCasting(char.id)" title="Manage Casting">
+                          Edit Role
+                        </button>
+                      </div>
+                    }
+                  </div>
+                }
               </div>
             }
           } @else {
@@ -323,4 +329,3 @@
     </div>
   </div>
 }
-

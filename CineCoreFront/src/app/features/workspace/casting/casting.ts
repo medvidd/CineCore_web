@@ -88,10 +88,16 @@ export class Casting implements OnInit {
     });
   }
 
+  activeActorTab: 'profile' | 'castings' = 'profile';
+  actorProfile: any = null;
+  myCastings: any[] = [];
+  actorCharFields: { key: string, value: string }[] = [];
+
   ngOnInit() {
     this.api.currentRole$.subscribe(role => {
       this.currentUserRole = role;
       this.canEdit = (role === 'owner' || role === 'manager');
+      this.safeLoadActorData();
       this.cdr.detectChanges();
     });
 
@@ -99,10 +105,48 @@ export class Casting implements OnInit {
       const id = params.get('id');
       if (id) {
         this.projectId = Number(id);
+
         this.loadRoles();
         this.loadProjectActors();
+        this.safeLoadActorData();
+
+        // Перевіряємо чи є roleId в URL
+        this.route.queryParams.subscribe(queryParams => {
+          const targetRoleId = queryParams['roleId'] ? Number(queryParams['roleId']) : null;
+          if (targetRoleId && this.roles.length > 0) {
+            const role = this.roles.find(r => r.id === targetRoleId);
+            if (role) this.selectRole(role);
+          }
+        });
       }
     });
+  }
+
+
+  safeLoadActorData() {
+    if (this.currentUserRole === 'actor' && this.projectId > 0) {
+      const user = JSON.parse(localStorage.getItem('cinecore_user') || '{}');
+      if (user?.id) {
+        // Щоб не завантажувати профіль двічі, робимо перевірку
+        if (!this.actorProfile) {
+          this.loadActorProfile(user.id);
+        }
+        // Кастинги завантажуємо одразу
+        this.loadMyCastingsForActor(user.id);
+      }
+    }
+  }
+
+  // НОВИЙ МЕТОД: Примусове оновлення при кліку на вкладку "My Castings"
+  switchActorTab(tab: 'profile' | 'castings') {
+    this.activeActorTab = tab;
+    if (tab === 'castings') {
+      const user = JSON.parse(localStorage.getItem('cinecore_user') || '{}');
+      if (user?.id && this.projectId > 0) {
+        // Завжди підтягуємо свіжі дані (статуси) з бази
+        this.loadMyCastingsForActor(user.id);
+      }
+    }
   }
 
   // ==========================================
@@ -357,4 +401,44 @@ export class Casting implements OnInit {
       return [];
     }
   }
+
+
+  // ACTORs
+  loadActorProfile(userId: number) {
+    this.api.getActorProfile(userId).subscribe(profile => {
+      this.actorProfile = profile;
+      try {
+        const parsed = JSON.parse(profile.characteristics || '{}');
+        this.actorCharFields = Object.keys(parsed).map(k => ({ key: k, value: parsed[k] }));
+        if (this.actorCharFields.length === 0) this.actorCharFields.push({ key: '', value: '' });
+      } catch {
+        this.actorCharFields = [{ key: '', value: '' }];
+      }
+      this.cdr.detectChanges();
+    });
+  }
+
+  loadMyCastingsForActor(userId: number) {
+    this.api.getActorCastingsInProject(this.projectId, userId).subscribe({
+      next: (data) => {
+        this.myCastings = data;
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('Error loading my castings:', err)
+    });
+  }
+
+  saveActorCharacteristics() {
+    const charObj: any = {};
+    this.actorCharFields.forEach(f => {
+      if (f.key?.trim()) charObj[f.key.trim()] = f.value;
+    });
+
+    this.api.updateActorCharacteristics(this.actorProfile.id, JSON.stringify(charObj)).subscribe(() => {
+      alert('Profile updated successfully!');
+    });
+  }
+
+  addActorCharField() { this.actorCharFields.push({ key: '', value: '' }); }
+  removeActorCharField(i: number) { this.actorCharFields.splice(i, 1); }
 }

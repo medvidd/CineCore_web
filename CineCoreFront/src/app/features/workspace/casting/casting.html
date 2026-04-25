@@ -14,6 +14,72 @@
     </div>
   </div>
 
+  @if (currentUserRole === 'actor') {
+    <div class="actor-cabinet">
+
+      <div class="actor-tabs">
+        <button [class.active]="activeActorTab === 'profile'" (click)="switchActorTab('profile')">My Profile</button>
+        <button [class.active]="activeActorTab === 'castings'" (click)="switchActorTab('castings')">My Castings</button>
+      </div>
+
+      @if (activeActorTab === 'profile' && actorProfile) {
+        <div class="actor-profile-view">
+          <div class="profile-main-card">
+            <div class="avatar-circle large" [ngClass]="actorProfile.avatarTheme">
+              {{ actorProfile.firstName[0] }}{{ actorProfile.lastName[0] }}
+            </div>
+            <div class="actor-header-info">
+              <h2>{{ actorProfile.firstName }} {{ actorProfile.lastName }}</h2>
+              <p>{{ actorProfile.email }} | {{ actorProfile.phoneNum || 'No phone' }}</p>
+              <div class="age-badge">Born: {{ getAgeInfo(actorProfile.birthday) }}</div>
+            </div>
+          </div>
+
+          <div class="characteristics-editor">
+            <div class="section-header">
+              <h3>Physical & Professional Characteristics</h3>
+              <p>This data is shared across all your film projects.</p>
+            </div>
+
+            <div class="dynamic-list">
+              @for (field of actorCharFields; track $index) {
+                <div class="dynamic-row">
+                  <input type="text" [(ngModel)]="field.key" placeholder="Property (e.g. Height)" class="form-control">
+                  <input type="text" [(ngModel)]="field.value" placeholder="Value (e.g. 185cm)" class="form-control">
+                  <button class="btn-icon-ghost danger" (click)="removeActorCharField($index)">✕</button>
+                </div>
+              }
+              <button class="btn-add-row" (click)="addActorCharField()">+ Add Property</button>
+            </div>
+
+            <button class="btn-primary save-btn" (click)="saveActorCharacteristics()">Save Profile Data</button>
+          </div>
+        </div>
+      }
+
+      @if (activeActorTab === 'castings') {
+        <div class="actor-castings-grid">
+          @for (c of myCastings; track c.roleId) {
+            <div class="my-casting-card"
+                 [class.approved-highlight]="c.status === 'approved' || c.castStatus === 'approved'">
+              <div class="card-top">
+                <span class="type-badge" [style.color]="c.colorHex" [style.borderColor]="c.colorHex">{{ c.roleType }}</span>
+                <span class="status-tag" [ngClass]="c.status">{{ c.status }}</span>
+              </div>
+              <h3>{{ c.roleName }}</h3>
+              <div class="card-bottom">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-xs"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                <span>Applied on: {{ c.date }}</span>
+              </div>
+            </div>
+          }
+          @if (myCastings.length === 0) {
+            <div class="empty-state-small">You haven't been added as a candidate to any roles in this project yet.</div>
+          }
+        </div>
+      }
+    </div>
+  } @else {
   <div class="casting-split-view">
 
     <aside class="roles-list-panel">
@@ -197,6 +263,7 @@
       }
     </main>
   </div>
+  }
 </div>
 
 @if (isRoleModalOpen) {

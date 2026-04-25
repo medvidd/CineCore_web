@@ -236,4 +236,23 @@ public class CastingController : ControllerBase
         await _context.SaveChangesAsync();
         return Ok(new { message = "Characteristics updated successfully" });
     }
+
+    [HttpGet("projects/{projectId}/actors/{userId}/my-castings")]
+    public async Task<ActionResult> GetActorCastingsInProject(int projectId, int userId)
+    {
+        var castings = await _context.Castings
+            .Where(c => c.ActorId == userId && c.Role.ProjectId == projectId)
+            .Include(c => c.Role)
+            .Select(c => new {
+                RoleId = c.RoleId,
+                RoleName = c.Role.RoleName,
+                RoleType = c.Role.RoleType,
+                ColorHex = c.Role.ColorHex,
+                Status = c.CastStatus,
+                Date = c.CastDate
+            })
+            .ToListAsync();
+
+        return Ok(castings);
+    }
 }

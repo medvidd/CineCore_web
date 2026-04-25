@@ -388,3 +388,34 @@ $teal: #3AB9A0;
   padding-left: 16px;
   transition: background-color 0.3s ease;
 }
+
+// script.scss
+
+.tag-card.my-approved-role {
+  background: rgba(0, 166, 62, 0.08) !important;
+  border-color: #00A63E !important;
+  box-shadow: inset 4px 0 0 #00A63E; // Зелена лінія зліва
+
+  h4 {
+    color: #00A63E !important;
+    font-weight: 600;
+  }
+}
+
+// Виділення в самому сценарії (блоки реплік)
+.script-block.highlighted-line {
+  background-color: rgba(58, 185, 160, 0.15);
+  border-left: 4px solid #3AB9A0;
+}
+
+.btn-ghost-mini {
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.4);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  transition: 0.2s;
+  &:hover { color: $teal; transform: scale(1.1); }
+  svg { width: 16px; height: 16px; }
+}
