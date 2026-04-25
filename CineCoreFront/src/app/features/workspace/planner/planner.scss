@@ -8,7 +8,7 @@ $danger: #FB2C36;
 .planner-wrapper {
   display: flex; gap: 24px; height: 100%; color: white;
   font-family: 'Space Grotesk', sans-serif;
-  overflow: hidden; // Забороняємо скрол всієї сторінки, кожна колонка скролиться окремо
+  overflow: hidden;
 }
 
 // --- ЛІВА ПАНЕЛЬ (POOL) ---
@@ -22,220 +22,190 @@ $danger: #FB2C36;
     h2 { font-size: 20px; font-weight: 500; margin: 0; }
     .search-box {
       display: flex; align-items: center; gap: 8px; background: $bg-card; border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 12px; padding: 10px 16px;
-      svg { width: 16px; height: 16px; color: rgba(255,255,255,0.5); }
-      input { background: transparent; border: none; color: white; width: 100%; outline: none; }
+      border-radius: 8px; padding: 8px 12px;
+      svg { width: 16px; height: 16px; color: rgba(255,255,255,0.4); }
+      input { background: none; border: none; color: white; outline: none; font-size: 14px; width: 100%;
+        &::placeholder { color: rgba(255,255,255,0.3); }
+      }
     }
     .filters {
-      display: flex; flex-direction: column; gap: 8px;
-      select { background: $bg-card; border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.6); padding: 10px 16px; border-radius: 12px; outline: none; appearance: none; cursor: pointer; }
+      display: flex; gap: 8px;
+      select { flex: 1; background: $bg-card; border: 1px solid rgba(255,255,255,0.1); color: white;
+        padding: 6px 8px; border-radius: 6px; font-size: 12px; outline: none; cursor: pointer; }
     }
+  }
+
+  .scenes-scroll-area {
+    flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;
+    padding-right: 8px; padding-bottom: 24px; min-height: 200px;
+    &::-webkit-scrollbar { width: 4px; }
+    &::-webkit-scrollbar-track { background: transparent; }
+    &::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
   }
 }
 
-// ЗОНА СПИСКІВ (POOL та COLUMNS)
-.scenes-scroll-area {
-  flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; min-height: 150px;
-  &::-webkit-scrollbar { width: 4px; }
-  &::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+// --- ПРАВА ПАНЕЛЬ (DAYS) ---
+.days-board {
+  flex: 1; display: flex; flex-direction: column; gap: 20px; overflow: hidden;
+
+  .board-controls {
+    display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;
+    .view-toggles { display: flex; background: rgba(255,255,255,0.05); border-radius: 8px; padding: 4px;
+      button { background: none; border: none; color: rgba(255,255,255,0.5); padding: 6px 16px;
+        border-radius: 6px; font-size: 14px; cursor: pointer; transition: 0.2s;
+        &.active { background: $bg-card; color: white; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+      }
+    }
+    .btn-add-day {
+      background: $teal; color: $bg-main; border: none; padding: 8px 16px; border-radius: 8px;
+      font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 8px; cursor: pointer;
+      span { font-size: 18px; line-height: 1; }
+      &:hover { opacity: 0.9; }
+    }
+  }
+
+  .days-scroll-container {
+    flex: 1; display: flex; gap: 16px; overflow-x: auto; padding-bottom: 24px; align-items: flex-start;
+    &::-webkit-scrollbar { height: 8px; }
+    &::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); border-radius: 4px; }
+    &::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+  }
 }
 
-// КАРТКА СЦЕНИ (CDK DRAG)
+// --- СТОВПЧИК ДНЯ ---
+.shoot-day-column {
+  width: 320px; background: rgba(29, 29, 29, 0.4); border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px; display: flex; flex-direction: column; flex-shrink: 0;
+  max-height: 100%; position: relative;
+
+  &.auto-draft {
+    border: 1px dashed $yellow; background: rgba(233, 166, 15, 0.05);
+  }
+
+  .btn-delete {
+    position: absolute; right: 12px; top: 12px; background: none; border: none;
+    color: rgba(255,255,255,0.3); font-size: 20px; cursor: pointer; padding: 0; line-height: 1;
+    &:hover { color: $danger; }
+  }
+
+  .day-header {
+    padding: 16px; border-bottom: 1px solid rgba(255,255,255,0.05);
+    .day-info { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;
+      h3 { margin: 0; font-size: 16px; font-weight: 600; }
+      .unit-label { font-size: 11px; font-weight: bold; background: rgba(255,255,255,0.1); padding: 4px 8px; border-radius: 4px; }
+    }
+    .capacity-section {
+      margin-bottom: 12px;
+      .progress-container {
+        height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden;
+        .progress-fill { height: 100%; background: $teal; transition: width 0.3s ease; }
+      }
+      .capacity-text { font-size: 11px; color: rgba(255,255,255,0.5); display: block; margin-top: 6px; text-align: right; }
+    }
+    .day-meta { display: flex; justify-content: space-between; align-items: center; font-size: 12px;
+      .call-time { color: rgba(255,255,255,0.6); }
+      .status-badge { padding: 4px 8px; border-radius: 12px; font-weight: 500; font-size: 11px;
+        &.completed { background: rgba(58, 185, 160, 0.1); color: $teal; }
+        &.draft { background: rgba(233, 166, 15, 0.1); color: $yellow; }
+        &.published { background: rgba(152, 16, 250, 0.1); color: $purple; }
+      }
+    }
+  }
+
+  .day-scenes-list { padding: 12px; display: flex; flex-direction: column; gap: 8px; flex: 1; overflow-y: auto; min-height: 100px; }
+}
+
+// --- КАРТКА СЦЕНИ ---
 .scene-card {
-  background: $bg-card; border-radius: 16px; padding: 16px; border: 1px solid rgba(255,255,255,0.1);
-  display: flex; flex-direction: column; gap: 8px; cursor: grab;
-  transition: box-shadow 0.2s, border-color 0.2s;
+  background: $bg-card; border: 1px solid rgba(255,255,255,0.05); border-radius: 8px;
+  padding: 12px; cursor: grab; transition: transform 0.2s, box-shadow 0.2s;
 
   &:active { cursor: grabbing; }
-  &:hover { border-color: rgba(255,255,255,0.3); }
+  &:hover { border-color: rgba(255,255,255,0.2); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
 
-  .scene-header {
-    display: flex; justify-content: space-between; align-items: center;
-    .scene-id { font-weight: 500; }
+  .scene-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;
+    .scene-id { font-size: 12px; font-weight: bold; color: $teal; }
+    .time-badge { font-size: 10px; background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px; color: rgba(255,255,255,0.7); }
   }
 
-  h3 { font-size: 16px; font-weight: 500; margin: 0; line-height: 1.4; }
+  h3 { margin: 0 0 10px 0; font-size: 14px; font-weight: 500; line-height: 1.4; color: #fff; }
 
-  .scene-details {
-    display: flex; flex-direction: column; gap: 4px; color: rgba(255,255,255,0.6); font-size: 12px;
-    span { display: flex; align-items: center; gap: 6px; svg { width: 14px; height: 14px; } }
+  .scene-details { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: rgba(255,255,255,0.5);
+    span { display: flex; align-items: center; gap: 6px; }
+    svg { width: 14px; height: 14px; opacity: 0.7; }
+    .duration { color: rgba(255,255,255,0.8); }
   }
 
-  .cast-chips {
-    display: flex; align-items: center; gap: 8px; margin-top: 4px; color: rgba(255,255,255,0.6);
-    svg { width: 16px; height: 16px; }
-    .chip { background: rgba(58, 185, 160, 0.1); color: $teal; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-family: 'Space Mono'; border: 0.8px solid rgba(58, 185, 160, 0.2); }
+  .cast-initials {
+    display: flex; gap: 4px; margin-top: 10px; flex-wrap: wrap;
+    .initial-bubble {
+      width: 24px; height: 24px; border-radius: 50%; background: $teal; color: $bg-main;
+      font-size: 10px; font-weight: bold; display: flex; align-items: center; justify-content: center;
+      &.small { width: 20px; height: 20px; font-size: 9px; }
+    }
   }
 }
 
-// Стилі CDK під час перетягування
+// CDK DRAG PREVIEW
 .cdk-drag-preview {
-  box-sizing: border-box; border-radius: 16px; box-shadow: 0 10px 20px rgba(0,0,0,0.5); border: 1px solid $teal !important; opacity: 0.9;
+  box-sizing: border-box; border-radius: 8px; box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+  background: lighten($bg-card, 5%); border: 1px solid $teal; opacity: 0.9;
 }
-.cdk-drag-placeholder { opacity: 0.3; border: 1px dashed rgba(255,255,255,0.3); background: transparent; }
+.cdk-drag-placeholder { opacity: 0.2; border: 1px dashed rgba(255,255,255,0.5); background: transparent; }
 .cdk-drag-animating { transition: transform 250ms cubic-bezier(0, 0, 0.2, 1); }
 
-// --- ПРАВА ПАНЕЛЬ (BOARD) ---
-.schedule-board-panel {
-  flex: 1; display: flex; flex-direction: column; gap: 24px; overflow: hidden;
-
-  .board-header {
-    display: flex; justify-content: space-between; align-items: flex-start;
-    .title-area {
-      display: flex; align-items: center; flex-wrap: wrap; gap: 16px;
-      svg { width: 24px; height: 24px; }
-      h2 { font-size: 30px; font-weight: 500; margin: 0; }
-      .badges { display: flex; gap: 8px; .badge { background: $bg-card; padding: 6px 12px; border-radius: 12px; font-size: 12px; } }
-    }
-    .actions-area {
-      display: flex; gap: 12px;
-      button { padding: 10px 20px; border-radius: 16px; font-family: 'Space Grotesk'; font-weight: 500; cursor: pointer; border: none; }
-      .btn-dark { background: $bg-card; color: white; border: 1px solid rgba(255,255,255,0.1); }
-      .btn-primary { background: $teal; color: $bg-main; }
-    }
-  }
-
-  .days-container {
-    flex: 1; display: flex; gap: 16px; overflow-x: auto; padding-bottom: 16px;
-    &::-webkit-scrollbar { height: 6px; }
-    &::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
-  }
-
-  .shoot-day-column {
-    min-width: 320px; width: 320px; display: flex; flex-direction: column; gap: 16px;
-
-    .day-header {
-      background: rgba(58, 185, 160, 0.05); border: 1px solid rgba(58, 185, 160, 0.2); border-radius: 16px; padding: 16px;
-      display: flex; flex-direction: column; gap: 8px;
-      .unit-row { display: flex; justify-content: space-between; color: rgba(255,255,255,0.6); font-size: 12px; font-weight: 500; text-transform: uppercase; .btn-more { background: transparent; border: none; color: white; cursor: pointer; } }
-      h3 { margin: 0; font-size: 24px; font-weight: 500; }
-      .call-time { margin: 0; font-size: 14px; color: rgba(255,255,255,0.6); display: flex; align-items: center; gap: 8px; svg { width: 16px; height: 16px; } }
-      .capacity {
-        margin-top: 8px;
-        .cap-text { display: flex; justify-content: space-between; font-size: 12px; color: rgba(255,255,255,0.6); margin-bottom: 4px; }
-        .cap-bar { height: 6px; background: $bg-main; border-radius: 10px; overflow: hidden; .fill { height: 100%; background: $teal; border-radius: 10px; } }
-      }
-    }
-
-    .btn-dashed { margin-top: 8px; background: transparent; border: 1px dashed rgba(255,255,255,0.2); color: rgba(255,255,255,0.6); padding: 12px; border-radius: 16px; cursor: pointer; font-family: 'Space Grotesk'; &:hover { border-color: $teal; color: $teal; } }
-  }
+// --- МОДАЛКА КАЛЕНДАРЯ ---
+.modal-backdrop {
+  position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px); display: flex; justify-content: center; align-items: center; z-index: 1000;
 }
 
-// Утиліти для бейджів
-.time-badge { padding: 2px 8px; border-radius: 8px; font-size: 10px; font-weight: 500; background: rgba(233, 166, 15, 0.1); color: $yellow; border: 1px solid rgba(233, 166, 15, 0.2); }
-.time-badge.purple { background: rgba(152, 16, 250, 0.1); color: $purple; border-color: rgba(152, 16, 250, 0.2); }
+.modal-content {
+  background: $bg-card; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px;
+  width: 100%; max-width: 480px; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.5);
 
-// --- СТИЛІ МОДАЛЬНОГО ВІКНА ---
-.modal-overlay {
-  position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-  background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
-  display: flex; justify-content: center; align-items: center; z-index: 1000;
-}
-
-.modal-container {
-  background: $bg-main;
-  border-radius: 20px; // Трохи менше заокруглення
-  padding: 24px; // Було 32px
-  width: 680px; // Зменшена загальна ширина (було 753px)
-  max-width: 90vw; // Захист для невеликих екранів
-  border: 1px solid rgba(255,255,255,0.1);
-  box-shadow: 0 20px 40px rgba(0,0,0,0.5);
-  font-family: 'Space Grotesk', sans-serif;
-  color: white;
-}
-
-.modal-header {
-  display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;
-  .header-text {
-    h2 { margin: 0 0 4px 0; font-size: 24px; font-weight: 500; } // Зменшено заголовок
-    p { margin: 0; color: rgba(255,255,255,0.6); font-size: 14px; }
-  }
-  .btn-close { background: transparent; border: none; color: rgba(255,255,255,0.6); cursor: pointer; svg { width: 20px; height: 20px; } &:hover { color: white; } }
-}
-
-.modal-form {
-  display: flex; flex-direction: column; gap: 16px;
-
-  .form-split-layout {
-    display: grid; grid-template-columns: 1fr 280px; gap: 20px;
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;
+    h2 { margin: 0; font-size: 20px; font-weight: 500; }
+    .close-btn { background: none; border: none; color: rgba(255,255,255,0.5); font-size: 24px; cursor: pointer; &:hover { color: white; } }
   }
 
-  .left-col { display: flex; flex-direction: column; gap: 12px; min-width: 0;}
-  .right-col { display: flex; flex-direction: column; }
-
-  .form-row { display: flex; gap: 12px; .form-group { flex: 1; min-width: 0; } }
+  .form-row { display: flex; gap: 16px; margin-bottom: 16px;
+    .form-group { flex: 1; }
+  }
 
   .form-group {
-    display: flex; flex-direction: column; gap: 6px;
-    label { font-size: 13px; font-weight: 500; white-space: nowrap; } // Трохи менші лейбли
-    .text-danger { color: $danger; }
-
-    .form-control {
-      background: $bg-card; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;
-      padding: 10px 14px; color: white; font-family: 'Space Grotesk'; font-size: 14px;
-      outline: none; transition: border 0.2s;
-      width: 100%; // Гарантуємо, що інпут не буде ширшим за контейнер
-      box-sizing: border-box; // Включаємо паддінги в ширину
+    display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;
+    label { font-size: 13px; color: rgba(255,255,255,0.7); font-weight: 500;
+      .selected-date-preview { color: $teal; }
+    }
+    .form-control { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px; padding: 10px 12px; color: white; font-family: inherit; font-size: 14px; outline: none;
       &:focus { border-color: $teal; }
-      &::placeholder { color: rgba(255,255,255,0.3); }
     }
-
-    .time-input {
-      color-scheme: dark;
-      cursor: text;
-      &::-webkit-calendar-picker-indicator { cursor: pointer; opacity: 0.6; transition: 0.2s; &:hover { opacity: 1; } }
-    }
+    select.form-control { appearance: none; }
+    textarea.form-control { resize: vertical; }
   }
 
-  small { color: rgba(255,255,255,0.6); font-size: 11px; margin-top: -2px; line-height: 1.4; display: block; white-space: normal; overflow-wrap: break-word; }
-  .mt-3 { margin-top: 8px; }
+  .modal-footer { display: flex; justify-content: flex-end; gap: 12px; margin-top: 32px;
+    .btn-cancel { background: none; border: 1px solid rgba(255,255,255,0.2); color: white; padding: 10px 20px; border-radius: 8px; font-weight: 500; cursor: pointer; &:hover { background: rgba(255,255,255,0.05); } }
+    .btn-submit { background: $teal; color: $bg-main; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; &:hover { filter: brightness(1.1); } }
+  }
 
-  // --- КАСТОМНИЙ КАЛЕНДАР ---
-  .custom-calendar {
-    background: #232323;
-    border-radius: 16px;
-    padding: 16px; // Зменшено відступ (було 20px)
-    display: flex; flex-direction: column; gap: 12px;
-    height: 100%;
-
-    .calendar-nav {
-      display: flex; justify-content: space-between; align-items: center;
-      .cal-month-year { font-size: 14px; font-weight: 500; color: white; }
-      .btn-cal-arrow {
-        background: rgba(255,255,255,0.05); border: none; color: white; border-radius: 8px;
-        width: 28px; height: 28px; display: flex; justify-content: center; align-items: center;
-        cursor: pointer; transition: 0.2s; svg { width: 14px; height: 14px; }
-        &:hover { background: rgba(255,255,255,0.1); }
-      }
+  .calendar-widget { background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 16px;
+    .cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;
+      button { background: none; border: none; color: white; cursor: pointer; font-size: 16px; opacity: 0.7; &:hover { opacity: 1; } }
+      span { font-weight: 600; font-size: 15px; }
     }
-
-    .cal-weekdays {
-      display: grid; grid-template-columns: repeat(7, 1fr); text-align: center;
+    .cal-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; margin-bottom: 8px;
       span { color: rgba(255,255,255,0.4); font-size: 11px; font-weight: 500; }
     }
-
-    .cal-days-grid {
-      display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; row-gap: 8px; // Щільніша сітка
-      .day-cell {
-        display: flex; justify-content: center; align-items: center;
-        height: 28px; width: 28px; margin: 0 auto; border-radius: 8px; // Менші кружечки дат
-        font-size: 13px; font-weight: 500; cursor: pointer; transition: 0.2s;
-
+    .cal-days-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; row-gap: 8px;
+      .day-cell { display: flex; justify-content: center; align-items: center; height: 28px; width: 28px; margin: 0 auto; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; transition: 0.2s;
         &:hover:not(.empty):not(.selected) { background: rgba(255,255,255,0.1); }
         &.empty { cursor: default; }
         &.today { border: 1px solid rgba(255,255,255,0.4); font-weight: bold; }
         &.selected { background: $teal; color: $bg-main; box-shadow: 0 4px 10px rgba(58, 185, 160, 0.3); border: none; }
       }
     }
-  }
-
-  textarea.form-control { resize: none; }
-
-  // FOOTER КНОПКИ
-  .modal-footer {
-    display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px;
-    button { padding: 10px 20px; border-radius: 12px; font-family: 'Space Grotesk'; font-size: 14px; font-weight: 500; cursor: pointer; border: none; transition: 0.2s; }
-    .btn-cancel { background: transparent; color: white; border: 1px solid rgba(255,255,255,0.2); &:hover { background: rgba(255,255,255,0.05); } }
-    .btn-submit { background: $bg-card; color: white; outline: 1px solid rgba(255,255,255,0.1); &:hover { background: #2a2a2a; } }
   }
 }
