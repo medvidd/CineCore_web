@@ -3,6 +3,7 @@ using System;
 using CineCoreBack.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace CineCoreBack.Migrations
 {
     [DbContext(typeof(DbConfig))]
-    partial class DbConfigModelSnapshot : ModelSnapshot
+    [Migration("20260425132521_AddRoleTypeAndCastStatus")]
+    partial class AddRoleTypeAndCastStatus
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -38,8 +41,15 @@ namespace CineCoreBack.Migrations
             modelBuilder.Entity("CineCoreBack.Models.Actor", b =>
                 {
                     b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
                         .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateOnly?>("BirthDate")
+                        .HasColumnType("date")
+                        .HasColumnName("birth_date");
 
                     b.Property<string>("Characteristics")
                         .ValueGeneratedOnAdd()
@@ -47,8 +57,36 @@ namespace CineCoreBack.Migrations
                         .HasColumnName("characteristics")
                         .HasDefaultValueSql("'{}'::jsonb");
 
+                    b.Property<string>("Email")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("email");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("first_name");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("last_name");
+
+                    b.Property<string>("PhoneNum")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("phone_num");
+
                     b.HasKey("Id")
                         .HasName("actors_pkey");
+
+                    b.HasIndex(new[] { "Email" }, "actors_email_key")
+                        .IsUnique();
+
+                    b.HasIndex(new[] { "PhoneNum" }, "actors_phone_num_key")
+                        .IsUnique();
 
                     b.ToTable("actors", (string)null);
                 });
@@ -766,18 +804,6 @@ namespace CineCoreBack.Migrations
                         .IsUnique();
 
                     b.ToTable("users", (string)null);
-                });
-
-            modelBuilder.Entity("CineCoreBack.Models.Actor", b =>
-                {
-                    b.HasOne("CineCoreBack.Models.User", "User")
-                        .WithOne()
-                        .HasForeignKey("CineCoreBack.Models.Actor", "Id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("actors_user_id_fkey");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("CineCoreBack.Models.CallSheet", b =>

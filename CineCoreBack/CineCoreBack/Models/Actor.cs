@@ -7,17 +7,9 @@ public partial class Actor
 {
     public int Id { get; set; }
 
-    public string FirstName { get; set; } = null!;
-
-    public string LastName { get; set; } = null!;
-
-    public DateOnly? BirthDate { get; set; }
-
-    public string? PhoneNum { get; set; }
-
-    public string? Email { get; set; }
-
     public string? Characteristics { get; set; }
+
+    public virtual User User { get; set; } = null!;
 
     public virtual ICollection<Casting> Castings { get; set; } = new List<Casting>();
 }

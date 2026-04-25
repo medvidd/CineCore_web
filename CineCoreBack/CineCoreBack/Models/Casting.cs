@@ -13,6 +13,8 @@ public partial class Casting
 
     public string? Notes { get; set; }
 
+    public string CastStatus { get; set; } = "pending";
+
     public virtual Actor Actor { get; set; } = null!;
 
     public virtual Role Role { get; set; } = null!;
