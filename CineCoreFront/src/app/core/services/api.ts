@@ -168,4 +168,20 @@ export class Api {
   deleteScene(sceneId: number) {
     return this.http.delete(`${this.SCRIPT_API_URL}/scene/${sceneId}`);
   }
+
+  getProjectResources(projectId: number) {
+    return this.http.get<any>(`${this.SCRIPT_API_URL}/project/${projectId}/resources`);
+  }
+  linkResource(sceneId: number, resourceId: number) {
+    return this.http.post(`${this.SCRIPT_API_URL}/scene/${sceneId}/resource/${resourceId}`, {});
+  }
+  unlinkResource(sceneId: number, resourceId: number) {
+    return this.http.delete(`${this.SCRIPT_API_URL}/scene/${sceneId}/resource/${resourceId}`);
+  }
+  updateRoleColor(roleId: number, colorHex: string) {
+    return this.http.put(`${this.SCRIPT_API_URL}/role/${roleId}/color`, JSON.stringify(colorHex), { headers: { 'Content-Type': 'application/json' } });
+  }
+  quickCreateResource(projectId: number, type: string, name: string) {
+    return this.http.post<any>(`${this.SCRIPT_API_URL}/project/${projectId}/${type}`, { name });
+  }
 }

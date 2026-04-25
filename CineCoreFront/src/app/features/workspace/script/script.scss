@@ -6,7 +6,6 @@ $teal: #3AB9A0;
   display: block;
   background: $bg-main;
   box-sizing: border-box;
-  /* Вираховуємо точну висоту екрану МІНУС відступи (96px + 32px) з workspace-layout */
   height: calc(100vh - 128px);
   overflow: hidden;
 }
@@ -14,20 +13,20 @@ $teal: #3AB9A0;
 .script-wrapper {
   display: flex;
   height: 100%;
-  max-height: 100%; /* Гарантуємо, що враппер не вийде за межі вікна */
+  max-height: 100%;
   width: 100%;
   overflow: hidden;
   font-family: 'Space Grotesk', sans-serif;
   color: white;
-
-  // Додаємо стилістики "картки"
   background: $bg-main;
   border-radius: 24px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.5);
 }
 
-// --- БОКОВІ ПАНЕЛІ ---
+// =====================================
+// БОКОВІ ПАНЕЛІ (Ліва і Права)
+// =====================================
 .left-panel, .right-panel {
   width: 320px;
   background: $bg-main;
@@ -45,39 +44,20 @@ $teal: #3AB9A0;
     justify-content: space-between;
     align-items: center;
     padding: 24px;
-    flex-shrink: 0; /* Щоб хедер не стискався */
+    flex-shrink: 0;
     h2 { margin: 0; font-size: 18px; font-weight: 500; }
   }
 }
 
 .left-panel { border-right: 1px solid rgba(255,255,255,0.1); }
+.right-panel { border-left: 1px solid rgba(255,255,255,0.1); }
 
-.right-panel {
-  border-left: 1px solid rgba(255,255,255,0.1);
-
-  .details-scroll {
-    flex: 1; /* Займає залишок простору */
-    min-height: 0; /* Дозволяє внутрішній скрол */
-    padding: 0 24px 24px 24px;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-
-    /* Приховуємо видимий скролбар, залишаючи можливість скролити */
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE та Edge */
-    &::-webkit-scrollbar {
-      display: none; /* Chrome, Safari, Opera */
-    }
-  }
-}
-
-// Кнопки
+// =====================================
+// КНОПКИ ТА ПЕРЕМИКАЧІ
+// =====================================
 .btn-icon { background: rgba(255,255,255,0.05); border: none; color: white; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; transition: 0.2s; &:hover { background: rgba(255,255,255,0.1); } }
 .btn-toggle { background: transparent; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: white; padding: 6px 12px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-family: 'Space Grotesk'; font-size: 12px; &:hover { background: rgba(255,255,255,0.05); border-color: $teal; color: $teal; } }
 
-// Ліва панель - Перемикач
 .scene-view-toggle {
   margin: 16px 24px 0 24px; display: flex; background: #000B10; border-radius: 12px; padding: 4px; flex-shrink: 0;
   button { flex: 1; background: transparent; border: none; color: rgba(255,255,255,0.5); padding: 8px; border-radius: 8px; cursor: pointer; font-family: 'Space Grotesk'; font-size: 14px; transition: 0.2s;
@@ -92,153 +72,65 @@ $teal: #3AB9A0;
   .plus-icon { font-size: 18px; font-weight: bold; }
 }
 
-.scenes-list {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  padding: 8px 16px 24px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px; // Відступ між картками
-
-  /* Скролбар */
-  &::-webkit-scrollbar { width: 4px; }
-  &::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
-
-  .scene-item {
-    background: rgba(255, 255, 255, 0.03); // Напівпрозорий фон прямокутника
-    border: 1px solid rgba(255, 255, 255, 0.1); // Світлий бордюр
-    border-radius: 12px;
-    padding: 16px;
-    cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    display: flex;
-    gap: 12px;
-    position: relative;
-
-    &:hover {
-      background: rgba(255, 255, 255, 0.06);
-      border-color: rgba(255, 255, 255, 0.2);
-      transform: translateY(-1px); // Легкий ефект підняття
-    }
-
-    &.active {
-      background: rgba(58, 185, 160, 0.08); // Фон з відтінком тілу для активної сцени
-      border-color: $teal; // Яскравий бордюр основного кольору
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-
-      .scene-id { color: $teal; }
-      .scene-title { color: white; font-weight: 500; }
-    }
-
-    /* Ручка для Drag & Drop */
-    .scene-drag-handle {
-      color: rgba(255, 255, 255, 0.2);
-      display: flex;
-      align-items: center;
-      cursor: grab;
-      &:hover { color: $teal; }
-    }
-
-    .scene-content-wrapper {
-      flex: 1;
-      min-width: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .scene-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-
-      .scene-id {
-        font-family: 'Space Grotesk';
-        font-size: 12px;
-        font-weight: 600;
-        color: rgba(255, 255, 255, 0.4);
-        letter-spacing: 0.5px;
-      }
-
-      .dot-active {
-        width: 8px;
-        height: 8px;
-        background: $teal;
-        border-radius: 50%;
-        box-shadow: 0 0 8px rgba(58, 185, 160, 0.6);
-      }
-    }
-
-    .scene-title {
-      font-size: 14px;
-      color: rgba(255, 255, 255, 0.8);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      text-transform: uppercase;
-    }
-
-    .scene-meta {
-      display: flex;
-      gap: 8px;
-      font-size: 12px;
-      color: rgba(255, 255, 255, 0.4);
-    }
-
-    /* Стиль при перетягуванні */
-    &.cdk-drag-preview {
-      background: $bg-card;
-      border: 1px solid $teal;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-      opacity: 0.9;
-    }
-
-    // Додайте в .scene-item всередині script.scss
-
-    .delete-scene-btn {
-      background: transparent;
-      border: none;
-      color: rgba(255, 255, 255, 0.2);
-      padding: 4px;
-      cursor: pointer;
-      border-radius: 4px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: 0.2s;
-      opacity: 0; // Прихована за замовчуванням
-
-      &:hover {
-        color: #ff4d4d; // Червоний колір при ховері на саму кнопку
-        background: rgba(255, 77, 77, 0.1);
-      }
-    }
-
-    &:hover .delete-scene-btn {
-      opacity: 1; // З'являється при наведенні на картку сцени
-    }
-
-    &.active .delete-scene-btn {
-      opacity: 0.6; // Залишається злегка видимою для активної сцени
-      &:hover { opacity: 1; }
-    }
-  }
-}
-
-// Перемикач для Read Mode
 .toggle-switch {
   display: flex; align-items: center; gap: 6px; font-family: 'Space Grotesk'; font-size: 12px; color: rgba(255,255,255,0.7); cursor: pointer;
   input { accent-color: $teal; cursor: pointer; width: 14px; height: 14px; }
 }
 
-// --- ЦЕНТРАЛЬНА ПАНЕЛЬ (Редактор) ---
+// =====================================
+// СПИСОК СЦЕН (Ліва панель)
+// =====================================
+.scenes-list {
+  flex: 1; min-height: 0; overflow-y: auto; padding: 8px 16px 24px 16px;
+  display: flex; flex-direction: column; gap: 12px;
+
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+
+  .scene-item {
+    background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px; padding: 16px; cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex; gap: 12px; position: relative;
+
+    &:hover { background: rgba(255, 255, 255, 0.06); border-color: rgba(255, 255, 255, 0.2); transform: translateY(-1px); }
+
+    &.active {
+      background: rgba(58, 185, 160, 0.08); border-color: $teal; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      .scene-id { color: $teal; }
+      .scene-title { color: white; font-weight: 500; }
+      .delete-scene-btn { opacity: 0.6; &:hover { opacity: 1; } }
+    }
+
+    .scene-drag-handle { color: rgba(255, 255, 255, 0.2); display: flex; align-items: center; cursor: grab; &:hover { color: $teal; } }
+
+    .scene-content-wrapper { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+
+    .scene-top { display: flex; justify-content: space-between; align-items: center; }
+    .scene-id { font-family: 'Space Grotesk'; font-size: 12px; font-weight: 600; color: rgba(255, 255, 255, 0.4); letter-spacing: 0.5px; }
+    .dot-active { width: 8px; height: 8px; background: $teal; border-radius: 50%; box-shadow: 0 0 8px rgba(58, 185, 160, 0.6); }
+
+    .scene-title { font-size: 14px; color: rgba(255, 255, 255, 0.8); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-transform: uppercase; }
+    .scene-meta { display: flex; gap: 8px; font-size: 12px; color: rgba(255, 255, 255, 0.4); }
+
+    &.cdk-drag-preview { background: $bg-card; border: 1px solid $teal; box-shadow: 0 8px 24px rgba(0,0,0,0.5); opacity: 0.9; }
+
+    // Кнопка видалення сцени
+    .delete-scene-btn {
+      background: transparent; border: none; color: rgba(255, 255, 255, 0.2); padding: 4px;
+      cursor: pointer; border-radius: 4px; display: flex; align-items: center; justify-content: center;
+      transition: 0.2s; opacity: 0;
+      &:hover { color: #ff4d4d; background: rgba(255, 77, 77, 0.1); }
+    }
+    &:hover .delete-scene-btn { opacity: 1; }
+  }
+}
+
+// =====================================
+// ЦЕНТРАЛЬНА ПАНЕЛЬ (Редактор)
+// =====================================
 .center-panel {
   flex: 1; display: flex; flex-direction: column; background: #070D12; position: relative; transition: 0.3s; min-width: 0;
-  &.zen-mode { background: #04080A; }
-}
-.center-panel.zen-mode .script-paper {
-  max-width: 1100px; // ← або інше значення на ваш смак
+  &.zen-mode { background: #04080A; .script-paper { max-width: 1100px; } }
 }
 
 .editor-toolbar {
@@ -258,321 +150,241 @@ $teal: #3AB9A0;
 }
 
 .script-content-area {
-  flex: 1;
-  width: 100%;
-  min-height: 0;
-  overflow-y: auto;
-  padding: 40px 0 80px 0;
-  display: flex;
-  justify-content: center;
-
+  flex: 1; width: 100%; min-height: 0; overflow-y: auto; padding: 40px 0 80px 0; display: flex; justify-content: center;
   &::-webkit-scrollbar { width: 8px; }
   &::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 10px; }
 
-  //&.write-mode {
-  //  overflow: hidden;
-  //}
+  &.left-closed .script-paper, &.right-closed .script-paper { max-width: 950px; }
+  &.left-closed.right-closed .script-paper { max-width: 1200px; }
 }
 
-.script-content-area.left-closed .script-paper,
-.script-content-area.right-closed .script-paper {
-  max-width: 950px;
-}
-
-.script-content-area.left-closed.right-closed .script-paper {
-  max-width: 1200px;
-}
-
-// --- АРКУШ СЦЕНАРІЮ ---
+// =====================================
+// АРКУШ СЦЕНАРІЮ
+// =====================================
 .script-paper {
-  width: 100%; max-width: 800px;
-  padding: 0 20px;
-  transition: max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1); // ← додати плавний перехід
+  width: 100%; max-width: 800px; padding: 0 20px; transition: max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex; flex-direction: column; gap: 12px;
-  font-family: 'Courier Prime', 'Space Mono', monospace;
-  font-size: 16px; line-height: 1.5;
+  font-family: 'Courier Prime', 'Space Mono', monospace; font-size: 16px; line-height: 1.5;
 
-  &::after {
-    content: ''; display: block; height: 15vh; flex-shrink: 0;
-  }
+  &::after { content: ''; display: block; height: 15vh; flex-shrink: 0; }
 
-  /* ДОДАЄМО: Розтягуємо аркуш на весь екран і прибираємо невидимий блок */
-  &.write-mode {
-    height: auto;
-    padding-bottom: 80px;
-    &::after { display: none; }
-  }
+  &.write-mode { height: auto; padding-bottom: 80px; &::after { display: none; } }
 
   .scene-divider {
-    display: flex; align-items: center; gap: 16px;
-    margin: 30px 0 24px 0;
+    display: flex; align-items: center; gap: 16px; margin: 30px 0 24px 0;
     &::before, &::after { content: ''; flex: 1; height: 1px; background: rgba(255,255,255,0.1); }
     span { color: $teal; font-family: 'Space Grotesk'; font-weight: 500; font-size: 14px; background: rgba(58, 185, 160, 0.1); padding: 4px 12px; border-radius: 12px; }
-    &.write-mode-divider {
-      margin: 12px 0 12px 0;
-    }
+    &.write-mode-divider { margin: 12px 0 12px 0; }
   }
 
-  // --- WRITE MODE (Велике поле вводу) ---
+  // --- WRITE MODE ---
   .write-hint {
     background: rgba(58, 185, 160, 0.1); color: $teal; padding: 12px 20px; border-radius: 8px;
     margin-bottom: 20px; font-family: 'Space Grotesk', sans-serif; font-size: 14px; text-align: center;
   }
 
   .raw-editor {
-    width: 100%;
-    background: transparent;
-    border: none;
-    color: white;
-    font-family: 'Courier Prime', 'Space Mono', monospace;
-    font-size: 16px;
-    line-height: 1.6;
-    outline: none;
-    padding: 0 0 80px 0;  // ← відступ знизу тут
-    min-height: 60vh;
-    height: auto;          // ← явно
-    display: block;        // ← contenteditable має бути block
-    white-space: pre-wrap;
-    word-break: break-word;
-    cursor: text;
-    box-sizing: border-box; // ← щоб padding враховувався в висоті
-
-    &:empty::before {
-      content: attr(data-placeholder);
-      color: rgba(255, 255, 255, 0.3);
-      pointer-events: none;
-    }
+    width: 100%; background: transparent; border: none; color: white;
+    font-family: 'Courier Prime', 'Space Mono', monospace; font-size: 16px; line-height: 1.6;
+    outline: none; padding: 0 0 80px 0; min-height: 60vh; height: auto; display: block;
+    white-space: pre-wrap; word-break: break-word; cursor: text; box-sizing: border-box;
+    &:empty::before { content: attr(data-placeholder); color: rgba(255, 255, 255, 0.3); pointer-events: none; }
   }
 
-  // --- БЛОК СЦЕНАРІЮ (Breakdown/Read) ---
+  // --- BREAKDOWN / READ MODE ---
   .script-block {
-    position: relative;
-    display: flex; align-items: flex-start;
-    border-left: 4px solid transparent;
-    border-radius: 4px;
-    margin-left: -16px; padding-left: 12px;
-    transition: background 0.2s;
-
+    position: relative; display: flex; align-items: flex-start;
+    border-left: 4px solid transparent; border-radius: 4px;
+    margin-left: -16px; padding-left: 12px; transition: background 0.2s;
     margin-bottom: 20px;
 
-    &.type-character,
-    &.type-parenthetical {
-      margin-bottom: 4px;
-    }
+    &.type-character, &.type-parenthetical { margin-bottom: 4px; }
+    &.type-dialogue { margin-bottom: 12px; }
 
-    &.type-dialogue {
-      margin-bottom: 12px;
-    }
-
-    // --- КЛАСИ ЛІНІЙ (Прямі, пунктири, хвильки, зигзаги) ---
+    // Класи ліній
     &.line-none { border-left-color: transparent !important; }
     &.line-solid { border-left-style: solid; border-left-color: var(--line-color); }
     &.line-dashed { border-left-style: dashed; border-left-color: var(--line-color); }
     &.line-dotted { border-left-style: dotted; border-left-color: var(--line-color); }
     &.line-double { border-left-style: double; border-left-width: 6px; border-left-color: var(--line-color); }
 
-    // Хвильки та Зигзаги реалізуються через SVG-маски
     &.line-wavy::before, &.line-zigzag::before {
-      content: ''; position: absolute; left: -4px; top: 0; bottom: 0; width: 6px; pointer-events: none;
-      background-color: var(--line-color);
+      content: ''; position: absolute; left: -4px; top: 0; bottom: 0; width: 6px; pointer-events: none; background-color: var(--line-color);
     }
+    &.line-wavy { border-left-color: transparent !important; &::before { mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='12' viewBox='0 0 6 12'%3E%3Cpath d='M3,0 C6,3 0,9 3,12' fill='none' stroke='black' stroke-width='2'/%3E%3C/svg%3E"); mask-size: 6px 12px; mask-repeat: repeat-y; -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='12' viewBox='0 0 6 12'%3E%3Cpath d='M3,0 C6,3 0,9 3,12' fill='none' stroke='black' stroke-width='2'/%3E%3C/svg%3E"); -webkit-mask-size: 6px 12px; -webkit-mask-repeat: repeat-y; } }
+    &.line-zigzag { border-left-color: transparent !important; &::before { mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='12' viewBox='0 0 6 12'%3E%3Cpolyline points='0,0 6,6 0,12' fill='none' stroke='black' stroke-width='2'/%3E%3C/svg%3E"); mask-size: 6px 12px; mask-repeat: repeat-y; -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='12' viewBox='0 0 6 12'%3E%3Cpolyline points='0,0 6,6 0,12' fill='none' stroke='black' stroke-width='2'/%3E%3C/svg%3E"); -webkit-mask-size: 6px 12px; -webkit-mask-repeat: repeat-y; } }
 
-    &.line-wavy {
-      border-left-color: transparent !important;
-      &::before {
-        mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='12' viewBox='0 0 6 12'%3E%3Cpath d='M3,0 C6,3 0,9 3,12' fill='none' stroke='black' stroke-width='2'/%3E%3C/svg%3E");
-        mask-size: 6px 12px; mask-repeat: repeat-y;
-        -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='12' viewBox='0 0 6 12'%3E%3Cpath d='M3,0 C6,3 0,9 3,12' fill='none' stroke='black' stroke-width='2'/%3E%3C/svg%3E");
-        -webkit-mask-size: 6px 12px; -webkit-mask-repeat: repeat-y;
-      }
-    }
+    &.mode-breakdown:hover { background: rgba(255,255,255,0.02); .block-controls { opacity: 1; } }
 
-    &.line-zigzag {
-      border-left-color: transparent !important;
-      &::before {
-        mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='12' viewBox='0 0 6 12'%3E%3Cpolyline points='0,0 6,6 0,12' fill='none' stroke='black' stroke-width='2'/%3E%3C/svg%3E");
-        mask-size: 6px 12px; mask-repeat: repeat-y;
-        -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='12' viewBox='0 0 6 12'%3E%3Cpolyline points='0,0 6,6 0,12' fill='none' stroke='black' stroke-width='2'/%3E%3C/svg%3E");
-        -webkit-mask-size: 6px 12px; -webkit-mask-repeat: repeat-y;
-      }
-    }
-
-    // Ховер показує кнопку типу
-    &.mode-breakdown:hover {
-      background: rgba(255,255,255,0.02);
-      .block-controls { opacity: 1; }
-    }
-
-    // Додайте / Оновіть цей блок всередині .script-block
-    .text-content {
-      width: 100%;
-      display: block;
-      white-space: pre-wrap; /* ВАЖЛИВО: Це зберігає одинарні ентери! */
-      word-break: break-word;
-    }
+    .text-content { width: 100%; display: block; white-space: pre-wrap; word-break: break-word; }
 
     .block-controls {
-      position: absolute; left: -45px; top: 2px; opacity: 0; transition: opacity 0.2s;
-      z-index: 1000; /* ВАЖЛИВО: Щоб меню було ПОВЕРХ сусідніх блоків */
-
+      position: absolute; left: -45px; top: 2px; opacity: 0; transition: opacity 0.2s; z-index: 1000;
       .btn-type-selector { background: $bg-card; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; width: 28px; height: 28px; display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 14px; &:hover { background: rgba(255,255,255,0.1); } }
-
-      // Випадаюче меню
       .type-menu {
         position: absolute; left: 32px; top: 0; background: $bg-card; border: 1px solid $teal; border-radius: 8px; padding: 8px; display: flex; flex-direction: column; gap: 4px; box-shadow: 0 10px 20px rgba(0,0,0,0.5); width: 160px;
         button { background: transparent; border: none; color: white; text-align: left; padding: 8px; border-radius: 6px; cursor: pointer; font-family: 'Space Grotesk'; font-size: 12px; &:hover { background: $teal; color: $bg-main; } }
       }
     }
 
-    // --- ПРАВИЛА ФОРМАТУВАННЯ ---
+    // Правила відступів
     &.type-scene_heading .text-content { font-weight: 700; text-transform: uppercase; margin-bottom: 8px; }
     &.type-action .text-content { color: rgba(255,255,255,0.85); margin-bottom: 8px; }
     &.type-shot .text-content { font-weight: 700; text-transform: uppercase; margin-bottom: 8px; }
-
-    &.type-character .text-content {
-      margin-left: 35%; width: 40%; font-weight: 700; text-transform: uppercase; margin-top: 16px; margin-bottom: 0;
-    }
-
-    &.type-parenthetical .text-content {
-      margin-left: 28%; width: 30%; color: rgba(255,255,255,0.6); font-style: italic; margin-bottom: 0;
-    }
-
-    &.type-dialogue .text-content {
-      margin-left: 20%; width: 55%; margin-bottom: 12px;
-    }
-
-    &.type-transition .text-content {
-      text-align: right; font-weight: 700; text-transform: uppercase; margin-top: 16px; padding-right: 5%; margin-bottom: 8px;
-    }
+    &.type-character .text-content { margin-left: 35%; width: 40%; font-weight: 700; text-transform: uppercase; margin-top: 16px; margin-bottom: 0; }
+    &.type-parenthetical .text-content { margin-left: 28%; width: 30%; color: rgba(255,255,255,0.6); font-style: italic; margin-bottom: 0; }
+    &.type-dialogue .text-content { margin-left: 20%; width: 55%; margin-bottom: 12px; }
+    &.type-transition .text-content { text-align: right; font-weight: 700; text-transform: uppercase; margin-top: 16px; padding-right: 5%; margin-bottom: 8px; }
   }
 }
 
-// Права панель
+// =====================================
+// ПРАВА ПАНЕЛІ (Ресурси та Теги)
+// =====================================
+.right-panel {
+  .details-scroll {
+    flex: 1; min-height: 0; padding: 0 24px 24px 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 24px;
+    scrollbar-width: none; -ms-overflow-style: none; &::-webkit-scrollbar { display: none; }
+  }
+}
+
 .detail-section {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  display: flex; flex-direction: column; gap: 12px;
 
   .section-title {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    height: 28px;
-
-    h3 {
-      font-size: 18px;
-      color: white;
-      font-weight: 500;
-      margin: 0;
-    }
-
-    .action-link {
-      color: $teal;
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-    }
-
+    display: flex; justify-content: space-between; align-items: center; height: 28px;
+    h3 { font-size: 18px; color: white; font-weight: 500; margin: 0; }
     .btn-icon-small {
-      background: transparent;
-      border: none;
-      color: rgba(255,255,255,0.5);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 4px;
-      border-radius: 4px;
+      background: transparent; border: none; color: rgba(255,255,255,0.5); cursor: pointer;
+      display: flex; align-items: center; justify-content: center; padding: 4px; border-radius: 4px;
       &:hover { background: rgba(255,255,255,0.1); color: white; }
     }
   }
-  .items-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
+
+  .items-list { display: flex; flex-direction: column; gap: 8px; }
 }
+
+// Картки ресурсів
+.tag-card, .location-card {
+  background: $bg-card; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 12px; box-sizing: border-box;
+}
+
 .tag-card {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  background: $bg-card;
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  height: 65px;
-  box-sizing: border-box;
-  justify-content: space-between;
-
-  .card-left {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    color: white;
-    font-size: 14px;
-    font-weight: 500;
-  }
-
-  .info {
-    display: flex;
-    flex-direction: column;
-    h4 {
-      margin: 0;
-      font-size: 14px;
-      font-weight: 500;
-      color: white;
-      line-height: 20px;
-    }
-    span {
-      font-size: 12px;
-      color: rgba(255,255,255,0.6);
-      line-height: 16px;
-    }
-  }
-
-  .menu-dots {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    padding: 4px;
-    cursor: pointer;
-    .dot {
-      width: 4px; height: 4px;
-      border: 1px solid rgba(255,255,255,0.6);
-      border-radius: 50%;
-    }
-    &:hover .dot { border-color: white; }
-  }
+  display: flex; align-items: center; gap: 12px; height: 65px; justify-content: space-between;
+  .card-left { display: flex; align-items: center; gap: 12px; }
+  .avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: white; font-size: 14px; font-weight: 500; }
+  .info { display: flex; flex-direction: column; h4 { margin: 0; font-size: 14px; font-weight: 500; color: white; line-height: 20px; } }
 }
 
-// Картка локації
 .location-card {
-  background: $bg-card;
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 12px;
-
   h4 { margin: 0 0 4px 0; font-size: 16px; font-weight: 500; }
-  p { margin: 0 0 4px 0; font-size: 14px; color: rgba(255,255,255,0.6); }
-  .loc-meta { font-size: 12px; color: rgba(255,255,255,0.6); }
+  p { margin: 0; font-size: 14px; color: rgba(255,255,255,0.6); }
 }
 
-// Поле Notes
 .notes-card {
-  background: $bg-card;
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 12px;
-  color: rgba(255,255,255,0.6);
-  font-size: 14px;
-  min-height: 45px;
+  background: $bg-card; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 12px; color: rgba(255,255,255,0.6); font-size: 14px; min-height: 150px; overflow: auto;
+}
+
+// Спеціальні елементи
+.auto-badge { font-size: 10px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1px; border: 1px solid rgba(255,255,255,0.1); padding: 1px 4px; border-radius: 4px; width: fit-content; }
+
+.scrollable-list {
+  min-height: 100px; max-height: 220px; overflow-y: auto; padding-right: 4px;
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+}
+
+.empty-hint { min-height: auto !important; text-align: center; border: 1px dashed rgba(255,255,255,0.2) !important; display: flex; align-items: center; justify-content: center; }
+
+// --- КНОПКА UNLINK (ХРЕСТИК БЕЗ ФОНУ) ---
+.btn-unlink {
+  background: transparent; border: none; color: rgba(255,255,255,0.4); padding: 4px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; transition: 0.2s;
+  &:hover { color: #ff4d4d; transform: scale(1.1); }
+}
+
+// --- ПОПОВЕР ПЕРСОНАЖА (Меню + Колір) ---
+.menu-dots {
+  display: flex; flex-direction: column; gap: 2px; padding: 4px 8px; cursor: pointer;
+  .dot { width: 4px; height: 4px; border: 1px solid rgba(255,255,255,0.6); border-radius: 50%; }
+  &:hover .dot { border-color: white; background: white; }
+}
+
+.popover-menu {
+  position: fixed; /* ВАЖЛИВО: fixed витягує меню з-під overflow: auto */
+  z-index: 9999;   /* Щоб точно бути поверх усього */
+  background: $bg-card; border: 1px solid $teal; border-radius: 12px; padding: 12px;
+  display: flex; flex-direction: column; gap: 8px;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.8); width: 160px;
+
+  .color-picker-label {
+    display: flex; justify-content: space-between; align-items: center; gap: 12px; cursor: pointer; padding: 4px 8px; border-radius: 6px;
+    &:hover { background: rgba(255,255,255,0.05); }
+    input[type="color"] { border: none; width: 24px; height: 24px; background: transparent; cursor: pointer; padding: 0; }
+  }
+
+  button {
+    background: transparent; border: none; color: white; text-align: left; padding: 6px 8px; border-radius: 6px; cursor: pointer; font-family: 'Space Grotesk'; font-size: 12px;
+    &:hover { background: rgba(255,255,255,0.05); }
+  }
+}
+
+// =====================================
+// МОДАЛЬНЕ ВІКНО ДОДАВАННЯ РЕСУРСІВ
+// =====================================
+.modal-overlay {
+  position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+  background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px);
+  display: flex; justify-content: center; align-items: center; z-index: 2000;
+}
+
+.modal-container {
+  width: 100%; max-width: 400px; background: $bg-card; border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1); padding: 32px;
+  .modal-header h2 { margin: 0 0 24px 0; font-size: 20px; font-weight: 500; }
+}
+
+.modal-search {
+  background: #000B10; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;
+  display: flex; align-items: center; padding: 0 16px; gap: 12px; margin-bottom: 20px;
+  &:focus-within { border-color: $teal; }
+  svg { width: 16px; color: rgba(255,255,255,0.4); }
+  input { flex: 1; background: transparent; border: none; color: white; padding: 12px 0; font-family: inherit; outline: none; }
+}
+
+.resource-list {
+  display: flex; flex-direction: column; gap: 4px;
+  .resource-row {
+    display: flex; justify-content: space-between; padding: 12px 16px;
+    background: rgba(255,255,255,0.02); border-radius: 8px; cursor: pointer; transition: 0.2s; border: 1px solid transparent;
+    &:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); }
+  }
+  .new-row {
+    background: rgba(58, 185, 160, 0.1); border-color: rgba(58, 185, 160, 0.3);
+    &:hover { background: rgba(58, 185, 160, 0.2); }
+  }
+}
+
+// --- СТИЛІ ДЛЯ ВИДІЛЕННЯ ПЕРСОНАЖА ---
+
+// Підсвітка картки збоку
+.tag-card.highlighted-card {
+  border-color: $teal;
+  background: rgba(58, 185, 160, 0.1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  transform: translateX(-4px); // Легкий зсув для акценту
+  transition: all 0.2s ease;
+}
+
+// Підсвітка тексту в сценарії
+.script-block.highlighted-line {
+  border-radius: 8px;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-right: 16px; // Щоб фон не обрізався рівно по тексту
+  margin-left: -20px;  // Розширюємо фон трохи вліво
+  padding-left: 16px;
+  transition: background-color 0.3s ease;
 }
