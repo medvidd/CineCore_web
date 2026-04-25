@@ -14,6 +14,7 @@ export class Api {
   private readonly CREW_API_URL = 'http://localhost:5214/api/crew';
   private readonly SCRIPT_API_URL = 'http://localhost:5214/api/script';
   private readonly ACTORS_API_URL = 'http://localhost:5214/api/actors';
+  private readonly PLANNER_API_URL = 'http://localhost:5214/api/planner'; // ДОДАЄМО СЮДИ
 
   private roleSubject = new BehaviorSubject<string>('none');
   currentRole$ = this.roleSubject.asObservable();
@@ -229,5 +230,26 @@ export class Api {
   }
   getActorCastingsInProject(projectId: number, userId: number): Observable<any[]> {
     return this.http.get<any[]>(`${this.PROJECTS_API_URL}/${projectId}/actors/${userId}/my-castings`);
+  }
+
+  // PLANNER
+  getPlannerBoard(projectId: number): Observable<any> {
+    return this.http.get(`${this.PLANNER_API_URL}/project/${projectId}/board`);
+  }
+
+  moveScene(projectId: number, sceneId: number, targetShootDayId: number | null, newIndex: number): Observable<any> {
+    return this.http.put(`${this.PLANNER_API_URL}/project/${projectId}/move-scene`, { sceneId, targetShootDayId, newIndex });
+  }
+
+  createShootDay(projectId: number, dayData: any): Observable<any> {
+    return this.http.post(`${this.PLANNER_API_URL}/project/${projectId}/shoot-day`, dayData);
+  }
+
+  updateShootDay(projectId: number, dayId: number, data: any): Observable<any> {
+    return this.http.put(`${this.PLANNER_API_URL}/project/${projectId}/shoot-day/${dayId}`, data);
+  }
+
+  deleteShootDay(projectId: number, dayId: number): Observable<any> {
+    return this.http.delete(`${this.PLANNER_API_URL}/project/${projectId}/shoot-day/${dayId}`);
   }
 }

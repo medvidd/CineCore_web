@@ -2,26 +2,32 @@ import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DragDropModule, CdkDragDrop, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
-import { Api} from '../../../core/services/api';
+import { Api } from '../../../core/services/api';
+import { ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'app-planner',
   standalone: true,
-  imports: [CommonModule, FormsModule, DragDropModule], // Додаємо DragDropModule
+  imports: [CommonModule, FormsModule, DragDropModule],
   templateUrl: './planner.html',
   styleUrl: './planner.scss'
 })
 export class Planner implements OnInit {
   private api = inject(Api);
   private cdr = inject(ChangeDetectorRef);
+  private route = inject(ActivatedRoute);
+
+  projectId: number = 0;
+
+  // Об'єкт дошки, що відповідає PlannerBoardDto з бекенду
+  board: any = { scenePool: [], shootDays: [] };
 
   currentUserRole: string = 'none';
   canEdit: boolean = false;
-
   isModalOpen = false;
 
   newDayForm = {
-    unit: '', shootDate: '', callTime: '', shiftStart: '', shiftEnd: '', baseLocation: '', notes: ''
+    unit: 'MAIN UNIT', shootDate: '', callTime: '08:00', shiftStart: '09:00', shiftEnd: '19:00', baseLocation: null as number | null, notes: ''
   };
 
   displayMonth = 0;
@@ -31,7 +37,14 @@ export class Planner implements OnInit {
   monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
   ngOnInit() {
-    // Ініціалізуємо поточний місяць
+    // Отримуємо projectId з URL (наприклад: /workspace/1/planner)
+    this.route.parent?.params.subscribe(params => {
+      this.projectId = +params['id'];
+      if (this.projectId) {
+        this.loadBoard();
+      }
+    });
+
     this.api.currentRole$.subscribe(role => {
       this.currentUserRole = role;
       this.canEdit = (role === 'owner' || role === 'manager');
@@ -44,14 +57,68 @@ export class Planner implements OnInit {
     this.generateCalendar();
   }
 
-  get currentMonthName() {
-    return this.monthNames[this.displayMonth];
+  loadBoard() {
+    if (!this.projectId) return;
+    this.api.getPlannerBoard(this.projectId).subscribe({
+      next: (data) => {
+        this.board = data;
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('Error loading planner board', err)
+    });
   }
 
+  // Обробка Drag & Drop
+  drop(event: CdkDragDrop<any[]>, targetDayId: number | null) {
+    const scene = event.previousContainer.data[event.previousIndex];
+
+    if (event.previousContainer === event.container) {
+      moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
+    } else {
+      transferArrayItem(
+        event.previousContainer.data,
+        event.container.data,
+        event.previousIndex,
+        event.currentIndex
+      );
+    }
+
+    // Відправляємо на бекенд
+    this.api.moveScene(this.projectId, scene.id, targetDayId, event.currentIndex).subscribe({
+      error: (err) => {
+        console.error('Failed to move scene', err);
+        this.loadBoard(); // Відкочуємо зміни в UI, якщо запит впав
+      }
+    });
+  }
+
+  // --- CRUD Знімальних днів ---
+  submitNewDay() {
+    this.api.createShootDay(this.projectId, this.newDayForm).subscribe({
+      next: () => {
+        this.closeModal();
+        this.loadBoard(); // Перезавантажуємо дошку з новим днем
+      },
+      error: (err) => console.error('Error creating shoot day', err)
+    });
+  }
+
+  deleteDay(dayId: number) {
+    if (confirm('Ви впевнені, що хочете видалити цей знімальний день? Усі сцени повернуться в пул.')) {
+      this.api.deleteShootDay(this.projectId, dayId).subscribe(() => {
+        this.loadBoard();
+      });
+    }
+  }
+
+  openModal() { this.isModalOpen = true; }
+  closeModal() { this.isModalOpen = false; }
+
+  // --- Календар ---
+  get currentMonthName() { return this.monthNames[this.displayMonth]; }
+
   generateCalendar() {
-    // Шукаємо перший день місяця (0 - Неділя, 1 - Понеділок...)
     const firstDay = new Date(this.displayYear, this.displayMonth, 1).getDay();
-    // Кількість днів у місяці
     const daysInMonth = new Date(this.displayYear, this.displayMonth + 1, 0).getDate();
 
     this.calendarWeeks = [];
@@ -68,37 +135,24 @@ export class Planner implements OnInit {
         currentDayOfWeek = 0;
       }
     }
-    // Якщо тиждень не закінчився, але дні місяця закінчилися, додаємо хвіст
     if (currentDayOfWeek > 0) {
       this.calendarWeeks.push(currentWeek);
     }
   }
 
   prevMonth() {
-    if (this.displayMonth === 0) {
-      this.displayMonth = 11;
-      this.displayYear--;
-    } else {
-      this.displayMonth--;
-    }
+    if (this.displayMonth === 0) { this.displayMonth = 11; this.displayYear--; } else { this.displayMonth--; }
     this.generateCalendar();
   }
 
   nextMonth() {
-    if (this.displayMonth === 11) {
-      this.displayMonth = 0;
-      this.displayYear++;
-    } else {
-      this.displayMonth++;
-    }
+    if (this.displayMonth === 11) { this.displayMonth = 0; this.displayYear++; } else { this.displayMonth++; }
     this.generateCalendar();
   }
 
   selectDate(day: number | null) {
     if (day !== null) {
       this.selectedDateObj = new Date(this.displayYear, this.displayMonth, day);
-
-      // Форматуємо для бекенду YYYY-MM-DD
       const y = this.selectedDateObj.getFullYear();
       const m = String(this.selectedDateObj.getMonth() + 1).padStart(2, '0');
       const d = String(this.selectedDateObj.getDate()).padStart(2, '0');
@@ -106,75 +160,19 @@ export class Planner implements OnInit {
     }
   }
 
-  // Перевірка чи день є сьогоднішнім (щоб підсвітити)
   isToday(day: number): boolean {
     const today = new Date();
-    return day === today.getDate() &&
-      this.displayMonth === today.getMonth() &&
-      this.displayYear === today.getFullYear();
+    return day === today.getDate() && this.displayMonth === today.getMonth() && this.displayYear === today.getFullYear();
   }
 
-  // Перевірка чи день вибраний користувачем
   isSelected(day: number): boolean {
     if (!this.selectedDateObj) return false;
-    return day === this.selectedDateObj.getDate() &&
-      this.displayMonth === this.selectedDateObj.getMonth() &&
-      this.displayYear === this.selectedDateObj.getFullYear();
+    return day === this.selectedDateObj.getDate() && this.displayMonth === this.selectedDateObj.getMonth() && this.displayYear === this.selectedDateObj.getFullYear();
   }
 
   formatTimeInput(event: any) {
-    let val = event.target.value.replace(/\D/g, ''); // Видаляємо все, крім цифр
-    if (val.length > 2) {
-      val = val.substring(0, 2) + ':' + val.substring(2, 4);
-    }
+    let val = event.target.value.replace(/\D/g, '');
+    if (val.length > 2) { val = val.substring(0, 2) + ':' + val.substring(2, 4); }
     event.target.value = val;
-  }
-
-  openModal() { this.isModalOpen = true; }
-  closeModal() { this.isModalOpen = false; }
-
-  // Мокові дані: Пул сцен (ті, що ще не в розкладі)
-  scenePool = [
-    { id: 'SC-005', title: 'Chase through downtown square', duration: '1h 30m', location: 'Historic Downtown Square', timeOfDay: 'EXT/DAY', cast: ['MC', 'JIR'] },
-    { id: 'SC-006', title: 'Interrogation room confrontation', duration: '45m', location: 'Modern Office Building', timeOfDay: 'INT/DAY', cast: ['ER', 'MC'] },
-    { id: 'SC-007', title: 'Midnight stakeout', duration: '50m', location: 'Historic Downtown Square', timeOfDay: 'EXT/NIGHT', cast: ['ER', 'MC', 'JIR'] },
-    { id: 'SC-008', title: 'Apartment search', duration: '35m', location: 'Vintage Apartment', timeOfDay: 'INT/DAY', cast: [] }
-  ];
-
-  // Мокові дані: Знімальні дні (Shoot Days) та їхні сцени (SceneSchedules)
-  shootDays = [
-    {
-      id: 1, date: 'Mar 24', unit: 'MAIN UNIT', status: 'Completed', callTime: '08:00',
-      capacityStr: '1h 45m / 10h 0m', capacityPct: 15,
-      scenes: [
-        { id: 'SC-001', title: 'Captain Rostova discovers the first letter', duration: '1h 0m', location: 'Old Abandoned Factory', timeOfDay: 'INT/NIGHT', cast: ['ER', 'MC'] }
-      ]
-    },
-    {
-      id: 2, date: 'Mar 25', unit: 'MAIN UNIT', status: 'Draft', callTime: '09:00',
-      capacityStr: '55m / 10h 0m', capacityPct: 10,
-      scenes: [
-        { id: 'SC-003', title: 'Forensic analysis with Dr. Vance', duration: '30m', location: 'Modern Office Building', timeOfDay: 'INT/DAY', cast: ['ER', 'HV'] },
-        { id: 'SC-004', title: 'Meeting with Mayor Stone', duration: '25m', location: 'Modern Office Building', timeOfDay: 'INT/DAY', cast: ['ER', 'VS'] }
-      ]
-    }
-  ];
-
-  // Магія Drag & Drop
-  drop(event: CdkDragDrop<any[]>) {
-    if (event.previousContainer === event.container) {
-      // Перетягування всередині одного списку (просто зміна порядку)
-      moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
-      // Тут буде виклик API для оновлення SceneOrder
-    } else {
-      // Перенесення сцени в інший день або з пулу
-      transferArrayItem(
-        event.previousContainer.data,
-        event.container.data,
-        event.previousIndex,
-        event.currentIndex,
-      );
-      // Тут буде виклик API: Створення або оновлення SceneSchedule (встановлення нового ShootDayId)
-    }
   }
 }
