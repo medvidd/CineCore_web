@@ -76,15 +76,16 @@ namespace CineCoreBack.Controllers
                     continue;
                 }
 
-                // Логіка прив'язки реплік до персонажа
+                // 1. ЗАПАМ'ЯТОВУЄМО ОСТАННЬОГО ПЕРСОНАЖА (Ніколи не скидаємо на null!)
                 if (type == "character")
                 {
                     currentRoleId = existingRoles.FirstOrDefault(r => r.RoleName.ToUpper() == block.Content.Trim().ToUpper())?.Id;
                 }
-                else if (type != "dialogue" && type != "parenthetical")
-                {
-                    currentRoleId = null;
-                }
+
+                // 2. Зберігаємо RoleId ТІЛЬКИ для персонажів, реплік та ремарок.
+                // Всі інші типи (action, shot, transition) будуть мати null у базі, 
+                // АЛЕ змінна currentRoleId збережеться для наступних реплік!
+                int? roleIdToSave = (type == "character" || type == "dialogue" || type == "parenthetical") ? currentRoleId : null;
 
                 _context.ScriptElements.Add(new ScriptElement
                 {
@@ -92,7 +93,7 @@ namespace CineCoreBack.Controllers
                     OrderIndex = order++,
                     Content = block.Content,
                     ElementType = type,
-                    RoleId = currentRoleId
+                    RoleId = roleIdToSave
                 });
             }
 
@@ -115,6 +116,45 @@ namespace CineCoreBack.Controllers
             return Ok(new { message = "Synced" });
         }
 
+        // ОТРИМАННЯ СКРИПТУ ОДНІЄЇ СЦЕНИ (Відновлений метод)
+        [HttpGet("scene/{sceneId}")]
+        public async Task<IActionResult> GetScript(int sceneId)
+        {
+            var scene = await _context.Scenes
+                .Include(s => s.ScriptElements)
+                    .ThenInclude(e => e.Role)
+                .FirstOrDefaultAsync(s => s.Id == sceneId);
+
+            if (scene == null) return NotFound();
+
+            var blocks = new List<object> {
+                new {
+                    id = "h-" + scene.Id,
+                    type = "scene_heading",
+                    content = scene.SluglineText,
+                    sceneCode = "SC-" + scene.SequenceNum.ToString().PadLeft(3, '0')
+                }
+            };
+
+            var elements = scene.ScriptElements.OrderBy(e => e.OrderIndex).Select(e => new {
+                id = e.Id.ToString(),
+                type = e.ElementType,
+                content = e.Content,
+                charId = e.RoleId?.ToString(),
+                color = (e.ElementType == "character" || e.ElementType == "dialogue" || e.ElementType == "parenthetical")
+                    ? (e.Role?.ColorHex ?? "#444")
+                    : "#444"
+            });
+
+            blocks.AddRange(elements);
+
+            return Ok(new
+            {
+                notes = scene.Notes,
+                blocks = blocks
+            });
+        }
+
         // 1. ОТРИМАННЯ СПИСКУ СЦЕН (ДЛЯ ЛІВОЇ ПАНЕЛІ)
         [HttpGet("project/{projectId}/scenes")]
         public async Task<IActionResult> GetProjectScenes(int projectId)
@@ -132,37 +172,43 @@ namespace CineCoreBack.Controllers
             return Ok(scenes);
         }
 
-        // 2. ОТРИМАННЯ СКРИПТУ + НОТАТОК (ДЛЯ ЦЕНТРАЛЬНОЇ ТА ПРАВОЇ ПАНЕЛЕЙ)
-        [HttpGet("scene/{sceneId}")]
-        public async Task<IActionResult> GetScript(int sceneId)
+        [HttpGet("project/{projectId}/full")]
+        public async Task<IActionResult> GetFullScript(int projectId)
         {
-            var scene = await _context.Scenes
-                .Include(s => s.ScriptElements)
-                    .ThenInclude(e => e.Role)
-                .FirstOrDefaultAsync(s => s.Id == sceneId);
+            var scenes = await _context.Scenes
+                .Include(s => s.ScriptElements).ThenInclude(e => e.Role)
+                .Where(s => s.ProjectId == projectId)
+                .OrderBy(s => s.SequenceNum)
+                .ToListAsync();
 
-            if (scene == null) return NotFound();
+            var result = new List<object>();
 
-            var blocks = new List<object> {
-                new { id = "h-" + scene.Id, type = "scene_heading", content = scene.SluglineText }
-            };
-
-            var elements = scene.ScriptElements.OrderBy(e => e.OrderIndex).Select(e => new {
-                id = e.Id.ToString(),
-                type = e.ElementType,
-                content = e.Content,
-                charId = e.RoleId?.ToString(),
-                color = e.Role?.ColorHex ?? "#444"
-            });
-
-            blocks.AddRange(elements);
-
-            // ПОВЕРТАЄМО ОБ'ЄКТ (Блоки + Нотатки)
-            return Ok(new
+            foreach (var scene in scenes)
             {
-                notes = scene.Notes,
-                blocks = blocks
-            });
+                // Додаємо заголовок як блок
+                result.Add(new
+                {
+                    id = "h-" + scene.Id,
+                    type = "scene_heading",
+                    content = scene.SluglineText,
+                    sceneId = scene.Id,
+                    sceneCode = "SC-" + scene.SequenceNum.ToString().PadLeft(3, '0')
+                });
+
+                // Додаємо елементи
+                var elements = scene.ScriptElements.OrderBy(e => e.OrderIndex).Select(e => new {
+                    id = e.Id.ToString(),
+                    type = e.ElementType,
+                    content = e.Content,
+                    charId = e.RoleId,
+                    color = (e.ElementType == "character" || e.ElementType == "dialogue" || e.ElementType == "parenthetical")
+                        ? (e.Role?.ColorHex ?? "#444")
+                        : "#444",
+                    sceneId = scene.Id
+                });
+                result.AddRange(elements);
+            }
+            return Ok(result);
         }
 
         // 3. НОТАТКИ ДО СЦЕНИ (Права панель)
@@ -177,19 +223,21 @@ namespace CineCoreBack.Controllers
             return NoContent();
         }
 
-        // 4. ПЕРЕВПОРЯДКУВАННЯ СЦЕН (DRAG & DROP)
         [HttpPut("project/{projectId}/scenes/reorder")]
         public async Task<IActionResult> ReorderScenes(int projectId, [FromBody] List<int> orderedSceneIds)
         {
             var scenes = await _context.Scenes.Where(s => s.ProjectId == projectId).ToListAsync();
 
+            // КРОК 1: Тимчасово виводимо номери за межі унікального індексу (напр. +1000)
+            // Це дозволить уникнути конфлікту "двох однакових номерів" під час транзакції
+            foreach (var s in scenes) { s.SequenceNum += 1000; }
+            await _context.SaveChangesAsync();
+
+            // КРОК 2: Призначаємо реальні номери згідно з новим порядком
             for (int i = 0; i < orderedSceneIds.Count; i++)
             {
                 var scene = scenes.FirstOrDefault(s => s.Id == orderedSceneIds[i]);
-                if (scene != null)
-                {
-                    scene.SequenceNum = i + 1; // Нумерація з 1
-                }
+                if (scene != null) { scene.SequenceNum = i + 1; }
             }
 
             await _context.SaveChangesAsync();
@@ -222,6 +270,36 @@ namespace CineCoreBack.Controllers
                 sequenceNum = newScene.SequenceNum,
                 sluglineText = newScene.SluglineText
             });
+        }
+
+        // ДОДАЙТЕ В ScriptController.cs
+        [HttpDelete("scene/{sceneId}")]
+        public async Task<IActionResult> DeleteScene(int sceneId)
+        {
+            var scene = await _context.Scenes.FindAsync(sceneId);
+            if (scene == null) return NotFound();
+
+            int projectId = scene.ProjectId;
+            int deletedSeqNum = scene.SequenceNum;
+
+            // Видаляємо сцену (ScriptElements видаляться автоматично, якщо налаштовано Cascade Delete)
+            _context.Scenes.Remove(scene);
+            await _context.SaveChangesAsync();
+
+            // Перераховуємо номери для сцен, що йшли ПІСЛЯ видаленої
+            var trailingScenes = await _context.Scenes
+                .Where(s => s.ProjectId == projectId && s.SequenceNum > deletedSeqNum)
+                .OrderBy(s => s.SequenceNum)
+                .ToListAsync();
+
+            foreach (var s in trailingScenes)
+            {
+                s.SequenceNum--;
+            }
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Scene deleted and sequence updated" });
         }
     }
 }

@@ -94,55 +94,135 @@ $teal: #3AB9A0;
 
 .scenes-list {
   flex: 1;
-  min-height: 0; /* Дозволяє внутрішній скрол */
+  min-height: 0;
   overflow-y: auto;
-  padding: 0 16px 24px 16px;
+  padding: 8px 16px 24px 16px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px; // Відступ між картками
+
+  /* Скролбар */
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
 
   .scene-item {
-    // ... існуючі стилі ...
-    display: flex;       // Змінюємо layout, щоб додати іконку зліва
-    gap: 8px;
+    background: rgba(255, 255, 255, 0.03); // Напівпрозорий фон прямокутника
+    border: 1px solid rgba(255, 255, 255, 0.1); // Світлий бордюр
+    border-radius: 12px;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    gap: 12px;
+    position: relative;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(255, 255, 255, 0.2);
+      transform: translateY(-1px); // Легкий ефект підняття
+    }
+
+    &.active {
+      background: rgba(58, 185, 160, 0.08); // Фон з відтінком тілу для активної сцени
+      border-color: $teal; // Яскравий бордюр основного кольору
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+
+      .scene-id { color: $teal; }
+      .scene-title { color: white; font-weight: 500; }
+    }
+
+    /* Ручка для Drag & Drop */
+    .scene-drag-handle {
+      color: rgba(255, 255, 255, 0.2);
+      display: flex;
+      align-items: center;
+      cursor: grab;
+      &:hover { color: $teal; }
+    }
 
     .scene-content-wrapper {
       flex: 1;
       min-width: 0;
-    }
-
-    .scene-drag-handle {
-      cursor: grab;
-      color: rgba(255, 255, 255, 0.2);
       display: flex;
-      align-items: center;
-      padding-top: 2px; // Вирівнювання
-      &:hover { color: $teal; }
-      &:active { cursor: grabbing; }
+      flex-direction: column;
+      gap: 6px;
     }
 
-    // Стиль елемента ПІД ЧАС перетягування (CDK додає цей клас)
+    .scene-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      .scene-id {
+        font-family: 'Space Grotesk';
+        font-size: 12px;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.4);
+        letter-spacing: 0.5px;
+      }
+
+      .dot-active {
+        width: 8px;
+        height: 8px;
+        background: $teal;
+        border-radius: 50%;
+        box-shadow: 0 0 8px rgba(58, 185, 160, 0.6);
+      }
+    }
+
+    .scene-title {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.8);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-transform: uppercase;
+    }
+
+    .scene-meta {
+      display: flex;
+      gap: 8px;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    /* Стиль при перетягуванні */
     &.cdk-drag-preview {
       background: $bg-card;
       border: 1px solid $teal;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-      border-radius: 12px;
-      z-index: 1000;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      opacity: 0.9;
     }
-  }
 
-  // Заглушка, яка показує місце, куди впаде сцена
-  .cdk-drag-placeholder {
-    opacity: 0.3;
-    border: 1px dashed $teal;
-  }
+    // Додайте в .scene-item всередині script.scss
 
-  // Плавна анімація пересування інших елементів
-  .cdk-drag-animating {
-    transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
-  }
-  .scenes-list.cdk-drop-list-dragging .scene-item:not(.cdk-drag-placeholder) {
-    transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+    .delete-scene-btn {
+      background: transparent;
+      border: none;
+      color: rgba(255, 255, 255, 0.2);
+      padding: 4px;
+      cursor: pointer;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: 0.2s;
+      opacity: 0; // Прихована за замовчуванням
+
+      &:hover {
+        color: #ff4d4d; // Червоний колір при ховері на саму кнопку
+        background: rgba(255, 77, 77, 0.1);
+      }
+    }
+
+    &:hover .delete-scene-btn {
+      opacity: 1; // З'являється при наведенні на картку сцени
+    }
+
+    &.active .delete-scene-btn {
+      opacity: 0.6; // Залишається злегка видимою для активної сцени
+      &:hover { opacity: 1; }
+    }
   }
 }
 
@@ -273,6 +353,17 @@ $teal: #3AB9A0;
     margin-left: -16px; padding-left: 12px;
     transition: background 0.2s;
 
+    margin-bottom: 20px;
+
+    &.type-character,
+    &.type-parenthetical {
+      margin-bottom: 4px;
+    }
+
+    &.type-dialogue {
+      margin-bottom: 12px;
+    }
+
     // --- КЛАСИ ЛІНІЙ (Прямі, пунктири, хвильки, зигзаги) ---
     &.line-none { border-left-color: transparent !important; }
     &.line-solid { border-left-style: solid; border-left-color: var(--line-color); }
@@ -312,20 +403,26 @@ $teal: #3AB9A0;
       .block-controls { opacity: 1; }
     }
 
-    // Контроли (Кнопка вибору типу)
+    // Додайте / Оновіть цей блок всередині .script-block
+    .text-content {
+      width: 100%;
+      display: block;
+      white-space: pre-wrap; /* ВАЖЛИВО: Це зберігає одинарні ентери! */
+      word-break: break-word;
+    }
+
     .block-controls {
       position: absolute; left: -45px; top: 2px; opacity: 0; transition: opacity 0.2s;
+      z-index: 1000; /* ВАЖЛИВО: Щоб меню було ПОВЕРХ сусідніх блоків */
+
       .btn-type-selector { background: $bg-card; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; width: 28px; height: 28px; display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 14px; &:hover { background: rgba(255,255,255,0.1); } }
 
       // Випадаюче меню
       .type-menu {
-        position: absolute; left: 32px; top: 0; background: $bg-card; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 8px; display: flex; flex-direction: column; gap: 4px; z-index: 100; box-shadow: 0 10px 20px rgba(0,0,0,0.5); width: 160px;
+        position: absolute; left: 32px; top: 0; background: $bg-card; border: 1px solid $teal; border-radius: 8px; padding: 8px; display: flex; flex-direction: column; gap: 4px; box-shadow: 0 10px 20px rgba(0,0,0,0.5); width: 160px;
         button { background: transparent; border: none; color: white; text-align: left; padding: 8px; border-radius: 6px; cursor: pointer; font-family: 'Space Grotesk'; font-size: 12px; &:hover { background: $teal; color: $bg-main; } }
       }
     }
-
-    // Текстовий контент
-    .text-content { width: 100%; display: block; }
 
     // --- ПРАВИЛА ФОРМАТУВАННЯ ---
     &.type-scene_heading .text-content { font-weight: 700; text-transform: uppercase; margin-bottom: 8px; }

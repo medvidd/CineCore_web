@@ -162,4 +162,10 @@ export class Api {
   createScene(projectId: number) {
     return this.http.post<any>(`${this.SCRIPT_API_URL}/project/${projectId}/scene`, {});
   }
+  getFullScript(projectId: number) {
+    return this.http.get<any[]>(`${this.SCRIPT_API_URL}/project/${projectId}/full`);
+  }
+  deleteScene(sceneId: number) {
+    return this.http.delete(`${this.SCRIPT_API_URL}/scene/${sceneId}`);
+  }
 }

@@ -375,6 +375,11 @@ public partial class DbConfig : DbContext
             entity.HasOne(d => d.Scene).WithMany(p => p.SceneResources)
                 .HasForeignKey(d => d.SceneId)
                 .HasConstraintName("scene_resource_scene_id_fkey");
+            entity.HasOne(d => d.Scene).WithMany(p => p.SceneResources)
+                .HasForeignKey(d => d.SceneId)
+                .OnDelete(DeleteBehavior.Cascade) // Видаляємо зв'язки з ресурсами при видаленні сцени
+                .HasConstraintName("scene_resource_scene_id_fkey");
+
         });
 
         modelBuilder.Entity<SceneSchedule>(entity =>
@@ -400,6 +405,10 @@ public partial class DbConfig : DbContext
             entity.HasOne(d => d.ShootDay).WithMany(p => p.SceneSchedules)
                 .HasForeignKey(d => d.ShootDayId)
                 .HasConstraintName("scene_schedule_shoot_day_id_fkey");
+            entity.HasOne(d => d.Scene).WithMany(p => p.SceneSchedules)
+                .HasForeignKey(d => d.SceneId)
+                .OnDelete(DeleteBehavior.Cascade) // Видаляємо записи з графіку при видаленні сцени
+                .HasConstraintName("scene_schedule_scene_id_fkey");
         });
 
         modelBuilder.Entity<ScriptElement>(entity =>
@@ -424,6 +433,10 @@ public partial class DbConfig : DbContext
 
             entity.HasOne(d => d.Scene).WithMany(p => p.ScriptElements)
                 .HasForeignKey(d => d.SceneId)
+                .HasConstraintName("script_elements_scene_id_fkey");
+            entity.HasOne(d => d.Scene).WithMany(p => p.ScriptElements)
+                .HasForeignKey(d => d.SceneId)
+                .OnDelete(DeleteBehavior.Cascade) // Додаємо каскадне видалення елементів сценарію
                 .HasConstraintName("script_elements_scene_id_fkey");
         });
 
