@@ -84,6 +84,7 @@ export class Script implements OnInit {
   ngOnInit() {
     this.api.currentRole$.subscribe(role => {
       this.currentUserRole = role;
+      const normalizedRole = role?.toLowerCase();
       this.canEdit = (role === 'owner' || role === 'manager');
       this.cdr.detectChanges();
     });
@@ -479,6 +480,42 @@ export class Script implements OnInit {
         block.charName = undefined;
       }
     }
+
+    // КРОК 2: Жорстко прив'язуємо кожну репліку до її персонажа
+    for (let i = 0; i < this.blocks.length; i++) {
+      const block = this.blocks[i];
+
+      if (block.type === 'dialogue' || block.type === 'parenthetical') {
+        const owner = this.getNearestCharacter(i); // Знаходимо, чия це репліка
+        if (owner) {
+          block.color = owner.color;
+          block.charName = owner.name; // Завдяки цьому працює підсвітка!
+        } else {
+          block.color = '#444444';
+          block.charName = undefined;
+        }
+      } else if (block.type !== 'character') {
+        block.color = '#444444';
+        block.charName = undefined;
+      }
+    }
+  }
+
+  // --- ДОПОМІЖНИЙ МЕТОД: Шукає власника репліки ---
+  private getNearestCharacter(currentIndex: number): { name: string, color: string } | null {
+    // Скануємо блоки знизу вгору від поточної репліки
+    for (let i = currentIndex - 1; i >= 0; i--) {
+      if (this.blocks[i].type === 'character') {
+        const name = this.blocks[i].content.trim().toUpperCase();
+
+        // Витягуємо колір у змінну. Якщо він є і він не сірий - беремо його, інакше дефолтний
+        const blockColor = this.blocks[i].color;
+        const color = (blockColor && blockColor !== '#444444') ? blockColor : '#3AB9A0';
+
+        return { name, color };
+      }
+    }
+    return null; // Якщо зверху взагалі немає персонажів
   }
 
   // --- ДОПОМІЖНИЙ МЕТОД: Шукає власника репліки ---

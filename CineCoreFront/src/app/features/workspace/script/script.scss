@@ -291,7 +291,7 @@ $teal: #3AB9A0;
 .auto-badge { font-size: 10px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1px; border: 1px solid rgba(255,255,255,0.1); padding: 1px 4px; border-radius: 4px; width: fit-content; }
 
 .scrollable-list {
-  min-height: 100px; max-height: 220px; overflow-y: auto; padding-right: 4px;
+  min-height: 100px; max-height: 180px; overflow-y: auto; padding-right: 4px;
   &::-webkit-scrollbar { width: 4px; }
   &::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
 }
