@@ -1,75 +1,283 @@
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Api} from '../../../core/services/api';
+import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
+import { Api } from '../../../core/services/api';
 
 @Component({
   selector: 'app-casting',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './casting.html',
   styleUrl: './casting.scss'
 })
-export class Casting {
+export class Casting implements OnInit {
   private api = inject(Api);
+  private route = inject(ActivatedRoute);
   private cdr = inject(ChangeDetectorRef);
 
-  // Статистика
-  totalRoles = 6;
-  castRoles = 1;
-
+  projectId: number = 0;
   currentUserRole: string = 'none';
   canEdit: boolean = false;
 
+  // Дані з API
+  roles: any[] = [];
+  selectedRole: any = null;
+  candidates: any[] = [];
+  projectActors: any[] = []; // Учасники проекту з роллю 'actor'
+
+  // ==========================================
+  // СТАН МОДАЛЬНОГО ВІКНА ДЛЯ РОЛІ
+  // ==========================================
+  isRoleModalOpen = false;
+  roleForm = {
+    id: null as number | null,
+    roleName: '',
+    roleType: 'supporting',
+    description: '',
+    age: null as number | null,
+    colorHex: '#51A2FF'
+  };
+  // Динамічний масив для JSONB характеристик
+  charFields: { key: string, value: string }[] = [];
+
+  roleTypes = ['lead', 'supporting', 'extra'];
+
+  // ==========================================
+  // СТАН МОДАЛЬНОГО ВІКНА ДЛЯ КАНДИДАТА
+  // ==========================================
+  isCandidateModalOpen = false;
+  candidateForm = {
+    actorId: null as number | null,
+    notes: ''
+  };
+
   ngOnInit() {
-    // 1. Підписуємося на роль (БЕЗ ДОДАТКОВИХ HTTP ЗАПИТІВ!)
     this.api.currentRole$.subscribe(role => {
       this.currentUserRole = role;
       this.canEdit = (role === 'owner' || role === 'manager');
       this.cdr.detectChanges();
     });
 
-    // ... ваша існуюча підписка на paramMap для отримання projectId
+    this.route.parent?.paramMap.subscribe(params => {
+      const id = params.get('id');
+      if (id) {
+        this.projectId = Number(id);
+        this.loadRoles();
+        this.loadProjectActors();
+      }
+    });
   }
 
-  // Мокові дані для ролей (Ліва панель)
-  roles = [
-    {
-      id: 1, name: 'Captain Eva Rostova', type: 'Lead', isCast: true,
-      desc: 'A brilliant but troubled police captain leading the investigation into a series of mysterious murders.',
-      gender: 'Female', age: '28-35',
-      castActor: { initials: 'EJ', name: 'Emily Jones', age: 28, email: 'emily.jones@example.com', phone: '+1 555 234-5678', bio: 'Versatile actress with 8 years of theater and film experience. Known for dramatic roles.' },
-      candidates: [{ initials: 'SW', name: 'Sarah William', age: 30 }]
-    },
-    {
-      id: 2, name: 'Detective Miles Cross', type: 'Lead', isCast: false,
-      desc: 'Eva\'s partner, skeptical of her unorthodox methods but fiercely loyal.',
-      gender: 'Male', age: '35-45',
-      castActor: null,
-      candidates: [
-        { initials: 'JB', name: 'James Brown', age: 38 },
-        { initials: 'MD', name: 'Michael Davis', age: 42 }
-      ]
-    },
-    { id: 3, name: 'Dr. Helena Vance', type: 'Supporting', isCast: false, candidates: [] },
-    { id: 4, name: 'Officer James Reed', type: 'Supporting', isCast: false, candidates: [] },
-    { id: 5, name: 'Mayor Victoria Stone', type: 'Supporting', isCast: false, candidates: [] },
-    { id: 6, name: 'Witness #1', type: 'Extra', isCast: false, candidates: [] }
-  ];
+  // ==========================================
+  // ЗАВАНТАЖЕННЯ ДАНИХ
+  // ==========================================
+  loadRoles() {
+    this.api.getProjectRoles(this.projectId).subscribe({
+      next: (data) => {
+        this.roles = data;
+        // Якщо роль була вибрана, оновлюємо її або вибираємо першу
+        if (this.selectedRole) {
+          this.selectedRole = this.roles.find(r => r.id === this.selectedRole.id) || this.roles[0];
+        } else if (this.roles.length > 0) {
+          this.selectRole(this.roles[0]);
+        }
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('Error loading roles:', err)
+    });
+  }
 
-  // Вибрана роль (за замовчуванням перша)
-  selectedRole: any = this.roles[0];
+  loadCandidates(roleId: number) {
+    this.api.getRoleCandidates(this.projectId, roleId).subscribe({
+      next: (data) => {
+        this.candidates = data;
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('Error loading candidates:', err)
+    });
+  }
+
+  loadProjectActors() {
+    this.api.getProjectCrew(this.projectId).subscribe({
+      next: (data) => {
+        // Беремо тільки тих учасників, у яких sysRole === 'actor'
+        this.projectActors = (data.activeMembers || []).filter((m: any) => m.sysRole === 'actor');
+        this.cdr.detectChanges();
+      }
+    });
+  }
 
   selectRole(role: any) {
     this.selectedRole = role;
+    this.loadCandidates(role.id);
   }
 
-  // Допоміжні класи для кольорів бейджів
-  getRoleTypeClass(type: string): string {
-    switch (type) {
-      case 'Lead': return 'badge-lead';
-      case 'Supporting': return 'badge-supporting';
-      case 'Extra': return 'badge-extra';
-      default: return '';
+  // ==========================================
+  // МОДАЛЬНЕ ВІКНО РОЛІ ТА ХАРАКТЕРИСТИКИ
+  // ==========================================
+  openAddRoleModal() {
+    this.roleForm = { id: null, roleName: '', roleType: 'supporting', description: '', age: null, colorHex: '#51A2FF' };
+    this.charFields = [{ key: '', value: '' }]; // Одне порожнє поле за замовчуванням
+    this.isRoleModalOpen = true;
+  }
+
+  openEditRoleModal() {
+    if (!this.selectedRole) return;
+    this.roleForm = {
+      id: this.selectedRole.id,
+      roleName: this.selectedRole.roleName,
+      roleType: this.selectedRole.roleType,
+      description: this.selectedRole.description,
+      age: this.selectedRole.age,
+      colorHex: this.selectedRole.colorHex
+    };
+
+    // Парсимо JSONB характеристики назад у масив для форми
+    try {
+      const parsed = JSON.parse(this.selectedRole.characteristics || '{}');
+      this.charFields = Object.keys(parsed).map(k => ({ key: k, value: parsed[k] }));
+      if (this.charFields.length === 0) this.charFields.push({ key: '', value: '' });
+    } catch {
+      this.charFields = [{ key: '', value: '' }];
+    }
+
+    this.isRoleModalOpen = true;
+  }
+
+  closeRoleModal() {
+    this.isRoleModalOpen = false;
+  }
+
+  addCharField() {
+    this.charFields.push({ key: '', value: '' });
+  }
+
+  removeCharField(index: number) {
+    this.charFields.splice(index, 1);
+  }
+
+  saveRole() {
+    // Збираємо масив charFields назад у JSON об'єкт
+    const charObj: any = {};
+    this.charFields.forEach(f => {
+      if (f.key && f.key.trim() !== '') {
+        charObj[f.key.trim()] = f.value;
+      }
+    });
+
+    const payload = {
+      ...this.roleForm,
+      characteristics: JSON.stringify(charObj)
+    };
+
+    if (this.roleForm.id) {
+      this.api.updateRole(this.projectId, this.roleForm.id, payload).subscribe({
+        next: () => { this.loadRoles(); this.closeRoleModal(); }
+      });
+    } else {
+      this.api.createRole(this.projectId, payload).subscribe({
+        next: () => { this.loadRoles(); this.closeRoleModal(); }
+      });
+    }
+  }
+
+  deleteRole() {
+    if (!this.selectedRole) return;
+    if (confirm(`Are you sure you want to delete ${this.selectedRole.roleName}?`)) {
+      this.api.deleteRole(this.projectId, this.selectedRole.id).subscribe({
+        next: () => {
+          this.selectedRole = null;
+          this.loadRoles();
+        }
+      });
+    }
+  }
+
+  // ==========================================
+  // МОДАЛЬНЕ ВІКНО КАНДИДАТА
+  // ==========================================
+  openAddCandidateModal() {
+    this.candidateForm = { actorId: null, notes: '' };
+    this.isCandidateModalOpen = true;
+  }
+
+  closeCandidateModal() {
+    this.isCandidateModalOpen = false;
+  }
+
+  saveCandidate() {
+    if (!this.candidateForm.actorId || !this.selectedRole) return;
+
+    this.api.addCandidate(this.projectId, this.selectedRole.id, {
+      actorId: Number(this.candidateForm.actorId),
+      notes: this.candidateForm.notes
+    }).subscribe({
+      next: () => {
+        this.loadCandidates(this.selectedRole.id);
+        this.loadRoles(); // Оновлюємо лічильник
+        this.closeCandidateModal();
+      },
+      error: (err) => alert(err.error?.message || 'Error adding candidate')
+    });
+  }
+
+  // ==========================================
+  // KANBAN ДОШКА (Геттери для колонок)
+  // ==========================================
+  get pendingCandidates() { return this.candidates.filter(c => c.castStatus === 'pending'); }
+  get holdCandidates() { return this.candidates.filter(c => c.castStatus === 'hold'); }
+  get approvedCandidates() { return this.candidates.filter(c => c.castStatus === 'approved'); }
+  get declinedCandidates() { return this.candidates.filter(c => c.castStatus === 'declined'); }
+
+  // ==========================================
+  // DRAG & DROP ЛОГІКА
+  // ==========================================
+  draggedCandidate: any = null;
+
+  onDragStart(event: DragEvent, candidate: any) {
+    this.draggedCandidate = candidate;
+    event.dataTransfer?.setData('text/plain', candidate.actorId.toString());
+    // Робимо картку трохи прозорою під час перетягування
+    setTimeout(() => { if (event.target instanceof HTMLElement) event.target.style.opacity = '0.5'; }, 0);
+  }
+
+  onDragEnd(event: DragEvent) {
+    if (event.target instanceof HTMLElement) event.target.style.opacity = '1';
+    this.draggedCandidate = null;
+  }
+
+  onDragOver(event: DragEvent) {
+    event.preventDefault(); // Дозволяє кинути об'єкт (Drop)
+  }
+
+  onDrop(event: DragEvent, newStatus: string) {
+    event.preventDefault();
+    if (this.draggedCandidate && this.draggedCandidate.castStatus !== newStatus) {
+      const actorId = this.draggedCandidate.actorId;
+
+      // Оптимістичне оновлення UI
+      this.draggedCandidate.castStatus = newStatus;
+
+      // Запит на бекенд
+      this.api.updateCandidateStatus(this.projectId, this.selectedRole.id, actorId, newStatus)
+        .subscribe({
+          error: () => {
+            // У разі помилки відкачуємо зміни
+            this.loadCandidates(this.selectedRole.id);
+            alert('Failed to update status');
+          }
+        });
+    }
+  }
+
+  // Helper
+  parseCharacteristics(jsonString: string): string[] {
+    try {
+      const parsed = JSON.parse(jsonString || '{}');
+      return Object.entries(parsed).map(([k, v]) => `${k}: ${v}`);
+    } catch {
+      return [];
     }
   }
 }

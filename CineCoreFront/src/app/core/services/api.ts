@@ -13,6 +13,7 @@ export class Api {
   private readonly PROPS_API_URL = 'http://localhost:5214/api/props';
   private readonly CREW_API_URL = 'http://localhost:5214/api/crew';
   private readonly SCRIPT_API_URL = 'http://localhost:5214/api/script';
+  private readonly ACTORS_API_URL = 'http://localhost:5214/api/actors';
 
   private roleSubject = new BehaviorSubject<string>('none');
   currentRole$ = this.roleSubject.asObservable();
@@ -183,5 +184,43 @@ export class Api {
   }
   quickCreateResource(projectId: number, type: string, name: string) {
     return this.http.post<any>(`${this.SCRIPT_API_URL}/project/${projectId}/${type}`, { name });
+  }
+
+
+  // CASTING
+  getProjectRoles(projectId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.PROJECTS_API_URL}/${projectId}/roles`);
+  }
+
+  createRole(projectId: number, payload: any): Observable<any> {
+    return this.http.post<any>(`${this.PROJECTS_API_URL}/${projectId}/roles`, payload);
+  }
+
+  updateRole(projectId: number, roleId: number, payload: any): Observable<any> {
+    return this.http.put<any>(`${this.PROJECTS_API_URL}/${projectId}/roles/${roleId}`, payload);
+  }
+
+  deleteRole(projectId: number, roleId: number): Observable<any> {
+    return this.http.delete<any>(`${this.PROJECTS_API_URL}/${projectId}/roles/${roleId}`);
+  }
+
+  getRoleCandidates(projectId: number, roleId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.PROJECTS_API_URL}/${projectId}/roles/${roleId}/candidates`);
+  }
+
+  addCandidate(projectId: number, roleId: number, payload: { actorId: number, notes?: string }): Observable<any> {
+    return this.http.post<any>(`${this.PROJECTS_API_URL}/${projectId}/roles/${roleId}/candidates`, payload);
+  }
+
+  updateCandidateStatus(projectId: number, roleId: number, actorId: number, status: string): Observable<any> {
+    return this.http.put<any>(`${this.PROJECTS_API_URL}/${projectId}/roles/${roleId}/candidates/${actorId}/status`, { castStatus: status });
+  }
+
+  getActorProfile(userId: number): Observable<any> {
+    return this.http.get<any>(`${this.ACTORS_API_URL}/${userId}/profile`);
+  }
+
+  updateActorCharacteristics(userId: number, characteristicsJson: string): Observable<any> {
+    return this.http.put<any>(`${this.ACTORS_API_URL}/${userId}/characteristics`, { characteristics: characteristicsJson });
   }
 }
