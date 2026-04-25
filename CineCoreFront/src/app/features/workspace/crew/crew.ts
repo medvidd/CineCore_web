@@ -30,6 +30,10 @@ export class Crew implements OnInit {
   currentUserRole: string = 'none';
   canEdit: boolean = false;
 
+  searchQuery: string = '';
+  roleFilter: string = 'All';
+  allRoles = ['All', 'Owner', 'Manager', 'Actor'];
+
   // Стан активної вкладки
   activeTab: 'members' | 'pending' = 'members';
 
@@ -245,6 +249,31 @@ export class Crew implements OnInit {
         error: (err) => alert(err.error?.message || 'Failed to remove member')
       });
     }
+  }
+
+  get filteredMembers() {
+    const q = this.searchQuery.toLowerCase().trim();
+    return this.activeMembers.filter(m => {
+      const matchesSearch = !q ||
+        m.fullName.toLowerCase().includes(q) ||
+        m.email.toLowerCase().includes(q) ||
+        (m.jobTitle && m.jobTitle.toLowerCase().includes(q));
+
+      const matchesRole = this.roleFilter === 'All' ||
+        m.sysRole.toLowerCase() === this.roleFilter.toLowerCase();
+
+      return matchesSearch && matchesRole;
+    });
+  }
+
+// Геттер для фільтрації запрошень
+  get filteredInvites() {
+    const q = this.searchQuery.toLowerCase().trim();
+    return this.pendingInvites.filter(i => {
+      const matchesSearch = !q || i.email.toLowerCase().includes(q);
+      const matchesRole = this.roleFilter === 'All' || i.sysRole.toLowerCase() === this.roleFilter.toLowerCase();
+      return matchesSearch && matchesRole;
+    });
   }
 
   copyToClipboard(text: string, label: string) {

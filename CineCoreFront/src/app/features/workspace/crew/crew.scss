@@ -46,18 +46,85 @@ $teal: #3AB9A0;
   }
 }
 
-// ПОШУК ТА ФІЛЬТР
+// ==========================================
+// ACTIONS BAR (ПОШУК ТА ФІЛЬТРИ)
+// ==========================================
 .actions-bar {
-  display: flex; gap: 16px;
+  display: flex; gap: 16px; justify-content: space-between; align-items: center;
+  margin-bottom: 16px;
 
-  .search-input {
-    flex: 1; background: $bg-main; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px;
-    display: flex; align-items: center; padding: 0 16px; gap: 12px;
-    svg { width: 18px; height: 18px; color: rgba(255,255,255,0.6); }
-    input { flex: 1; background: transparent; border: none; color: white; padding: 14px 0; font-family: 'Space Grotesk'; font-size: 14px; &:focus { outline: none; } &::placeholder { color: rgba(255,255,255,0.4); } }
+  // Фіксуємо однакову висоту для обох елементів
+  .search-input,
+  .filter-dropdown .custom-select {
+    height: 48px;
+    box-sizing: border-box;
   }
 
-  .btn-filter { background: $bg-main; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 0 16px; color: white; cursor: pointer; display: flex; align-items: center; svg { width: 18px; height: 18px; } transition: 0.2s; &:hover { background: rgba(255,255,255,0.05); } }
+  // СТИЛЬ ПОШУКУ (Дизайн з Crew - $bg-main)
+  .search-input {
+    flex: 1;
+    background: $bg-main;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 12px;
+
+    svg {
+      width: 18px; height: 18px;
+      color: rgba(255,255,255,0.6);
+      flex-shrink: 0;
+    }
+
+    input {
+      flex: 1; background: transparent; border: none; color: white;
+      font-family: 'Space Grotesk', sans-serif; font-size: 14px;
+      outline: none;
+
+      &::placeholder { color: rgba(255,255,255,0.4); }
+    }
+  }
+
+  // СТИЛЬ ФІЛЬТРА (Дизайн з Resources - $bg-card)
+  .filter-dropdown {
+    position: relative;
+    display: flex;
+    align-items: center;
+
+    .filter-icon {
+      position: absolute;
+      left: 16px;
+      width: 16px;
+      height: 16px;
+      color: rgba(255, 255, 255, 0.6);
+      pointer-events: none;
+    }
+
+    .custom-select {
+      background: $bg-card;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: white;
+      padding: 0 40px 0 40px; // Місце для іконок зліва і справа
+      border-radius: 16px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 14px;
+      cursor: pointer;
+      outline: none;
+      transition: border-color 0.2s;
+      appearance: none; // Прибирає дефолтну стрілочку браузера
+
+      // Кастомна стрілочка праворуч (збережена з resources)
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.6)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 16px center;
+      background-size: 16px;
+
+      &:hover, &:focus { border-color: $teal; }
+
+      option { background: $bg-card; color: white; padding: 8px; }
+    }
+  }
 }
 
 // ТАБЛИЦЯ
@@ -80,11 +147,21 @@ $teal: #3AB9A0;
 
     // БЕЙДЖІ РОЛЕЙ (З кольорами по дизайну)
     .sys-role-badge { padding: 6px 12px; border-radius: 12px; font-size: 12px; border: 0.8px solid; }
-    .role-owner { color: #9810FA; background: rgba(152, 16, 250, 0.1); border-color: rgba(152, 16, 250, 0.2); }
-    .role-manager { color: #E7000B; background: rgba(231, 0, 11, 0.1); border-color: rgba(231, 0, 11, 0.2); }
-    .role-actor { color: #00A63E; background: rgba(0, 201, 80, 0.1); border-color: rgba(0, 201, 80, 0.2); }
-    .role-crew { color: $teal; background: rgba(58, 185, 160, 0.1); border-color: rgba(58, 185, 160, 0.2); }
-
+    .role-owner {
+      color: #FF8904;
+      background: rgba(255, 137, 4, 0.1);
+      border-color: rgba(255, 137, 4, 0.2);
+    }
+    .role-manager {
+      color: #3AB9A0;
+      background: rgba(58, 185, 160, 0.1);
+      border-color: rgba(58, 185, 160, 0.2);
+    }
+    .role-actor {
+      color: #51A2FF;
+      background: rgba(81, 162, 255, 0.1);
+      border-color: rgba(81, 162, 255, 0.2);
+    }
     .contact-links { display: flex; flex-direction: column; gap: 4px; a { color: $teal; text-decoration: none; font-size: 12px; &:hover { text-decoration: underline; } } }
     .btn-more { background: transparent; border: none; color: white; font-size: 20px; cursor: pointer; }
 
@@ -118,7 +195,7 @@ $teal: #3AB9A0;
         &.pointer {
           cursor: pointer;
         }
-        
+
         .contact-icon {
           width: 12px;
           height: 12px;

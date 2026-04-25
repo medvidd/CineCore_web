@@ -501,22 +501,6 @@ export class Script implements OnInit {
     }
   }
 
-  // --- ДОПОМІЖНИЙ МЕТОД: Шукає власника репліки ---
-  private getNearestCharacter(currentIndex: number): { name: string, color: string } | null {
-    // Скануємо блоки знизу вгору від поточної репліки
-    for (let i = currentIndex - 1; i >= 0; i--) {
-      if (this.blocks[i].type === 'character') {
-        const name = this.blocks[i].content.trim().toUpperCase();
-
-        // Витягуємо колір у змінну. Якщо він є і він не сірий - беремо його, інакше дефолтний
-        const blockColor = this.blocks[i].color;
-        const color = (blockColor && blockColor !== '#444444') ? blockColor : '#3AB9A0';
-
-        return { name, color };
-      }
-    }
-    return null; // Якщо зверху взагалі немає персонажів
-  }
 
   // --- ДОПОМІЖНИЙ МЕТОД: Шукає власника репліки ---
   private getNearestCharacter(currentIndex: number): { name: string, color: string } | null {
@@ -534,7 +518,7 @@ export class Script implements OnInit {
     }
     return null; // Якщо зверху взагалі немає персонажів
   }
-  
+
   // --- ЛОГІКА UI БЛОКІВ ---
   toggleTypeMenu(blockId: string) {
     this.openTypeMenuId = this.openTypeMenuId === blockId ? null : blockId;

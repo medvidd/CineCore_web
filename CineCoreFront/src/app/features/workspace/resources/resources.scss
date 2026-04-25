@@ -74,15 +74,42 @@ $danger: #FF3B30;
 // ==========================================
 .actions-bar {
   display: flex; gap: 16px; justify-content: space-between; align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 16px;
 
-  .search-input {
-    flex: 1; max-width: 500px; background: $bg-card; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px;
-    display: flex; align-items: center; padding: 0 16px; gap: 12px;
-    svg { width: 18px; height: 18px; color: rgba(255,255,255,0.6); }
-    input { flex: 1; background: transparent; border: none; color: white; padding: 14px 0; font-family: 'Space Grotesk'; font-size: 14px; &:focus { outline: none; } }
+  // Фіксуємо однакову висоту для обох елементів
+  .search-input,
+  .filter-dropdown .custom-select {
+    height: 48px;
+    box-sizing: border-box;
   }
 
+  // СТИЛЬ ПОШУКУ (Дизайн з Crew - $bg-main)
+  .search-input {
+    flex: 1;
+    background: $bg-main;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 12px;
+
+    svg {
+      width: 18px; height: 18px;
+      color: rgba(255,255,255,0.6);
+      flex-shrink: 0;
+    }
+
+    input {
+      flex: 1; background: transparent; border: none; color: white;
+      font-family: 'Space Grotesk', sans-serif; font-size: 14px;
+      outline: none;
+
+      &::placeholder { color: rgba(255,255,255,0.4); }
+    }
+  }
+
+  // СТИЛЬ ФІЛЬТРА (Дизайн з Resources - $bg-card)
   .filter-dropdown {
     position: relative;
     display: flex;
@@ -101,21 +128,27 @@ $danger: #FF3B30;
       background: $bg-card;
       border: 1px solid rgba(255, 255, 255, 0.1);
       color: white;
-      padding: 14px 16px 14px 40px;
+      padding: 0 40px 0 40px; // Місце для іконок зліва і справа
       border-radius: 16px;
       font-family: 'Space Grotesk', sans-serif;
       font-size: 14px;
       cursor: pointer;
       outline: none;
       transition: border-color 0.2s;
-      appearance: none;
+      appearance: none; // Прибирає дефолтну стрілочку браузера
+
+      // Кастомна стрілочка праворуч (збережена з resources)
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.6)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 16px center;
+      background-size: 16px;
 
       &:hover, &:focus { border-color: $teal; }
+
       option { background: $bg-card; color: white; padding: 8px; }
     }
   }
 }
-
 // ==========================================
 // LOCATIONS GRID (Скляні картки)
 // ==========================================

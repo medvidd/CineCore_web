@@ -112,25 +112,48 @@ namespace CineCoreBack.Controllers
         [HttpGet("project/{projectId}")]
         public async Task<IActionResult> GetProjectCrew(int projectId)
         {
-            // Беремо активних учасників (ті, хто вже прийняв запрошення або є власником)
-            // Примітка: переконайтеся, що у моделі ProjectMember є поля JobTitle та Department
-            // Беремо активних учасників (тільки тих, у кого вже є UserId)
+            var project = await _context.Projects
+                .Include(p => p.Owner)
+                .FirstOrDefaultAsync(p => p.Id == projectId);
+
+            if (project == null) return NotFound();
+
             var activeMembers = await _context.ProjectMembers
                 .Include(pm => pm.User)
-                .Where(pm => pm.ProjectId == projectId && pm.UserId != null) // Відсіюємо тих, хто ще не приєднався
+                .Where(pm => pm.ProjectId == projectId && pm.UserId != null)
                 .Select(pm => new ActiveMemberResponseDto
                 {
-                    UserId = pm.UserId.Value, // Виправлено: .Value вирішує проблему конвертації int? в int
+                    UserId = pm.UserId.Value,
                     Email = pm.User!.Email,
                     FullName = $"{pm.User.FirstName} {pm.User.LastName}".Trim(),
-                    SysRole = pm.SysRole, // Виправлено: використовуємо додане поле SysRole
+                    SysRole = pm.SysRole,
                     JobTitle = pm.JobTitle,
                     Department = pm.Department,
-                    JoinedDate = pm.JoinedAt ?? DateTime.UtcNow // Виправлено: JoinedAt замість JoinedDate
+                    JoinedDate = pm.JoinedAt ?? DateTime.UtcNow
                 })
                 .ToListAsync();
 
-            // Беремо очікуючі запрошення
+            // ДОДАНО: Перевірка, чи є власник у списку. Якщо немає - додаємо його вручну
+            if (!activeMembers.Any(m => m.UserId == project.OwnerId))
+            {
+                activeMembers.Insert(0, new ActiveMemberResponseDto
+                {
+                    UserId = project.OwnerId,
+                    Email = project.Owner.Email,
+                    FullName = $"{project.Owner.FirstName} {project.Owner.LastName}".Trim(),
+                    SysRole = "owner",
+                    JobTitle = "Project Creator",
+                    Department = "Administration",
+                    JoinedDate = project.CreatedAt ?? DateTime.UtcNow
+                });
+            }
+            else
+            {
+                // Якщо він там є, переконуємось, що роль встановлена як "owner"
+                var ownerInList = activeMembers.First(m => m.UserId == project.OwnerId);
+                ownerInList.SysRole = "owner";
+            }
+
             var pendingInvites = await _context.ProjectInvitations
                 .Include(pi => pi.InvitedBy)
                 .Where(pi => pi.ProjectId == projectId)
@@ -146,11 +169,7 @@ namespace CineCoreBack.Controllers
                 })
                 .ToListAsync();
 
-            return Ok(new
-            {
-                ActiveMembers = activeMembers,
-                PendingInvites = pendingInvites
-            });
+            return Ok(new { ActiveMembers = activeMembers, PendingInvites = pendingInvites });
         }
 
         // Додайте ці методи в CrewController.cs

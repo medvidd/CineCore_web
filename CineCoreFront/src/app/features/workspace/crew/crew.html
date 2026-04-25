@@ -21,6 +21,20 @@
     }
   </div>
 
+  <div class="actions-bar">
+    <div class="search-input">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      <input type="text" placeholder="Search members by name, email or title..." [(ngModel)]="searchQuery">
+    </div>
+
+    <div class="filter-dropdown">
+      <svg class="filter-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+      <select [(ngModel)]="roleFilter" class="custom-select">
+        @for (role of allRoles; track role) { <option [value]="role">{{ role }}</option> }
+      </select>
+    </div>
+  </div>
+
   <div class="tabs-container">
     <button class="tab-btn"
             [class.active]="activeTab === 'members'"
@@ -47,7 +61,7 @@
     </tr>
     </thead>
       <tbody>
-        @for (member of activeMembers; track member.userId) {
+        @for (member of filteredMembers; track member.userId) {
           <tr>
             <td>
               <div class="user-cell">
@@ -81,18 +95,26 @@
               </div>
             </td>
             <td>{{ member.joinedDate | date:'MMM d, yyyy' }}</td>
+
             @if (canEdit) {
               <td>
                 <div class="action-icons">
-                  <button class="btn-edit-icon" (click)="openEditModal(member)" title="Edit Member">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                  </button>
-                  <button class="btn-delete" (click)="removeMember(member)" title="Remove Member">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <polyline points="3 6 5 6 21 6"></polyline>
-                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                    </svg>
-                  </button>
+                  @if (member.sysRole !== 'owner') {
+                    <button class="btn-edit-icon" (click)="openEditModal(member)" title="Edit Member">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                    </button>
+                    <button class="btn-delete" (click)="removeMember(member)" title="Remove Member">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2 2v2"></path>
+                      </svg>
+                    </button>
+                  } @else {
+                    <span style="color: rgba(255,255,255,0.2); font-size: 12px; display: flex; align-items: center; gap: 4px; padding: 4px;">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                      Locked
+                    </span>
+                  }
                 </div>
               </td>
             }
