@@ -128,7 +128,9 @@
 
             <div class="script-block"
                  [ngClass]="'type-' + block.type + ' mode-' + viewMode + ' ' + getBlockLineClass(block)"
-                 [style.--line-color]="block.color || '#444'">
+                 [class.highlighted-line]="block.charName === highlightedCharName && highlightedCharName !== null"
+                 [style.--line-color]="block.color || '#444444'"
+                 [style.backgroundColor]="block.charName === highlightedCharName && highlightedCharName !== null ? (block.color + '25') : 'transparent'">
 
               @if (viewMode === 'breakdown') {
                 <div class="block-controls">
@@ -176,34 +178,54 @@
       <button class="btn-icon" (click)="toggleRight()">▶</button>
     </div>
 
-    <div class="details-scroll">
+    <div class="details-scroll" (click)="openCharMenuId = null">
 
       <div class="detail-section">
         <div class="section-title">
           <h3>Characters</h3>
-          <button class="btn-icon-small">
+          <button class="btn-icon-small" *ngIf="canEdit" (click)="openResourceModal('role')">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
           </button>
         </div>
 
-        <div class="items-list">
+        <div class="items-list scrollable-list">
           @if (activeCharacters.length > 0) {
             @for (char of activeCharacters; track char.name) {
-              <div class="tag-card">
+              <div class="tag-card"
+                   [class.highlighted-card]="highlightedCharName === char.name"
+                   (click)="toggleHighlight(char.name)"
+                   style="cursor: pointer;">
                 <div class="card-left">
                   <div class="avatar" [style.background]="char.color">{{ char.initials }}</div>
                   <div class="info">
                     <h4>{{ char.name }}</h4>
-                    <span>{{ char.type }}</span>
+                    @if (char.isAuto) { <span class="auto-badge">Auto</span> }
                   </div>
                 </div>
-                <div class="menu-dots"><div class="dot"></div><div class="dot"></div></div>
+
+                <div class="menu-container">
+                  <div class="menu-dots" (click)="toggleCharMenu($event, char.id); $event.stopPropagation()">
+                    <div class="dot"></div><div class="dot"></div>
+                  </div>
+
+                  @if (openCharMenuId === char.id) {
+                    <div class="popover-menu"
+                         [style.top.px]="menuTop"
+                         [style.right.px]="menuRight"
+                         (click)="$event.stopPropagation()">
+
+                      <label class="color-picker-label">
+                        <span>Change Color</span>
+                        <input type="color" [value]="char.color" (change)="onColorChange(char.id, $event)">
+                      </label>
+                      <button>Edit Details</button>
+                    </div>
+                  }
+                </div>
               </div>
             }
           } @else {
-            <div class="notes-card" style="min-height: auto; text-align: center; border: 1px dashed rgba(255,255,255,0.2);">
-              No characters yet
-            </div>
+            <div class="notes-card empty-hint">No characters yet</div>
           }
         </div>
       </div>
@@ -211,44 +233,49 @@
       <div class="detail-section">
         <div class="section-title">
           <h3>Location</h3>
-          <span class="action-link">Add</span>
+          <button class="btn-icon-small" *ngIf="canEdit" (click)="openResourceModal('location')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          </button>
         </div>
-        @if (sceneLocations.length > 0) {
-          @for (loc of sceneLocations; track loc.id) {
-            <div class="location-card">
-              <h4>{{ loc.name }}</h4>
-              <p>{{ loc.type }}</p>
-            </div>
+        <div class="items-list scrollable-list">
+          @if (linkedLocations.length > 0) {
+            @for (loc of linkedLocations; track loc.id) {
+              <div class="location-card">
+                <div style="display: flex; justify-content: space-between;">
+                  <h4>{{ loc.name }}</h4>
+                  <button class="btn-unlink" *ngIf="canEdit" (click)="unlinkResource('location', loc.id)" title="Unlink Location">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                  </button>                </div>
+                <p>{{ loc.type }}</p>
+              </div>
+            }
+          } @else {
+            <div class="notes-card empty-hint">No location assigned</div>
           }
-        } @else {
-          <div class="notes-card" style="min-height: auto; text-align: center; border: 1px dashed rgba(255,255,255,0.2);">
-            No location assigned
-          </div>
-        }
+        </div>
       </div>
 
       <div class="detail-section">
         <div class="section-title">
           <h3>Props</h3>
-          <button class="btn-icon-small">
+          <button class="btn-icon-small" *ngIf="canEdit" (click)="openResourceModal('prop')">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
           </button>
         </div>
 
-        <div class="items-list">
-          @if (sceneProps.length > 0) {
-            @for (prop of sceneProps; track prop.id) {
+        <div class="items-list scrollable-list">
+          @if (linkedProps.length > 0) {
+            @for (prop of linkedProps; track prop.id) {
               <div class="tag-card">
                 <div class="card-left">
                   <div class="info"><h4>{{ prop.name }}</h4></div>
                 </div>
-                <div class="menu-dots"><div class="dot"></div><div class="dot"></div></div>
-              </div>
+                <button class="btn-unlink" *ngIf="canEdit" (click)="unlinkResource('prop', prop.id)" title="Unlink Prop">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>              </div>
             }
           } @else {
-            <div class="notes-card" style="min-height: auto; text-align: center; border: 1px dashed rgba(255,255,255,0.2);">
-              No props added
-            </div>
+            <div class="notes-card empty-hint">No props added</div>
           }
         </div>
       </div>
@@ -256,15 +283,44 @@
       <div class="detail-section">
         <div class="section-title">
           <h3>Notes</h3>
-          <button class="btn-icon-small">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-          </button>
         </div>
-        <div class="notes-card">
-          No notes yet
-        </div>
+        <textarea class="notes-card editable-notes"
+                  [(ngModel)]="sceneNotes"
+                  [disabled]="!canEdit"
+                  (ngModelChange)="notesAutosaveSubject.next($event)"
+                  placeholder="Add scene notes here..."></textarea>
       </div>
 
     </div>
   </aside>
 </div>
+
+@if (isResourceModalOpen) {
+  <div class="modal-overlay" (click)="isResourceModalOpen = false">
+    <div class="modal-container" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 style="text-transform: capitalize;">Add {{ resourceModalType }}</h2>
+      </div>
+
+      <div class="modal-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input type="text" [(ngModel)]="resourceSearch" placeholder="Search resources...">
+      </div>
+
+      <div class="resource-list scrollable-list" style="max-height: 300px;">
+        @for (item of getFilteredResources(); track item.id) {
+          <div class="resource-row" (click)="linkResource(item.id)">
+            <span>{{ item.name }}</span>
+            <span class="text-teal">+ Add</span>
+          </div>
+        }
+        @if (resourceSearch.trim().length > 0 && getFilteredResources().length === 0 && resourceModalType !== 'role') {
+          <div class="resource-row new-row" (click)="quickCreateResource()">
+            <span>Create new "{{ resourceSearch }}"</span>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+}
+
