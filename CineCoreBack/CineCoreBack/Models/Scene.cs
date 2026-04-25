@@ -17,6 +17,8 @@ public partial class Scene
 
     public virtual Project Project { get; set; } = null!;
 
+    public string? Notes { get; set; }
+
     public virtual ICollection<SceneResource> SceneResources { get; set; } = new List<SceneResource>();
 
     public virtual ICollection<SceneSchedule> SceneSchedules { get; set; } = new List<SceneSchedule>();

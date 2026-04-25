@@ -15,6 +15,8 @@ public partial class ScriptElement
 
     public int? RoleId { get; set; }
 
+    public string ElementType { get; set; } = "action";
+
     public virtual Role? Role { get; set; }
 
     public virtual Scene Scene { get; set; } = null!;

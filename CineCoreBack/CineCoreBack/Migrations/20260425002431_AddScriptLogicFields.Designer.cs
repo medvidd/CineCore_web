@@ -3,6 +3,7 @@ using System;
 using CineCoreBack.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace CineCoreBack.Migrations
 {
     [DbContext(typeof(DbConfig))]
-    partial class DbConfigModelSnapshot : ModelSnapshot
+    [Migration("20260425002431_AddScriptLogicFields")]
+    partial class AddScriptLogicFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -648,11 +651,6 @@ namespace CineCoreBack.Migrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("content");
-
-                    b.Property<string>("ElementType")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("element_type");
 
                     b.Property<int>("OrderIndex")
                         .HasColumnType("integer")
