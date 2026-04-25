@@ -455,6 +455,10 @@ public partial class DbConfig : DbContext
                 .HasMaxLength(100)
                 .HasDefaultValueSql("'Main Unit'::character varying")
                 .HasColumnName("unit_name");
+            entity.Property(e => e.Status)
+                .HasColumnName("status")
+                .HasColumnType("enm_shoot_day_status")
+                .HasDefaultValueSql("'draft'::enm_shoot_day_status");
 
             entity.HasOne(d => d.BaseLocation).WithMany(p => p.ShootDays)
                 .HasForeignKey(d => d.BaseLocationId)

@@ -19,6 +19,8 @@ public partial class ShootDay
 
     public string? GeneralNotes { get; set; }
 
+    public string Status { get; set; } = "draft";
+
     public virtual Location? BaseLocation { get; set; }
 
     public virtual ICollection<CallSheet> CallSheets { get; set; } = new List<CallSheet>();
