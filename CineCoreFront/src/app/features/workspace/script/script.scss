@@ -102,12 +102,47 @@ $teal: #3AB9A0;
   gap: 8px;
 
   .scene-item {
-    background: transparent; border: 1px solid transparent; border-radius: 12px; padding: 12px; cursor: pointer; transition: 0.2s;
-    &:hover { background: rgba(255,255,255,0.02); }
-    &.active { background: rgba(58, 185, 160, 0.05); border-color: rgba(58, 185, 160, 0.3); }
-    .scene-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; .scene-id { color: $teal; font-size: 12px; font-family: 'Space Mono'; } .dot-active { width: 8px; height: 8px; background: $teal; border-radius: 50%; } }
-    .scene-title { font-size: 14px; font-weight: 500; margin-bottom: 8px; line-height: 1.4; }
-    .scene-meta { display: flex; gap: 12px; color: rgba(255,255,255,0.5); font-size: 12px; }
+    // ... існуючі стилі ...
+    display: flex;       // Змінюємо layout, щоб додати іконку зліва
+    gap: 8px;
+
+    .scene-content-wrapper {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .scene-drag-handle {
+      cursor: grab;
+      color: rgba(255, 255, 255, 0.2);
+      display: flex;
+      align-items: center;
+      padding-top: 2px; // Вирівнювання
+      &:hover { color: $teal; }
+      &:active { cursor: grabbing; }
+    }
+
+    // Стиль елемента ПІД ЧАС перетягування (CDK додає цей клас)
+    &.cdk-drag-preview {
+      background: $bg-card;
+      border: 1px solid $teal;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+      border-radius: 12px;
+      z-index: 1000;
+    }
+  }
+
+  // Заглушка, яка показує місце, куди впаде сцена
+  .cdk-drag-placeholder {
+    opacity: 0.3;
+    border: 1px dashed $teal;
+  }
+
+  // Плавна анімація пересування інших елементів
+  .cdk-drag-animating {
+    transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+  }
+  .scenes-list.cdk-drop-list-dragging .scene-item:not(.cdk-drag-placeholder) {
+    transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
   }
 }
 

@@ -195,5 +195,33 @@ namespace CineCoreBack.Controllers
             await _context.SaveChangesAsync();
             return Ok();
         }
+
+        // СТВОРЕННЯ НОВОЇ СЦЕНИ
+        [HttpPost("project/{projectId}/scene")]
+        public async Task<IActionResult> CreateScene(int projectId)
+        {
+            // Знаходимо максимальний SequenceNum у цьому проекті
+            var maxSeq = await _context.Scenes
+                .Where(s => s.ProjectId == projectId)
+                .MaxAsync(s => (int?)s.SequenceNum) ?? 0;
+
+            var newScene = new Scene
+            {
+                ProjectId = projectId,
+                SequenceNum = maxSeq + 1,
+                SluglineText = "NEW SCENE",
+                EstimatedDuration = TimeSpan.Zero
+            };
+
+            _context.Scenes.Add(newScene);
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                id = newScene.Id,
+                sequenceNum = newScene.SequenceNum,
+                sluglineText = newScene.SluglineText
+            });
+        }
     }
 }
