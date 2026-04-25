@@ -14,17 +14,27 @@
       <span class="plus-icon">+</span> Add Scene Heading
     </div>
 
-    <div class="scenes-list">
+    <div class="scenes-list" cdkDropList (cdkDropListDropped)="dropScene($event)">
       @for (scene of scenes; track scene.id) {
-        <div class="scene-item" [class.active]="scene.isActive">
-          <div class="scene-top">
-            <span class="scene-id">{{ scene.id }}</span>
-            @if (scene.isActive) { <div class="dot-active"></div> }
+        <div class="scene-item"
+             cdkDrag
+             [cdkDragDisabled]="!canEdit"
+             [class.active]="scene.id === sceneId"
+             (click)="selectScene(scene.id)">
+
+          <div class="scene-drag-handle" cdkDragHandle *ngIf="canEdit">
+            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg>
           </div>
-          <div class="scene-title">{{ scene.heading }}</div>
-          <div class="scene-meta">
-            <span>{{ scene.pages }}</span>
-            <span>• {{ scene.time }}</span>
+
+          <div class="scene-content-wrapper">
+            <div class="scene-top">
+              <span class="scene-id">SC-{{ scene.sequenceNum }}</span>
+              @if (scene.id === sceneId) { <div class="dot-active"></div> }
+            </div>
+            <div class="scene-title">{{ scene.sluglineText }}</div>
+            <div class="scene-meta">
+              <span>{{ scene.estimatedDuration ? scene.estimatedDuration : '--:--' }}</span>
+            </div>
           </div>
         </div>
       }
@@ -170,13 +180,20 @@
       <div class="detail-section">
         <div class="section-title">
           <h3>Location</h3>
-          <span class="action-link">Change</span>
+          <span class="action-link">Add</span>
         </div>
-        <div class="location-card">
-          <h4>St. John Street</h4>
-          <p>Exterior</p>
-          <span class="loc-meta">center</span>
-        </div>
+        @if (sceneLocations.length > 0) {
+          @for (loc of sceneLocations; track loc.id) {
+            <div class="location-card">
+              <h4>{{ loc.name }}</h4>
+              <p>{{ loc.type }}</p>
+            </div>
+          }
+        } @else {
+          <div class="notes-card" style="min-height: auto; text-align: center; border: 1px dashed rgba(255,255,255,0.2);">
+            No location assigned
+          </div>
+        }
       </div>
 
       <div class="detail-section">
@@ -188,24 +205,20 @@
         </div>
 
         <div class="items-list">
-          <div class="tag-card">
-            <div class="card-left">
-              <div class="info"><h4>Phone (iPhone)</h4></div>
+          @if (sceneProps.length > 0) {
+            @for (prop of sceneProps; track prop.id) {
+              <div class="tag-card">
+                <div class="card-left">
+                  <div class="info"><h4>{{ prop.name }}</h4></div>
+                </div>
+                <div class="menu-dots"><div class="dot"></div><div class="dot"></div></div>
+              </div>
+            }
+          } @else {
+            <div class="notes-card" style="min-height: auto; text-align: center; border: 1px dashed rgba(255,255,255,0.2);">
+              No props added
             </div>
-            <div class="menu-dots"><div class="dot"></div><div class="dot"></div></div>
-          </div>
-          <div class="tag-card">
-            <div class="card-left">
-              <div class="info"><h4>Coffee Cup</h4></div>
-            </div>
-            <div class="menu-dots"><div class="dot"></div><div class="dot"></div></div>
-          </div>
-          <div class="tag-card">
-            <div class="card-left">
-              <div class="info"><h4>Vintage Revolver</h4></div>
-            </div>
-            <div class="menu-dots"><div class="dot"></div><div class="dot"></div></div>
-          </div>
+          }
         </div>
       </div>
 

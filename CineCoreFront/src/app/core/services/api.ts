@@ -12,6 +12,7 @@ export class Api {
   private readonly LOCATIONS_API_URL = 'http://localhost:5214/api/locations';
   private readonly PROPS_API_URL = 'http://localhost:5214/api/props';
   private readonly CREW_API_URL = 'http://localhost:5214/api/crew';
+  private readonly SCRIPT_API_URL = 'http://localhost:5214/api/script';
 
   private roleSubject = new BehaviorSubject<string>('none');
   currentRole$ = this.roleSubject.asObservable();
@@ -135,4 +136,27 @@ export class Api {
     return this.http.delete(`${this.CREW_API_URL}/invites/${inviteId}`);
   }
 
+
+  // SCRIPT ENDPOINTS
+  getSceneScript(sceneId: number) {
+    return this.http.get<any[]>(`${this.SCRIPT_API_URL}/scene/${sceneId}`);
+  }
+  autoSaveScript(sceneId: number, projectId: number, blocks: any[]) {
+    const payload = {
+      projectId: projectId,
+      blocks: blocks.map(b => ({ type: b.type, content: b.content }))
+    };
+    return this.http.post(`${this.SCRIPT_API_URL}/scene/${sceneId}/autosave`, payload);
+  }
+  updateSceneNotes(sceneId: number, notes: string) {
+    return this.http.put(`${this.SCRIPT_API_URL}/scene/${sceneId}/notes`, JSON.stringify(notes), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+  getProjectScenes(projectId: number) {
+    return this.http.get<any[]>(`${this.SCRIPT_API_URL}/project/${projectId}/scenes`);
+  }
+  reorderScenes(projectId: number, orderedIds: number[]) {
+    return this.http.put(`${this.SCRIPT_API_URL}/project/${projectId}/scenes/reorder`, orderedIds);
+  }
 }

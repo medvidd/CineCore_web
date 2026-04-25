@@ -2,6 +2,11 @@ import { Component, ElementRef, ViewChild, OnInit, inject, ChangeDetectorRef } f
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Api } from '../../../core/services/api';
+import { Subject} from 'rxjs';
+import { debounceTime } from 'rxjs/operators';
+import { ActivatedRoute } from '@angular/router';
+import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
+
 
 type BlockType = 'scene_heading' | 'action' | 'character' | 'dialogue' | 'parenthetical' | 'transition' | 'shot';
 type ViewMode = 'edit' | 'breakdown' | 'read';
@@ -18,7 +23,7 @@ interface ScriptBlock {
 @Component({
   selector: 'app-script',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, DragDropModule],
   templateUrl: './script.html',
   styleUrl: './script.scss'
 })
@@ -26,22 +31,34 @@ export class Script implements OnInit {
   @ViewChild('scriptPaper') scriptPaper!: ElementRef;
   private api = inject(Api);
   private cdr= inject(ChangeDetectorRef);
+  private route = inject(ActivatedRoute);
+
+  projectId: number = 0;
+  sceneId: number = 0;
+  sceneNotes: string = '';
+
+  private autosaveSubject = new Subject<void>();
+  private notesAutosaveSubject = new Subject<string>();
 
   // --- СТАНИ UI ---
   isLeftOpen = true;
   isRightOpen = true;
-  viewMode: ViewMode = 'breakdown'; // Режими: edit, breakdown, read
+  viewMode: ViewMode = 'breakdown';
   sceneViewMode: SceneViewMode = 'single';
-
-  // Додаткові стани
-  showLinesInRead = true; // Перемикач ліній у режимі читання
-  rawScriptText = '';     // Текст для Write (edit) режиму
+  showLinesInRead = true;
+  rawScriptText = '';
   openTypeMenuId: string | null = null;
-
   currentUserRole: string = 'none';
   canEdit: boolean = false;
 
   @ViewChild('rawEditor') rawEditorRef!: ElementRef;
+
+  scenes: any[] = [];
+  activeCharacters: any[] = [];
+  blocks: ScriptBlock[] = [];
+
+  sceneLocations: any[] = [];
+  sceneProps: any[] = [];
 
   ngOnInit() {
     this.api.currentRole$.subscribe(role => {
@@ -50,10 +67,105 @@ export class Script implements OnInit {
       this.cdr.detectChanges();
     });
 
-    // Якщо починаємо з режиму редагування, генеруємо текст
+    // 1. Отримуємо ID проекту та сцени (припустимо, вони є в URL)
+    this.route.parent?.paramMap.subscribe(params => {
+      const pid = params.get('id');
+      if (pid) {
+        this.projectId = Number(pid);
+        this.loadScenesList(); // Завантажуємо ліву панель!
+      }
+    });
+
+    // Для тесту можемо взяти першу сцену з вашого хардкодного списку
+    this.route.parent?.paramMap.subscribe(params => {
+      const pid = params.get('id');
+      if (pid) {
+        this.projectId = Number(pid);
+        this.loadScenesList(); // Завантажуємо ліву панель!
+      }
+    });
+
+    // 2. НАЛАШТУВАННЯ АВТОЗБЕРЕЖЕННЯ (чекає 3 секунди після зупинки вводу)
+    this.autosaveSubject.pipe(debounceTime(3000)).subscribe(() => {
+      this.performAutosave();
+    });
+
+    this.notesAutosaveSubject.pipe(debounceTime(2000)).subscribe((notes) => {
+      this.api.updateSceneNotes(this.sceneId, notes).subscribe();
+    });
+  }
+
+  loadScenesList() {
+    this.api.getProjectScenes(this.projectId).subscribe({
+      next: (data) => {
+        this.scenes = data;
+        // Якщо в проекті є сцени, автоматично відкриваємо першу
+        if (this.scenes.length > 0 && this.sceneId === 0) {
+          this.selectScene(this.scenes[0].id);
+        }
+      },
+      error: (err) => console.error('Failed to load scenes', err)
+    });
+  }
+
+  selectScene(id: number) {
+    if (this.sceneId === id) return; // Не перезавантажувати, якщо вже обрана
+
+    // Якщо ми в режимі 'edit', перед зміною сцени зберігаємо поточну
     if (this.viewMode === 'edit') {
-      this.buildRawTextFromBlocks();
+      this.parseRawTextToBlocks();
+      this.performAutosave();
     }
+
+    this.sceneId = id;
+    this.loadSceneScript();
+  }
+
+  loadSceneScript() {
+    this.api.getSceneScript(this.sceneId).subscribe({
+      next: (data: any) => {
+        this.blocks = data.blocks;       // Беремо блоки з нового об'єкта
+        this.sceneNotes = data.notes || ''; // Беремо нотатки
+
+        this.extractCharactersFromBlocks();
+
+        if (this.viewMode === 'edit') {
+          this.buildRawTextFromBlocks();
+          if (this.rawEditorRef?.nativeElement) {
+            this.rawEditorRef.nativeElement.innerText = this.rawScriptText;
+          }
+        }
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('Failed to load script', err)
+    });
+  }
+
+  performAutosave() {
+    if (!this.canEdit) return; // Якщо актор - не зберігаємо
+
+    this.api.autoSaveScript(this.sceneId, this.projectId, this.blocks).subscribe({
+      next: () => {
+        console.log('Script autosaved!');
+        this.extractCharactersFromBlocks(); // Оновлюємо список ролей збоку
+      },
+      error: (err) => console.error('Autosave failed', err)
+    });
+  }
+
+  extractCharactersFromBlocks() {
+    const charNames = [...new Set(this.blocks
+      .filter(b => b.type === 'character')
+      .map(b => b.content.trim().toUpperCase())
+    )];
+
+    this.activeCharacters = charNames.map((name, i) => ({
+      id: 'char-' + i,
+      initials: name.charAt(0),
+      name: name,
+      type: 'Auto',
+      color: '#3AB9A0' // Можна брати з БД, якщо повертати в DTO
+    }));
   }
 
   toggleLeft() { this.isLeftOpen = !this.isLeftOpen; }
@@ -61,9 +173,9 @@ export class Script implements OnInit {
 
   onRawInput(event: Event) {
     const el = event.target as HTMLElement;
-    // textContent не додає зайвих \n від div/br
-    this.rawScriptText = el.innerText
-      .replace(/\n{3,}/g, '\n\n'); // не більше одного порожнього рядка
+    this.rawScriptText = el.innerText.replace(/\n{3,}/g, '\n\n');
+    this.parseRawTextToBlocks();
+    this.autosaveSubject.next();
   }
 
   setViewMode(mode: ViewMode) {
@@ -98,32 +210,20 @@ export class Script implements OnInit {
     textarea.style.height = (textarea.scrollHeight) + 'px'; // Встановити висоту контенту
   }
 
-  // --- ДАНІ ---
-  scenes = [
-    { id: 'SC-001', heading: 'INT. CAFE - DAY', pages: '1.5 p.', time: '00:05:00', isActive: false },
-    { id: 'SC-002', heading: 'EXT. NIGHT STREET', pages: '0.75 p.', time: '00:03:00', isActive: true },
-    { id: 'SC-003', heading: 'INT. SARAH\'S HOUSE', pages: '0.5 p.', time: '00:02:00', isActive: false }
-  ];
 
-  activeCharacters = [
-    { id: 'char-1', initials: 'J', name: 'JOHN', type: 'Lead', color: '#3AB9A0' },
-    { id: 'char-2', initials: 'S', name: 'SARAH', type: 'Lead', color: '#E9A60F' },
-    { id: 'char-3', initials: 'D', name: 'DETECTIVE CHEN', type: 'Lead', color: '#8B5CF6' }
-  ];
-
-  blocks: ScriptBlock[] = [
-    { id: 'b1', type: 'scene_heading', content: 'EXT. NIGHT STREET' },
-    { id: 'b2', type: 'action', content: 'Джон виходить з кафе. Вулиця покрита дощем, відблиски вогнів у калюжах.' },
-    { id: 'b3', type: 'action', content: 'Він дістає телефон, набирає номер. Довгі гудки.' },
-    { id: 'b4', type: 'character', content: 'JOHN', charId: 'char-1', color: '#3AB9A0' },
-    { id: 'b5', type: 'parenthetical', content: 'у телефон', color: '#3AB9A0' },
-    { id: 'b6', type: 'dialogue', content: 'Нам потрібно поговорити. Сьогодні ввечері.', color: '#3AB9A0' },
-    { id: 'b7', type: 'action', content: 'Він кидає недопалок на землю і йде нічною вулицею.' },
-    { id: 'b8', type: 'character', content: 'SARAH', charId: 'char-2', color: '#E9A60F' },
-    { id: 'b9', type: 'dialogue', content: 'Джон? Я тебе погано чую, зв\'язок переривається.', color: '#E9A60F' },
-    { id: 'b10', type: 'transition', content: 'CUT TO:' },
-    { id: 'b11', type: 'shot', content: 'CLOSE UP ON PHONE' }
-  ];
+  // blocks: ScriptBlock[] = [
+  //   { id: 'b1', type: 'scene_heading', content: 'EXT. NIGHT STREET' },
+  //   { id: 'b2', type: 'action', content: 'Джон виходить з кафе. Вулиця покрита дощем, відблиски вогнів у калюжах.' },
+  //   { id: 'b3', type: 'action', content: 'Він дістає телефон, набирає номер. Довгі гудки.' },
+  //   { id: 'b4', type: 'character', content: 'JOHN', charId: 'char-1', color: '#3AB9A0' },
+  //   { id: 'b5', type: 'parenthetical', content: 'у телефон', color: '#3AB9A0' },
+  //   { id: 'b6', type: 'dialogue', content: 'Нам потрібно поговорити. Сьогодні ввечері.', color: '#3AB9A0' },
+  //   { id: 'b7', type: 'action', content: 'Він кидає недопалок на землю і йде нічною вулицею.' },
+  //   { id: 'b8', type: 'character', content: 'SARAH', charId: 'char-2', color: '#E9A60F' },
+  //   { id: 'b9', type: 'dialogue', content: 'Джон? Я тебе погано чую, зв\'язок переривається.', color: '#E9A60F' },
+  //   { id: 'b10', type: 'transition', content: 'CUT TO:' },
+  //   { id: 'b11', type: 'shot', content: 'CLOSE UP ON PHONE' }
+  // ];
 
   // --- ЛОГІКА ПЕРЕТВОРЕННЯ (WRITE MODE) ---
   buildRawTextFromBlocks() {
@@ -154,6 +254,26 @@ export class Script implements OnInit {
     });
   }
 
+  // --- DRAG AND DROP ЛОГІКА ---
+  dropScene(event: CdkDragDrop<any[]>) {
+    // Якщо користувач не має прав на редагування, забороняємо переміщення
+    if (!this.canEdit) return;
+
+    // Переміщуємо елемент у локальному масиві
+    moveItemInArray(this.scenes, event.previousIndex, event.currentIndex);
+
+    // Миттєво оновлюємо візуальні номери (SequenceNum) для всіх сцен
+    this.scenes.forEach((scene, index) => {
+      scene.sequenceNum = index + 1;
+    });
+
+    // Збираємо новий порядок ID і відправляємо на сервер
+    const orderedIds = this.scenes.map(s => s.id);
+    this.api.reorderScenes(this.projectId, orderedIds).subscribe({
+      error: (err) => console.error('Failed to reorder scenes', err)
+    });
+  }
+
   // --- ЛОГІКА UI БЛОКІВ ---
   toggleTypeMenu(blockId: string) {
     this.openTypeMenuId = this.openTypeMenuId === blockId ? null : blockId;
@@ -162,6 +282,7 @@ export class Script implements OnInit {
   setBlockType(block: ScriptBlock, newType: BlockType) {
     block.type = newType;
     this.openTypeMenuId = null;
+    this.autosaveSubject.next();
   }
 
   // Вибір класу лінії в залежності від типу блоку
