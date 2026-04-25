@@ -3,15 +3,12 @@
   <div class="casting-header-card">
     <div class="header-left">
       <div class="icon-box">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-        </svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
       </div>
       <div class="title-group">
-        <h1>Casting</h1>
+        <h1>Casting Management</h1>
         <div class="stats-badges">
-          <span class="badge">{{ totalRoles }} Roles</span>
-          <span class="badge">{{ castRoles }} Actors</span>
+          <span class="badge">{{ roles.length }} Total Roles</span>
         </div>
       </div>
     </div>
@@ -20,112 +17,217 @@
   <div class="casting-split-view">
 
     <aside class="roles-list-panel">
-      <button class="btn-add-role">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-        Add Role
-      </button>
+      @if (canEdit) {
+        <button class="btn-add-role" (click)="openAddRoleModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          New Role
+        </button>
+      }
 
       <div class="roles-scroll">
         @for (role of roles; track role.id) {
-          <div class="role-list-card"
+          <div class="role-item"
                [class.active]="selectedRole?.id === role.id"
                (click)="selectRole(role)">
-            <div class="card-top">
-              <h3>{{ role.name }}</h3>
-              @if (role.isCast) {
-                <div class="status-icon casted"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
-              } @else {
-                <div class="status-icon pending"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg></div>
-              }
+            <div class="role-item-header">
+              <span class="type-badge" [style.color]="role.colorHex" [style.borderColor]="role.colorHex">{{ role.roleType }}</span>
+              <span class="candidates-count"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg> {{ role.candidatesCount }}</span>
             </div>
-            <span class="type-badge" [ngClass]="getRoleTypeClass(role.type)">{{ role.type }}</span>
+            <h4>{{ role.roleName }}</h4>
+            @if (role.age) { <div class="role-meta">Age: {{ role.age }}</div> }
           </div>
+        }
+        @if (roles.length === 0) {
+          <div class="empty-state-small">No roles created yet.</div>
         }
       </div>
     </aside>
 
     <main class="role-details-panel">
       @if (selectedRole) {
-        <div class="details-scroll">
+        <div class="details-header">
+          <div class="title-area">
+            <span class="type-badge large" [style.color]="selectedRole.colorHex" [style.borderColor]="selectedRole.colorHex">{{ selectedRole.roleType }}</span>
+            <h2>{{ selectedRole.roleName }}</h2>
+            <p>{{ selectedRole.description || 'No description provided.' }}</p>
 
-          <div class="role-header">
-            <div class="header-main">
-              <h2>{{ selectedRole.name }}</h2>
-              <button class="btn-icon">⋮</button>
-            </div>
-            <div class="role-tags">
-              <span class="type-badge" [ngClass]="getRoleTypeClass(selectedRole.type)">{{ selectedRole.type }}</span>
-              @if (selectedRole.gender) { <span class="tag">Gender: {{ selectedRole.gender }}</span> }
-              @if (selectedRole.age) { <span class="tag">Age: {{ selectedRole.age }}</span> }
-            </div>
-            @if (selectedRole.desc) {
-              <p class="role-desc">{{ selectedRole.desc }}</p>
-            }
-          </div>
-
-          <div class="section-block">
-            <h3 class="section-title">Cast Actor</h3>
-
-            @if (selectedRole.isCast && selectedRole.castActor) {
-              <div class="cast-actor-card">
-                <div class="actor-profile">
-                  <div class="avatar">{{ selectedRole.castActor.initials }}</div>
-                  <div class="info">
-                    <div class="name-row">
-                      <h4>{{ selectedRole.castActor.name }}</h4>
-                      <span class="status-badge approved">Approved</span>
-                    </div>
-                    <span class="age">{{ selectedRole.castActor.age }} years old</span>
-                    <div class="contacts">
-                      <p><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg> {{ selectedRole.castActor.email }}</p>
-                      <p class="text-teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg> {{ selectedRole.castActor.phone }}</p>
-                    </div>
-                  </div>
-                </div>
-                <p class="actor-bio">{{ selectedRole.castActor.bio }}</p>
-                <div class="actor-actions">
-                  <button class="btn-outline">Change Status</button>
-                  <button class="btn-outline-danger">Uncast</button>
-                </div>
-              </div>
-            } @else {
-              <div class="empty-cast-state">
-                <p>No actor cast for this role</p>
-                <button class="btn-dark">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
-                  Add First Candidate
-                </button>
+            @if (parseCharacteristics(selectedRole.characteristics).length > 0) {
+              <div class="characteristics-tags">
+                @for (tag of parseCharacteristics(selectedRole.characteristics); track tag) {
+                  <span class="char-tag">{{ tag }}</span>
+                }
               </div>
             }
           </div>
 
-          <div class="section-block candidates-block">
-            <div class="section-header">
-              <h3 class="section-title">Candidates ({{ selectedRole.candidates?.length || 0 }})</h3>
-              <button class="btn-dark-small">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
-                Add Candidate
-              </button>
+          @if (canEdit) {
+            <div class="actions">
+              <button class="btn-dark-icon" (click)="openEditRoleModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
+              <button class="btn-dark-icon delete" (click)="deleteRole()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2v2"></path></svg></button>
+              <button class="btn-primary" (click)="openAddCandidateModal()">Add Candidate</button>
             </div>
+          }
+        </div>
 
-            <div class="candidates-list">
-              @for (candidate of selectedRole.candidates; track candidate.name) {
-                <div class="candidate-card">
-                  <div class="cand-info">
-                    <div class="avatar" [ngStyle]="{'background': 'linear-gradient(135deg, #A5B370 0%, #D7AB3D 100%)'}">{{ candidate.initials }}</div>
-                    <div>
-                      <h4>{{ candidate.name }}</h4>
-                      <span>{{ candidate.age }} years old</span>
-                    </div>
+        <div class="kanban-board">
+
+          <div class="k-column" (dragover)="onDragOver($event)" (drop)="onDrop($event, 'pending')">
+            <div class="k-col-header yellow">Pending <span>{{ pendingCandidates.length }}</span></div>
+            <div class="k-list">
+              @for (cand of pendingCandidates; track cand.actorId) {
+                <div class="k-card" draggable="true" (dragstart)="onDragStart($event, cand)" (dragend)="onDragEnd($event)">
+                  <div class="avatar" [ngClass]="cand.avatarTheme">{{ cand.firstName[0] }}{{ cand.lastName[0] }}</div>
+                  <div class="k-info">
+                    <strong>{{ cand.firstName }} {{ cand.lastName }}</strong>
+                    <span>Added: {{ cand.castDate }}</span>
                   </div>
-                  <button class="btn-icon">⋮</button>
+                </div>
+              }
+            </div>
+          </div>
+
+          <div class="k-column" (dragover)="onDragOver($event)" (drop)="onDrop($event, 'hold')">
+            <div class="k-col-header purple">On Hold <span>{{ holdCandidates.length }}</span></div>
+            <div class="k-list">
+              @for (cand of holdCandidates; track cand.actorId) {
+                <div class="k-card" draggable="true" (dragstart)="onDragStart($event, cand)" (dragend)="onDragEnd($event)">
+                  <div class="avatar" [ngClass]="cand.avatarTheme">{{ cand.firstName[0] }}{{ cand.lastName[0] }}</div>
+                  <div class="k-info">
+                    <strong>{{ cand.firstName }} {{ cand.lastName }}</strong>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+
+          <div class="k-column" (dragover)="onDragOver($event)" (drop)="onDrop($event, 'approved')">
+            <div class="k-col-header green">Approved <span>{{ approvedCandidates.length }}</span></div>
+            <div class="k-list">
+              @for (cand of approvedCandidates; track cand.actorId) {
+                <div class="k-card approved-card" draggable="true" (dragstart)="onDragStart($event, cand)" (dragend)="onDragEnd($event)">
+                  <div class="avatar" [ngClass]="cand.avatarTheme">{{ cand.firstName[0] }}{{ cand.lastName[0] }}</div>
+                  <div class="k-info">
+                    <strong>{{ cand.firstName }} {{ cand.lastName }}</strong>
+                    <span class="badge-approved">Cast</span>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+
+          <div class="k-column" (dragover)="onDragOver($event)" (drop)="onDrop($event, 'declined')">
+            <div class="k-col-header red">Declined <span>{{ declinedCandidates.length }}</span></div>
+            <div class="k-list">
+              @for (cand of declinedCandidates; track cand.actorId) {
+                <div class="k-card declined-card" draggable="true" (dragstart)="onDragStart($event, cand)" (dragend)="onDragEnd($event)">
+                  <div class="avatar" [ngClass]="cand.avatarTheme">{{ cand.firstName[0] }}{{ cand.lastName[0] }}</div>
+                  <div class="k-info">
+                    <strong>{{ cand.firstName }} {{ cand.lastName }}</strong>
+                  </div>
                 </div>
               }
             </div>
           </div>
 
         </div>
+
+      } @else {
+        <div class="empty-state-large">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+          <h3>Select a Role</h3>
+          <p>Choose a role from the left panel to view candidates or manage casting.</p>
+        </div>
       }
     </main>
   </div>
 </div>
+
+@if (isRoleModalOpen) {
+  <div class="modal-overlay" (click)="closeRoleModal()">
+    <div class="modal-container large-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header"><h2>{{ roleForm.id ? 'Edit Role' : 'Create New Role' }}</h2></div>
+
+      <form (ngSubmit)="saveRole()" class="modal-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Role Name</label>
+            <input type="text" [(ngModel)]="roleForm.roleName" name="rName" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label>Type</label>
+            <select [(ngModel)]="roleForm.roleType" name="rType" class="form-control custom-select">
+              @for(t of roleTypes; track t) { <option [value]="t">{{ t | titlecase }}</option> }
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Age (approx.)</label>
+            <input type="number" [(ngModel)]="roleForm.age" name="rAge" class="form-control">
+          </div>
+          <div class="form-group">
+            <label>Color Tag</label>
+            <input type="color" [(ngModel)]="roleForm.colorHex" name="rColor" class="form-control color-picker">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Description / Breakdown</label>
+          <textarea [(ngModel)]="roleForm.description" name="rDesc" class="form-control" rows="3"></textarea>
+        </div>
+
+        <div class="form-divider">CHARACTERISTICS</div>
+
+        <div class="dynamic-list">
+          @for (field of charFields; track $index) {
+            <div class="dynamic-row">
+              <input type="text" [(ngModel)]="field.key" name="k_{{$index}}" placeholder="E.g. Eye Color" class="form-control">
+              <input type="text" [(ngModel)]="field.value" name="v_{{$index}}" placeholder="E.g. Blue" class="form-control">
+              <button type="button" class="btn-remove-row" (click)="removeCharField($index)">✕</button>
+            </div>
+          }
+          <button type="button" class="btn-add-row" (click)="addCharField()">+ Add Characteristic</button>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn-cancel" (click)="closeRoleModal()">Cancel</button>
+          <button type="submit" class="btn-submit">Save Role</button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+
+@if (isCandidateModalOpen) {
+  <div class="modal-overlay" (click)="closeCandidateModal()">
+    <div class="modal-container" (click)="$event.stopPropagation()">
+      <div class="modal-header"><h2>Add Candidate</h2><p class="modal-subtitle">Select an actor from the project crew.</p></div>
+
+      <form (ngSubmit)="saveCandidate()" class="modal-form">
+        <div class="form-group">
+          <label>Select Actor</label>
+          <select [(ngModel)]="candidateForm.actorId" name="cActor" class="form-control custom-select" required>
+            <option [value]="null" disabled selected>Choose an actor...</option>
+            @for(actor of projectActors; track actor.userId) {
+              <option [value]="actor.userId">{{ actor.fullName }} ({{ actor.email }})</option>
+            }
+          </select>
+          @if (projectActors.length === 0) {
+            <span class="input-info yellow">No active actors in this project. Invite them via Crew tab first.</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label>Casting Notes (Optional)</label>
+          <textarea [(ngModel)]="candidateForm.notes" name="cNotes" class="form-control" rows="3"></textarea>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn-cancel" (click)="closeCandidateModal()">Cancel</button>
+          <button type="submit" class="btn-submit" [disabled]="!candidateForm.actorId">Add Candidate</button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
