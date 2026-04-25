@@ -216,6 +216,10 @@ export class Api {
     return this.http.put<any>(`${this.PROJECTS_API_URL}/${projectId}/roles/${roleId}/candidates/${actorId}/status`, { castStatus: status });
   }
 
+  removeCandidate(projectId: number, roleId: number, actorId: number) {
+    return this.http.delete(`${this.PROJECTS_API_URL}/${projectId}/roles/${roleId}/candidates/${actorId}`);
+  }
+
   getActorProfile(userId: number): Observable<any> {
     return this.http.get<any>(`${this.ACTORS_API_URL}/${userId}/profile`);
   }

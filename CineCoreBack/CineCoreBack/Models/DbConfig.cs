@@ -87,9 +87,9 @@ public partial class DbConfig : DbContext
                 .HasColumnName("characteristics");
 
             entity.HasOne(d => d.User)
-                .WithOne() 
+                .WithOne(u => u.Actor) 
                 .HasForeignKey<Actor>(d => d.Id)
-                .OnDelete(DeleteBehavior.Cascade) 
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("actors_user_id_fkey");
         });
 

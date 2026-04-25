@@ -24,13 +24,35 @@
         </button>
       }
 
+      <div class="roles-search-bar" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px;">
+        <input type="text" [(ngModel)]="searchQuery" placeholder="Search roles..." class="form-control" style="padding: 10px 14px;">
+        <select [(ngModel)]="statusFilter" class="form-control custom-select" style="padding: 10px 14px;">
+          <option value="all">All Statuses</option>
+          <option value="uncasted">Needs Casting</option>
+          <option value="casted">Already Cast</option>
+        </select>
+      </div>
+
       <div class="roles-scroll">
-        @for (role of roles; track role.id) {
+        @for (role of filteredRoles; track role.id) {
           <div class="role-item"
                [class.active]="selectedRole?.id === role.id"
                (click)="selectRole(role)">
             <div class="role-item-header">
-              <span class="type-badge" [style.color]="role.colorHex" [style.borderColor]="role.colorHex">{{ role.roleType }}</span>
+              <div class="role-badges">
+                <span class="type-badge" [style.color]="role.colorHex" [style.borderColor]="role.colorHex">{{ role.roleType }}</span>
+
+                @if (role.isCast) {
+                  <span class="status-icon casted" title="Role is cast">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                  </span>
+                } @else {
+                  <span class="status-icon uncasted" title="Needs casting">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+                  </span>
+                }
+              </div>
+
               <span class="candidates-count"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg> {{ role.candidatesCount }}</span>
             </div>
             <h4>{{ role.roleName }}</h4>
@@ -62,8 +84,8 @@
 
           @if (canEdit) {
             <div class="actions">
-              <button class="btn-dark-icon" (click)="openEditRoleModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
-              <button class="btn-dark-icon delete" (click)="deleteRole()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2v2"></path></svg></button>
+              <button class="btn-icon-ghost" (click)="openEditRoleModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
+              <button class="btn-icon-ghost danger" (click)="deleteRole()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2v2"></path></svg></button>
               <button class="btn-primary" (click)="openAddCandidateModal()">Add Candidate</button>
             </div>
           }
@@ -75,12 +97,19 @@
             <div class="k-col-header yellow">Pending <span>{{ pendingCandidates.length }}</span></div>
             <div class="k-list">
               @for (cand of pendingCandidates; track cand.actorId) {
-                <div class="k-card" draggable="true" (dragstart)="onDragStart($event, cand)" (dragend)="onDragEnd($event)">
-                  <div class="avatar" [ngClass]="cand.avatarTheme">{{ cand.firstName[0] }}{{ cand.lastName[0] }}</div>
+                <div class="k-card" draggable="true"
+                     (dragstart)="onDragStart($event, cand)"
+                     (dragend)="onDragEnd($event)"
+                     (click)="viewCandidateDetails(cand)">                  <div class="avatar" [ngClass]="cand.avatarTheme">{{ cand.firstName[0] }}{{ cand.lastName[0] }}</div>
                   <div class="k-info">
                     <strong>{{ cand.firstName }} {{ cand.lastName }}</strong>
                     <span>Added: {{ cand.castDate }}</span>
                   </div>
+                  @if (canEdit) {
+                    <button class="btn-icon-ghost danger mini-delete" (click)="$event.stopPropagation(); deleteCandidate(cand)">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2v2"></path></svg>
+                    </button>
+                  }
                 </div>
               }
             </div>
@@ -90,11 +119,19 @@
             <div class="k-col-header purple">On Hold <span>{{ holdCandidates.length }}</span></div>
             <div class="k-list">
               @for (cand of holdCandidates; track cand.actorId) {
-                <div class="k-card" draggable="true" (dragstart)="onDragStart($event, cand)" (dragend)="onDragEnd($event)">
-                  <div class="avatar" [ngClass]="cand.avatarTheme">{{ cand.firstName[0] }}{{ cand.lastName[0] }}</div>
+                <div class="k-card" draggable="true"
+                     (dragstart)="onDragStart($event, cand)"
+                     (dragend)="onDragEnd($event)"
+                     (click)="viewCandidateDetails(cand)">                  <div class="avatar" [ngClass]="cand.avatarTheme">{{ cand.firstName[0] }}{{ cand.lastName[0] }}</div>
                   <div class="k-info">
                     <strong>{{ cand.firstName }} {{ cand.lastName }}</strong>
+                    <span>Added: {{ cand.castDate }}</span>
                   </div>
+                  @if (canEdit) {
+                    <button class="btn-icon-ghost danger mini-delete" (click)="$event.stopPropagation(); deleteCandidate(cand)">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2v2"></path></svg>
+                    </button>
+                  }
                 </div>
               }
             </div>
@@ -104,26 +141,46 @@
             <div class="k-col-header green">Approved <span>{{ approvedCandidates.length }}</span></div>
             <div class="k-list">
               @for (cand of approvedCandidates; track cand.actorId) {
-                <div class="k-card approved-card" draggable="true" (dragstart)="onDragStart($event, cand)" (dragend)="onDragEnd($event)">
-                  <div class="avatar" [ngClass]="cand.avatarTheme">{{ cand.firstName[0] }}{{ cand.lastName[0] }}</div>
+                <div class="k-card" draggable="true"
+                     (dragstart)="onDragStart($event, cand)"
+                     (dragend)="onDragEnd($event)"
+                     (click)="viewCandidateDetails(cand)">                  <div class="avatar" [ngClass]="cand.avatarTheme">{{ cand.firstName[0] }}{{ cand.lastName[0] }}</div>
                   <div class="k-info">
                     <strong>{{ cand.firstName }} {{ cand.lastName }}</strong>
+                    <span>Added: {{ cand.castDate }}</span>
                     <span class="badge-approved">Cast</span>
                   </div>
+
                 </div>
               }
             </div>
           </div>
 
           <div class="k-column" (dragover)="onDragOver($event)" (drop)="onDrop($event, 'declined')">
-            <div class="k-col-header red">Declined <span>{{ declinedCandidates.length }}</span></div>
+            <div class="k-col-header red">
+              Declined <span>{{ declinedCandidates.length }}</span>
+              @if (declinedCandidates.length > 0 && canEdit) {
+                <button class="btn-icon-ghost danger" (click)="clearDeclinedCandidates()" title="Clear all declined">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                </button>
+              }
+            </div>
             <div class="k-list">
               @for (cand of declinedCandidates; track cand.actorId) {
-                <div class="k-card declined-card" draggable="true" (dragstart)="onDragStart($event, cand)" (dragend)="onDragEnd($event)">
-                  <div class="avatar" [ngClass]="cand.avatarTheme">{{ cand.firstName[0] }}{{ cand.lastName[0] }}</div>
+                <div class="k-card" draggable="true"
+                     (dragstart)="onDragStart($event, cand)"
+                     (dragend)="onDragEnd($event)"
+                     (click)="viewCandidateDetails(cand)">                  <div class="avatar" [ngClass]="cand.avatarTheme">{{ cand.firstName[0] }}{{ cand.lastName[0] }}</div>
                   <div class="k-info">
                     <strong>{{ cand.firstName }} {{ cand.lastName }}</strong>
+                    <span>Added: {{ cand.castDate }}</span>
                   </div>
+
+                  @if (canEdit) {
+                    <button class="btn-icon-ghost danger mini-delete" (click)="$event.stopPropagation(); deleteCandidate(cand)">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2v2"></path></svg>
+                    </button>
+                  }
                 </div>
               }
             </div>
@@ -228,6 +285,60 @@
           <button type="submit" class="btn-submit" [disabled]="!candidateForm.actorId">Add Candidate</button>
         </div>
       </form>
+    </div>
+  </div>
+}
+
+
+@if (isCandidateDetailsModalOpen && selectedCandidateDetails) {
+  <div class="modal-overlay" (click)="closeCandidateDetailsModal()">
+    <div class="modal-container" (click)="$event.stopPropagation()">
+
+      <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 24px;">
+        <div class="avatar-circle" [ngClass]="selectedCandidateDetails.avatarTheme">
+          {{ selectedCandidateDetails.firstName[0] }}{{ selectedCandidateDetails.lastName[0] }}
+        </div>
+        <div>
+          <h2 style="margin: 0 0 4px 0;">{{ selectedCandidateDetails.firstName }} {{ selectedCandidateDetails.lastName }}</h2>
+          <div style="color: #3AB9A0; font-size: 14px;">{{ selectedCandidateDetails.email }}</div>
+          <div style="color: rgba(255,255,255,0.6); font-size: 14px;">{{ selectedCandidateDetails.phoneNum || 'No phone provided' }}</div>
+        </div>
+      </div>
+
+      <div class="age-badge">
+        Born: {{ getAgeInfo(selectedCandidateDetails.birthday) }}
+      </div>
+
+      <div style="height: 10px"></div>
+
+      <div class="form-divider">ACTOR CHARACTERISTICS</div>
+
+      <div style="background: rgba(0, 11, 16, 0.5); border-radius: 12px; padding: 16px; border: 1px solid rgba(255,255,255,0.05); max-height: 300px; overflow-y: auto;">
+        @if (parseCharacteristics(selectedCandidateDetails.characteristics).length > 0) {
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            @for (char of parseCharacteristics(selectedCandidateDetails.characteristics); track char) {
+              <div style="display: flex; flex-direction: column; background: #1D1D1D; padding: 8px 12px; border-radius: 8px;">
+                <span style="font-size: 11px; color: rgba(255,255,255,0.4); text-transform: uppercase;">{{ char.split(':')[0] }}</span>
+                <span style="font-size: 14px; font-weight: 500;">{{ char.split(':')[1] }}</span>
+              </div>
+            }
+          </div>
+        } @else {
+          <div style="text-align: center; color: rgba(255,255,255,0.4); font-size: 14px; padding: 16px;">
+            Actor hasn't provided any characteristics yet.
+          </div>
+        }
+      </div>
+
+      @if (selectedCandidateDetails.notes) {
+        <div class="form-divider" style="margin-top: 16px;">CASTING NOTES</div>
+        <p style="font-size: 14px; color: rgba(255,255,255,0.8); line-height: 1.5; margin: 0;">{{ selectedCandidateDetails.notes }}</p>
+      }
+
+      <div class="form-actions">
+        <button type="button" class="btn-cancel" style="width: 100%;" (click)="closeCandidateDetailsModal()">Close</button>
+      </div>
+
     </div>
   </div>
 }

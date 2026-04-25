@@ -15,6 +15,7 @@ public class RoleDto
     public string RoleType { get; set; } = null!;
     public string ColorHex { get; set; } = null!;
     public int CandidatesCount { get; set; }
+    public bool IsCast { get; set; }
 }
 
 public class CreateRoleDto
@@ -42,7 +43,7 @@ public class CandidateDto
     public string? Email { get; set; }
     public string? PhoneNum { get; set; }
     public string AvatarTheme { get; set; } = null!;
-
+    public DateOnly? Birthday { get; set; }
     // Дані з таблиці Actor
     public string? Characteristics { get; set; } // JSON з параметрами актора
 

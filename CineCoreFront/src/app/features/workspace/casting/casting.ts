@@ -52,6 +52,42 @@ export class Casting implements OnInit {
     notes: ''
   };
 
+  // ==========================================
+  // МОДАЛЬНЕ ВІКНО ДЕТАЛЕЙ КАНДИДАТА
+  // ==========================================
+  selectedCandidateDetails: any = null;
+  isCandidateDetailsModalOpen = false;
+
+  viewCandidateDetails(candidate: any) {
+    this.selectedCandidateDetails = candidate;
+    this.isCandidateDetailsModalOpen = true;
+  }
+
+  closeCandidateDetailsModal() {
+    this.isCandidateDetailsModalOpen = false;
+    this.selectedCandidateDetails = null;
+  }
+
+  // Змінні для пошуку
+  searchQuery: string = '';
+  statusFilter: string = 'all'; // 'all', 'casted', 'uncasted'
+
+  // Геттер, який замінить масив roles у HTML
+  get filteredRoles() {
+    return this.roles.filter(role => {
+      // 1. Пошук по тексту (імені)
+      const matchesSearch = !this.searchQuery ||
+        role.roleName.toLowerCase().includes(this.searchQuery.toLowerCase());
+
+      // 2. Фільтр по статусу
+      let matchesStatus = true;
+      if (this.statusFilter === 'casted') matchesStatus = role.isCast;
+      if (this.statusFilter === 'uncasted') matchesStatus = !role.isCast;
+
+      return matchesSearch && matchesStatus;
+    });
+  }
+
   ngOnInit() {
     this.api.currentRole$.subscribe(role => {
       this.currentUserRole = role;
@@ -255,20 +291,61 @@ export class Casting implements OnInit {
     event.preventDefault();
     if (this.draggedCandidate && this.draggedCandidate.castStatus !== newStatus) {
       const actorId = this.draggedCandidate.actorId;
+      const oldStatus = this.draggedCandidate.castStatus; // Запам'ятовуємо старий статус
 
-      // Оптимістичне оновлення UI
       this.draggedCandidate.castStatus = newStatus;
 
-      // Запит на бекенд
       this.api.updateCandidateStatus(this.projectId, this.selectedRole.id, actorId, newStatus)
         .subscribe({
+          next: () => {
+            // Оновлюємо список ролей зліва, якщо ми затвердили актора АБО скасували його затвердження
+            if (newStatus === 'approved' || oldStatus === 'approved') {
+              this.loadRoles();
+            }
+          },
           error: () => {
-            // У разі помилки відкачуємо зміни
             this.loadCandidates(this.selectedRole.id);
             alert('Failed to update status');
           }
         });
     }
+  }
+
+  // Видалення одного кандидата
+  deleteCandidate(candidate: any) {
+    if (confirm(`Remove ${candidate.firstName} from this role?`)) {
+      this.api.removeCandidate(this.projectId, this.selectedRole.id, candidate.actorId).subscribe({
+        next: () => this.loadCandidates(this.selectedRole.id)
+      });
+    }
+  }
+
+  // Очищення всіх відхилених
+  clearDeclinedCandidates() {
+    const declined = this.declinedCandidates;
+    if (declined.length === 0) return;
+
+    if (confirm(`Remove all ${declined.length} declined candidates?`)) {
+      // Видаляємо по черзі (або можна зробити один запит на беку)
+      declined.forEach(c => {
+        this.api.removeCandidate(this.projectId, this.selectedRole.id, c.actorId).subscribe();
+      });
+      // Оптимістично очищуємо список
+      this.candidates = this.candidates.filter(c => c.castStatus !== 'declined');
+      this.cdr.detectChanges();
+    }
+  }
+
+  getAgeInfo(birthday: string | null): string {
+    if (!birthday) return 'Age unknown';
+    const birthDate = new Date(birthday);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return `${birthDate.getFullYear()}   (${age} years old)`;
   }
 
   // Helper

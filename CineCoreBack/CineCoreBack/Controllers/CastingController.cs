@@ -35,7 +35,8 @@ public class CastingController : ControllerBase
                 Characteristics = r.Characteristics,
                 RoleType = r.RoleType,
                 ColorHex = r.ColorHex,
-                CandidatesCount = r.Castings.Count
+                CandidatesCount = r.Castings.Count,
+                IsCast = r.Castings.Any(c => c.CastStatus == "approved")
             })
             .ToListAsync();
 
@@ -119,6 +120,7 @@ public class CastingController : ControllerBase
                 Email = c.Actor.User.Email,
                 PhoneNum = c.Actor.User.PhoneNum,
                 AvatarTheme = c.Actor.User.AvatarTheme,
+                Birthday = c.Actor.User.Birthday.HasValue ? DateOnly.FromDateTime(c.Actor.User.Birthday.Value) : null,
                 Characteristics = c.Actor.Characteristics,
                 CastStatus = c.CastStatus,
                 CastDate = c.CastDate,
@@ -172,6 +174,17 @@ public class CastingController : ControllerBase
         await _context.SaveChangesAsync();
 
         return Ok(new { message = "Status updated successfully", newStatus = casting.CastStatus });
+    }
+
+    [HttpDelete("projects/{projectId}/roles/{roleId}/candidates/{actorId}")]
+    public async Task<IActionResult> RemoveCandidate(int projectId, int roleId, int actorId)
+    {
+        var casting = await _context.Castings.FirstOrDefaultAsync(c => c.RoleId == roleId && c.ActorId == actorId);
+        if (casting == null) return NotFound();
+
+        _context.Castings.Remove(casting);
+        await _context.SaveChangesAsync();
+        return Ok(new { message = "Candidate removed" });
     }
 
     // ==========================================
