@@ -148,11 +148,9 @@ export class Script implements OnInit {
   selectScene(id: number) {
     // Перевіряємо, чи це перше завантаження (коли sceneId ще 0)
     const isInitialLoad = this.sceneId === 0;
-    this.sceneId = id;
 
     if (this.sceneViewMode === 'all') {
-      // ВИПРАВЛЕННЯ: Якщо це старт або блоки ще не завантажені — вантажимо дані,
-      // а не просто скролимо в пустоту
+      this.sceneId = id;
       if (isInitialLoad || this.blocks.length === 0) {
         this.loadData();
       } else {
@@ -161,8 +159,26 @@ export class Script implements OnInit {
       return;
     }
 
+    // ✅ FIX: Запам'ятовуємо СТАРИЙ sceneId ДО того як змінити його.
+    // Це вирішує race condition: performManualSave має зберігати вміст
+    // ПОПЕРЕДНЬОЇ сцени, а не нової.
+    const previousSceneId = this.sceneId;
+
+    // ✅ FIX: Скидаємо debounce щоб "застряглий" autosave не прилетів
+    // вже після того як ми переключились на нову сцену.
+    this.autosaveSubject.complete();
+    // Перестворюємо Subject (після complete він мертвий)
+    this.autosaveSubject = new Subject<void>();
+    this.autosaveSubject.pipe(debounceTime(3000)).subscribe(() => {
+      this.performAutosave();
+    });
+
+    // Тепер безпечно оновлюємо sceneId
+    this.sceneId = id;
+
+    // Зберігаємо вміст ПОПЕРЕДНЬОЇ сцени з правильним previousSceneId
     if (this.canEdit && !isInitialLoad) {
-      this.performManualSave();
+      this.performManualSave(previousSceneId);
     }
 
     this.loadData();
@@ -234,12 +250,15 @@ export class Script implements OnInit {
     });
   }
 
-  performManualSave() {
+  performManualSave(sceneId: number = this.sceneId) {
     if (this.viewMode === 'edit') {
       this.parseRawTextToBlocks();
     }
-    // Відправляємо запит без debounce
-    this.api.autoSaveScript(this.sceneId, this.projectId, this.blocks).subscribe();
+    this.api.autoSaveScript(sceneId, this.projectId, this.blocks).subscribe({
+      next: (res: any) => {
+        this.patchSceneDuration(sceneId, res.estimatedDuration);
+      }
+    });
   }
 
   // Оновлює назву сцени у списку зліва на основі блоку scene_heading
@@ -346,12 +365,21 @@ export class Script implements OnInit {
     if (!this.canEdit || this.sceneViewMode === 'all') return;
 
     this.api.autoSaveScript(this.sceneId, this.projectId, this.blocks).subscribe({
-      next: () => {
-        console.log('Script autosaved!');
+      next: (res: any) => {
         this.extractCharactersFromBlocks();
+        this.patchSceneDuration(this.sceneId, res.estimatedDuration);
       },
       error: (err) => console.error('Autosave failed', err)
     });
+  }
+
+  // Оновлює estimatedDuration у локальному списку сцен без перезавантаження
+  private patchSceneDuration(sceneId: number, duration: string | null) {
+    const scene = this.scenes.find(s => s.id === sceneId);
+    if (scene) {
+      scene.estimatedDuration = duration;
+      this.cdr.detectChanges();
+    }
   }
 
   extractCharactersFromBlocks() {

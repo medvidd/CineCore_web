@@ -114,7 +114,15 @@ namespace CineCoreBack.Controllers
                 await _context.SaveChangesAsync();
             }
 
-            return Ok(new { message = "Synced" });
+            // КРОК Д: Розрахунок тривалості сцени на основі блоків
+            scene.EstimatedDuration = EstimateSceneDuration(dto.Blocks);
+            await _context.SaveChangesAsync();
+
+            var duration = scene.EstimatedDuration.HasValue
+                ? $"{(int)scene.EstimatedDuration.Value.TotalMinutes:D2}:{scene.EstimatedDuration.Value.Seconds:D2}"
+                : null;
+
+            return Ok(new { message = "Synced", estimatedDuration = duration });
         }
 
         // ОТРИМАННЯ СКРИПТУ ОДНІЄЇ СЦЕНИ (Відновлений метод)
@@ -166,7 +174,52 @@ namespace CineCoreBack.Controllers
                     estimatedDuration = s.EstimatedDuration
                 })
                 .ToListAsync();
-            return Ok(scenes);
+
+            var result = scenes.Select(s => new {
+                s.id,
+                s.sequenceNum,
+                s.sluglineText,
+                // Формат "MM:SS" для UI; null якщо ще не розраховано
+                estimatedDuration = s.estimatedDuration.HasValue
+                    ? $"{(int)s.estimatedDuration.Value.TotalMinutes:D2}:{s.estimatedDuration.Value.Seconds:D2}"
+                    : (string?)null
+            });
+
+            return Ok(result);
+        }
+
+        // ПЕРЕРАХУНОК ТРИВАЛОСТІ ВСІХ СЦЕН ПРОЕКТУ (одноразовий або при потребі)
+        [HttpPost("project/{projectId}/recalculate-durations")]
+        public async Task<IActionResult> RecalculateAllDurations(int projectId)
+        {
+            var scenes = await _context.Scenes
+                .Include(s => s.ScriptElements)
+                .Where(s => s.ProjectId == projectId)
+                .ToListAsync();
+
+            foreach (var scene in scenes)
+            {
+                // Конвертуємо ScriptElement назад у ScriptBlockDto для переліку
+                // scene_heading додаємо окремо з SluglineText
+                var blocks = new List<ScriptBlockDto>
+                {
+                    new ScriptBlockDto { Type = "scene_heading", Content = scene.SluglineText }
+                };
+
+                blocks.AddRange(scene.ScriptElements
+                    .OrderBy(e => e.OrderIndex)
+                    .Select(e => new ScriptBlockDto
+                    {
+                        Type = e.ElementType,
+                        Content = e.Content
+                    }));
+
+                scene.EstimatedDuration = EstimateSceneDuration(blocks);
+            }
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { updated = scenes.Count });
         }
 
         [HttpGet("project/{projectId}/full")]
@@ -460,6 +513,71 @@ namespace CineCoreBack.Controllers
             await _context.SaveChangesAsync();
 
             return Ok(new { id = prop.Id, name = prop.PropName });
+        }
+
+        // --------------------------------------------------------
+        // АЛГОРИТМ РОЗРАХУНКУ ТРИВАЛОСТІ СЦЕНИ
+        // Базується на стандарті кіноіндустрії: ~1 хвилина на сторінку сценарію.
+        // Стандартна сторінка = ~55 слів діалогу або ~200 символів action-тексту.
+        // Кожен тип блоку має власний "ваговий коефіцієнт".
+        // --------------------------------------------------------
+        private static TimeSpan EstimateSceneDuration(List<ScriptBlockDto> blocks)
+        {
+            double totalSeconds = 0;
+
+            foreach (var block in blocks)
+            {
+                string type = block.Type.ToLower();
+                string content = block.Content?.Trim() ?? "";
+                if (content.Length == 0) continue;
+
+                int wordCount = content.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;
+                int charCount = content.Length;
+
+                switch (type)
+                {
+                    // ДІАЛОГ: читається зі швидкістю ~120 слів/хв (природна мова актора)
+                    case "dialogue":
+                        totalSeconds += (wordCount / 120.0) * 60;
+                        break;
+
+                    // РЕМАРКА (parenthetical): коротка пауза + час читання
+                    case "parenthetical":
+                        totalSeconds += 1.5 + (wordCount / 150.0) * 60;
+                        break;
+
+                    // ПЕРСОНАЖ (character): пауза перед репліками ~0.8с
+                    case "character":
+                        totalSeconds += 0.8;
+                        break;
+
+                    // ACTION: описи дій знімають час на екрані.
+                    // Стандарт: ~1 хвилина на 55 слів (1 стор. = ~55 слів action = 1 хв)
+                    case "action":
+                        totalSeconds += (wordCount / 55.0) * 60;
+                        break;
+
+                    // TRANSITION (FADE OUT, CUT TO тощо): суто технічний, ~1.5с
+                    case "transition":
+                        totalSeconds += 1.5;
+                        break;
+
+                    // SHOT (INSERT, CLOSE ON тощо): короткий кадр, ~2–3с залежно від довжини
+                    case "shot":
+                        totalSeconds += 2.0 + (wordCount / 80.0) * 60;
+                        break;
+
+                    // SCENE_HEADING: не впливає на хронометраж
+                    case "scene_heading":
+                    default:
+                        break;
+                }
+            }
+
+            // Мінімум 3 секунди для непустої сцени, максимум 30 хвилин (захист від аномалій)
+            totalSeconds = Math.Clamp(totalSeconds, blocks.Any(b => b.Type.ToLower() != "scene_heading") ? 3 : 0, 1800);
+
+            return TimeSpan.FromSeconds(Math.Round(totalSeconds));
         }
 
     }
