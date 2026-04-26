@@ -254,9 +254,27 @@ export class Script implements OnInit {
     if (this.viewMode === 'edit') {
       this.parseRawTextToBlocks();
     }
+
+    // НОВЕ: Перевіряємо локально, чи є в цій сцені більше одного заголовка
+    const willSplit = this.blocks.filter(b => b.type === 'scene_heading').length > 1;
+
     this.api.autoSaveScript(sceneId, this.projectId, this.blocks).subscribe({
       next: (res: any) => {
-        this.patchSceneDuration(sceneId, res.estimatedDuration);
+        // НОВЕ: Якщо бекенд розрізав сцену АБО ми передбачили це локально
+        if (res.wasSplit || willSplit) {
+          // 1. Оновлюємо ліву панель (з'явилися нові сцени зі зсунутими номерами)
+          this.loadScenesList();
+
+          // 2. Перемикаємо режими, щоб показати користувачу результат
+          this.sceneViewMode = 'all';  // Вмикаємо Full Script
+          this.viewMode = 'breakdown'; // Виходимо з режиму набору тексту
+
+          // 3. Завантажуємо весь оновлений сценарій
+          this.loadData();
+        } else {
+          // Стара логіка: звичайне збереження без розрізання
+          this.patchSceneDuration(sceneId, res.estimatedDuration);
+        }
       }
     });
   }
@@ -364,10 +382,22 @@ export class Script implements OnInit {
   performAutosave() {
     if (!this.canEdit || this.sceneViewMode === 'all') return;
 
+    // НОВЕ: Перевіряємо, чи з'явився другий заголовок під час набору тексту
+    const willSplit = this.blocks.filter(b => b.type === 'scene_heading').length > 1;
+
     this.api.autoSaveScript(this.sceneId, this.projectId, this.blocks).subscribe({
       next: (res: any) => {
-        this.extractCharactersFromBlocks();
-        this.patchSceneDuration(this.sceneId, res.estimatedDuration);
+        if (res.wasSplit || willSplit) {
+          // Сцена розрізана! Робимо те саме, що і при ручному збереженні
+          this.loadScenesList();
+          this.sceneViewMode = 'all';
+          this.viewMode = 'breakdown';
+          this.loadData();
+        } else {
+          // Звичайне фонове збереження
+          this.extractCharactersFromBlocks();
+          this.patchSceneDuration(this.sceneId, res.estimatedDuration);
+        }
       },
       error: (err) => console.error('Autosave failed', err)
     });
@@ -591,7 +621,18 @@ export class Script implements OnInit {
     this.openTypeMenuId = null;
     this.updateColors();
     this.syncSidebarTitle();
-    this.autosaveSubject.next();
+
+    // НОВЕ: Рахуємо, скільки заголовків стало у сцені після зміни типу
+    const headingsCount = this.blocks.filter(b => b.type === 'scene_heading').length;
+
+    if (headingsCount > 1) {
+      // Якщо ми створили другий заголовок — примусово відправляємо на бекенд,
+      // щоб він миттєво розрізав сцену і перевів нас у Full Script
+      this.performManualSave();
+    } else {
+      // Інакше — просто ставимо в чергу на звичайне автозбереження
+      this.autosaveSubject.next();
+    }
   }
 
   // Вибір класу лінії в залежності від типу блоку
