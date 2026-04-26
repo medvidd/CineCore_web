@@ -252,4 +252,16 @@ export class Api {
   deleteShootDay(projectId: number, dayId: number): Observable<any> {
     return this.http.delete(`${this.PLANNER_API_URL}/project/${projectId}/shoot-day/${dayId}`);
   }
+  // AUTO-SCHEDULE
+  autoSchedule(projectId: number, settings: any): Observable<any> {
+    return this.http.post(`${this.PLANNER_API_URL}/project/${projectId}/auto-schedule`, settings);
+  }
+
+  confirmDay(projectId: number, dayId: number, confirm: boolean): Observable<any> {
+    return this.http.post(`${this.PLANNER_API_URL}/project/${projectId}/confirm-day`, { shootDayId: dayId, confirm });
+  }
+
+  confirmAllGenerated(projectId: number): Observable<any> {
+    return this.http.post(`${this.PLANNER_API_URL}/project/${projectId}/confirm-all-generated`, {});
+  }
 }

@@ -31,7 +31,7 @@ namespace CineCoreBack.Migrations
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "enm_role_type", new[] { "lead", "supporting", "extra" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "enm_scene_status", new[] { "draft", "complete" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "enm_script_element", new[] { "action", "character", "dialogue", "parenthetical", "transition", "shot" });
-            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "enm_shoot_day_status", new[] { "draft", "published", "completed", "cancelled" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "enm_shoot_day_status", new[] { "draft", "generated", "published", "completed" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "enm_system_role", new[] { "owner", "manager", "actor" });
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 

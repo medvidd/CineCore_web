@@ -322,4 +322,284 @@ public class PlannerController : ControllerBase
         }
         return (words[0].Substring(0, 1) + words[1].Substring(0, 1)).ToUpper();
     }
+
+    // POST api/planner/project/{projectId}/auto-schedule
+    [HttpPost("project/{projectId}/auto-schedule")]
+    public async Task<ActionResult<AutoScheduleResultDto>> AutoSchedule(
+    int projectId, [FromBody] AutoScheduleRequestDto req)
+    {
+        var result = new AutoScheduleResultDto();
+
+        // 1. Незаплановані сцени
+        var unscheduledScenes = await _context.Scenes
+            .Where(s => s.ProjectId == projectId && !s.SceneSchedules.Any())
+            .Include(s => s.SceneResources)
+                .ThenInclude(sr => sr.Resource)
+                    .ThenInclude(r => r.Location)
+            .Include(s => s.ScriptElements)
+                .ThenInclude(se => se.Role)
+            .OrderBy(s => s.SequenceNum)
+            .ToListAsync();
+
+        if (!unscheduledScenes.Any())
+        {
+            result.Message = "All scenes are already scheduled.";
+            return Ok(result);
+        }
+
+        // 2. Формуємо список цільових днів
+        List<ShootDay> targetDays;
+
+        if (req.Mode == "fill")
+        {
+            targetDays = await _context.ShootDays
+                .Where(sd => sd.ProjectId == projectId &&
+                             (sd.Status == "draft" || sd.Status == "generated"))
+                .Include(sd => sd.SceneSchedules)
+                    .ThenInclude(ss => ss.Scene)
+                .OrderBy(sd => sd.ShiftStart)
+                .ToListAsync();
+
+            if (!targetDays.Any())
+            {
+                result.Message = "No available shoot days found. Use 'Generate' mode to create new days.";
+                return Ok(result);
+            }
+        }
+        else // generate
+        {
+            if (!DateTime.TryParse(req.StartDate, out var startDate))
+                startDate = DateTime.UtcNow.Date;
+
+            TimeSpan shiftStart = TimeSpan.TryParse(req.DefaultShiftStart, out var ss)
+                ? ss : new TimeSpan(9, 0, 0);
+            TimeSpan shiftEnd = TimeSpan.TryParse(req.DefaultShiftEnd, out var se)
+                ? se : new TimeSpan(19, 0, 0);
+
+            double effectiveShiftMinutes = (shiftEnd - shiftStart).TotalMinutes;
+            if (effectiveShiftMinutes <= 0) effectiveShiftMinutes = 600;
+
+            // Рахуємо загальну тривалість — сцени без duration отримують дефолт 20 хв
+            double totalMinutes = unscheduledScenes
+                .Sum(s => s.EstimatedDuration.HasValue
+                    ? s.EstimatedDuration.Value.TotalMinutes
+                    : 20.0);
+
+            // +1 день про запас, мінімум 1
+            int daysNeeded = Math.Max(1,
+                (int)Math.Ceiling(totalMinutes / effectiveShiftMinutes) + 1);
+
+            targetDays = new List<ShootDay>();
+            var currentDate = DateTime.SpecifyKind(startDate.Date, DateTimeKind.Utc);
+
+            for (int i = 0; i < daysNeeded; i++)
+            {
+                if (req.SkipWeekends)
+                {
+                    while (currentDate.DayOfWeek == DayOfWeek.Saturday ||
+                           currentDate.DayOfWeek == DayOfWeek.Sunday)
+                        currentDate = currentDate.AddDays(1);
+                }
+
+                var newDay = new ShootDay
+                {
+                    ProjectId = projectId,
+                    UnitName = "MAIN UNIT",
+                    ShiftStart = DateTime.SpecifyKind(currentDate.Add(shiftStart), DateTimeKind.Utc),
+                    ShiftEnd = DateTime.SpecifyKind(currentDate.Add(shiftEnd), DateTimeKind.Utc),
+                    Status = "generated",
+                    GeneralNotes = "Auto-generated. Review and confirm."
+                };
+
+                _context.ShootDays.Add(newDay);
+                targetDays.Add(newDay);
+                currentDate = currentDate.AddDays(1);
+            }
+
+            // *** КРИТИЧНО: зберігаємо ДО розподілу щоб отримати реальні Id ***
+            await _context.SaveChangesAsync();
+        }
+
+        // 3. Сортування сцен
+        IEnumerable<Scene> sortedScenes = req.GroupBy == "location"
+            ? unscheduledScenes
+                .GroupBy(s => GetPrimaryLocationId(s))
+                .OrderByDescending(g => g.Key.HasValue ? g.Count() : 0)
+                .SelectMany(g => g)
+            : unscheduledScenes.OrderBy(s => s.SequenceNum);
+
+        // 4. Алгоритм розподілу — повністю in-memory, без async запитів у циклі
+        // Будуємо словник: dayId -> вже заплановані хвилини
+        var scheduledMinutesPerDay = new Dictionary<int, double>();
+
+        foreach (var day in targetDays)
+        {
+            // Для fill-режиму: враховуємо вже прикріплені сцени
+            double alreadyScheduled = 0;
+            if (req.Mode == "fill" && day.SceneSchedules?.Any() == true)
+            {
+                alreadyScheduled = day.SceneSchedules
+                    .Where(ss => ss.Scene != null)
+                    .Sum(ss => ss.Scene.EstimatedDuration.HasValue
+                        ? ss.Scene.EstimatedDuration.Value.TotalMinutes
+                        : 20.0);
+            }
+            scheduledMinutesPerDay[day.Id] = alreadyScheduled;
+        }
+
+        // Словник: dayId -> наступний порядковий номер сцени
+        var nextOrderPerDay = new Dictionary<int, int>();
+        foreach (var day in targetDays)
+        {
+            int existingCount = day.SceneSchedules?.Count ?? 0;
+            nextOrderPerDay[day.Id] = existingCount;
+        }
+
+        double maxShiftMinutes = req.MaxShiftMinutes > 0 ? req.MaxShiftMinutes : 600;
+        var newSchedules = new List<SceneSchedule>();
+        int scheduledCount = 0;
+
+        foreach (var scene in sortedScenes)
+        {
+            double sceneDuration = scene.EstimatedDuration.HasValue
+                ? scene.EstimatedDuration.Value.TotalMinutes
+                : 20.0; // дефолт для сцен без тривалості
+
+            // Шукаємо перший день де є місце
+            ShootDay? foundDay = null;
+
+            foreach (var day in targetDays)
+            {
+                double shiftCapacity = Math.Min(
+                    (day.ShiftEnd - day.ShiftStart).TotalMinutes,
+                    maxShiftMinutes);
+
+                double used = scheduledMinutesPerDay[day.Id];
+                double wouldUse = used + sceneDuration + req.BufferMinutes;
+
+                if (wouldUse <= shiftCapacity || used == 0) // якщо день порожній — кладемо завжди
+                {
+                    foundDay = day;
+                    break;
+                }
+            }
+
+            if (foundDay == null) break; // більше немає місця
+
+            newSchedules.Add(new SceneSchedule
+            {
+                SceneId = scene.Id,
+                ShootDayId = foundDay.Id,
+                SceneOrder = nextOrderPerDay[foundDay.Id]++
+            });
+
+            scheduledMinutesPerDay[foundDay.Id] += sceneDuration + req.BufferMinutes;
+            scheduledCount++;
+        }
+
+        // 5. Зберігаємо всі SceneSchedule одним батчем
+        _context.SceneSchedules.AddRange(newSchedules);
+        await _context.SaveChangesAsync();
+
+        // 6. Формуємо відповідь
+        // Повертаємо тільки дні де реально є хоч одна сцена
+        var usedDayIds = newSchedules.Select(ss => ss.ShootDayId).Distinct().ToHashSet();
+
+        result.TotalScenesScheduled = scheduledCount;
+        result.UnscheduledCount = unscheduledScenes.Count - scheduledCount;
+        result.Message = $"Scheduled {scheduledCount} scenes across {usedDayIds.Count} days.";
+
+        foreach (var day in targetDays.Where(d => usedDayIds.Contains(d.Id)))
+        {
+            var assignedScenes = newSchedules
+                .Where(ss => ss.ShootDayId == day.Id)
+                .ToList();
+
+            double shiftCapacity = (day.ShiftEnd - day.ShiftStart).TotalMinutes;
+            double usedMinutes = scheduledMinutesPerDay[day.Id];
+
+            result.GeneratedDays.Add(new AutoScheduleDayPreviewDto
+            {
+                ShootDayId = day.Id,
+                Date = day.ShiftStart.ToString("MMM dd", CultureInfo.InvariantCulture),
+                ShootDateIso = day.ShiftStart.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                IsNewlyCreated = req.Mode == "generate",
+                AssignedSceneIds = assignedScenes.Select(ss => ss.SceneId).ToList(),
+                CapacityStr = $"{(int)(usedMinutes / 60)}h {(int)(usedMinutes % 60)}m / {(int)(shiftCapacity / 60)}h {(int)(shiftCapacity % 60)}m",
+                CapacityPct = shiftCapacity > 0 ? (int)(usedMinutes / shiftCapacity * 100) : 0
+            });
+        }
+
+        return Ok(result);
+    }
+
+    // POST api/planner/project/{projectId}/confirm-day
+    // Підтверджує або відхиляє конкретний generated день
+    [HttpPost("project/{projectId}/confirm-day")]
+    public async Task<IActionResult> ConfirmDay(
+        int projectId, [FromBody] ConfirmDayDto dto)
+    {
+        var day = await _context.ShootDays
+            .Include(sd => sd.SceneSchedules)
+            .FirstOrDefaultAsync(sd => sd.Id == dto.ShootDayId
+                                    && sd.ProjectId == projectId);
+
+        if (day == null) return NotFound();
+
+        if (dto.Confirm)
+        {
+            // Підтверджуємо → змінюємо статус з generated на draft
+            day.Status = "draft";
+            day.GeneralNotes = day.GeneralNotes?.Replace(
+                "Auto-generated. Review and confirm.", "").Trim();
+        }
+        else
+        {
+            // Відхиляємо → видаляємо SceneSchedules (сцени повертаються в pool)
+            _context.SceneSchedules.RemoveRange(day.SceneSchedules);
+            _context.ShootDays.Remove(day);
+        }
+
+        await _context.SaveChangesAsync();
+        return NoContent();
+    }
+
+    // POST api/planner/project/{projectId}/confirm-all-generated
+    // Масове підтвердження всіх generated днів
+    [HttpPost("project/{projectId}/confirm-all-generated")]
+    public async Task<IActionResult> ConfirmAllGenerated(int projectId)
+    {
+        var generatedDays = await _context.ShootDays
+            .Where(sd => sd.ProjectId == projectId && sd.Status == "generated")
+            .ToListAsync();
+
+        foreach (var day in generatedDays)
+        {
+            day.Status = "draft";
+        }
+
+        await _context.SaveChangesAsync();
+        return Ok(new { confirmed = generatedDays.Count });
+    }
+
+    // Допоміжні методи
+    private static int? GetPrimaryLocationId(Scene scene)
+    {
+        return scene.SceneResources
+            .Where(sr => sr.Resource?.Location != null)
+            .Select(sr => (int?)sr.Resource.Location.Id)
+            .FirstOrDefault();
+    }
+
+    private async Task<double> GetScheduledMinutesForDay(int dayId)
+    {
+        var sceneIds = await _context.SceneSchedules
+            .Where(ss => ss.ShootDayId == dayId)
+            .Select(ss => ss.SceneId)
+            .ToListAsync();
+
+        return await _context.Scenes
+            .Where(s => sceneIds.Contains(s.Id))
+            .SumAsync(s => (double?)s.EstimatedDuration.Value.TotalMinutes ?? 30);
+    }
 }

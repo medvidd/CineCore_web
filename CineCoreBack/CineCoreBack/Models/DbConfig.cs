@@ -69,7 +69,7 @@ public partial class DbConfig : DbContext
             .HasPostgresEnum("enm_role_type", new[] { "lead", "supporting", "extra" })
             .HasPostgresEnum("enm_scene_status", new[] { "draft", "complete" })
             .HasPostgresEnum("enm_script_element", new[] { "action", "character", "dialogue", "parenthetical", "transition", "shot" })
-            .HasPostgresEnum("enm_shoot_day_status", new[] { "draft", "published", "completed", "cancelled" })
+            .HasPostgresEnum("enm_shoot_day_status", new[] { "draft", "generated", "published", "completed" })
             .HasPostgresEnum("enm_system_role", new[] { "owner", "manager", "actor" });
 
         modelBuilder.Entity<Actor>(entity =>

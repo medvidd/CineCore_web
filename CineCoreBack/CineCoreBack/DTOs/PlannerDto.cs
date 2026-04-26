@@ -77,3 +77,58 @@ public class UpdateShootDayDto
     public string? GeneralNotes { get; set; }
     public string? Status { get; set; } // Для переведення з draft у published
 }
+
+// DTO для запиту Auto-Schedule
+public class AutoScheduleRequestDto
+{
+    // Режим: "fill" — заповнити наявні дні, "generate" — створити нові
+    public string Mode { get; set; } = "fill";
+
+    // Для режиму "generate" — з якої дати починати
+    public string? StartDate { get; set; }
+
+    // Макс. тривалість зміни в хвилинах (напр. 600 = 10 годин)
+    public int MaxShiftMinutes { get; set; } = 600;
+
+    // Час початку зміни для нових днів (напр. "09:00")
+    public string DefaultShiftStart { get; set; } = "09:00";
+
+    // Час кінця зміни для нових днів
+    public string DefaultShiftEnd { get; set; } = "19:00";
+
+    // Чи пропускати вихідні при генерації нових днів
+    public bool SkipWeekends { get; set; } = true;
+
+    // Залишати буфер між сценами (в хвилинах)
+    public int BufferMinutes { get; set; } = 15;
+
+    // Пріоритет групування: "location" або "sequence"
+    public string GroupBy { get; set; } = "location";
+}
+
+// Результат Auto-Schedule — повертається одразу на фронтенд для preview
+public class AutoScheduleResultDto
+{
+    public List<AutoScheduleDayPreviewDto> GeneratedDays { get; set; } = new();
+    public int TotalScenesScheduled { get; set; }
+    public int UnscheduledCount { get; set; }
+    public string Message { get; set; } = "";
+}
+
+public class AutoScheduleDayPreviewDto
+{
+    public int ShootDayId { get; set; }       // ID щойно створеного/існуючого дня
+    public string Date { get; set; } = "";
+    public string ShootDateIso { get; set; } = "";
+    public bool IsNewlyCreated { get; set; }  // true = щойно згенеровано, false = вже існував
+    public List<int> AssignedSceneIds { get; set; } = new();
+    public string CapacityStr { get; set; } = "";
+    public int CapacityPct { get; set; }
+}
+
+// DTO для підтвердження/відхилення конкретного дня
+public class ConfirmDayDto
+{
+    public int ShootDayId { get; set; }
+    public bool Confirm { get; set; } // true = підтвердити (draft), false = відхилити (видалити)
+}

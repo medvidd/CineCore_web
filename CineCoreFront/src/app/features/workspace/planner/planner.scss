@@ -571,6 +571,9 @@ $border: rgba(255, 255, 255, 0.08);
       filter: brightness(1.2);
     }
   }
+
+  .dot.generated { background: $danger; }
+
 }
 
 .status-menu {
@@ -624,6 +627,43 @@ $border: rgba(255, 255, 255, 0.08);
       &.completed {
         background: $teal;
       }
+    }
+  }
+
+  // В .status-menu (якщо ще не є загального стилю для dot):
+  .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+
+    &.draft     { background: $yellow; }
+    &.generated { background: $yellow; opacity: 0.5; } // приглушений жовтий
+    &.published { background: $purple; }
+    &.completed { background: $teal; }
+    &.cancelled { background: $danger; }
+  }
+
+  .status-menu-hint {
+    font-size: 9px;
+    color: $text-muted;
+    margin-left: auto;
+    letter-spacing: 0.04em;
+  }
+
+  .status-menu-current {
+    background: rgba($yellow, 0.08);
+    cursor: default;
+    opacity: 0.7;
+  }
+
+  // status-badge для generated (у хедері дня):
+  .status-badge {
+    &.generated {
+      color: $danger;
+      background: rgba($danger, 0.12);
+      border-color: rgba($danger, 0.25);
     }
   }
 }
@@ -1061,4 +1101,275 @@ $border: rgba(255, 255, 255, 0.08);
       }
     }
   }
+}
+
+// -------------------------------------------------------
+// STATUS: GENERATED (auto-schedule preview)
+// -------------------------------------------------------
+.shoot-day-column {
+  &.status-generated {
+    border-left-color: $danger;           // червоний замість жовтого
+    background: rgba($danger, 0.04);
+    outline: 1.5px solid rgba($danger, 0.2);
+    outline-offset: -1px;
+    position: relative;
+
+    // "AUTO" badge у верхньому куті
+    &::before {
+      content: 'AUTO';
+      position: absolute;
+      top: 8px;
+      right: 10px;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: $yellow;
+      background: rgba($yellow, 0.12);
+      border: 1px solid rgba($yellow, 0.3);
+      border-radius: 4px;
+      padding: 2px 5px;
+      pointer-events: none;
+    }
+  }
+}
+
+// -------------------------------------------------------
+// CONFIRM / REJECT BUTTON
+// -------------------------------------------------------
+.btn-icon-confirm {
+  color: $teal !important;
+  &:hover {
+    background: rgba($teal, 0.15) !important;
+  }
+}
+
+// -------------------------------------------------------
+// AUTO-GENERATED BANNER
+// -------------------------------------------------------
+.auto-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 24px;
+  background: rgba($yellow, 0.08);
+  border-bottom: 1px solid rgba($yellow, 0.2);
+  flex-shrink: 0;
+
+  .auto-banner-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: $yellow;
+
+    svg {
+      flex-shrink: 0;
+      stroke: $yellow;
+    }
+  }
+
+  .btn-confirm-all {
+    background: $yellow;
+    color: $bg-main;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: 0.15s;
+
+    &:hover { filter: brightness(1.1); }
+  }
+}
+
+// -------------------------------------------------------
+// AUTO-SCHEDULE MODAL
+// -------------------------------------------------------
+.modal-auto {
+  max-width: 500px;
+
+  .modal-title-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    svg { color: $yellow; }
+  }
+
+  .auto-mode-tabs {
+    display: flex;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid $border;
+    border-radius: 8px;
+    padding: 4px;
+    gap: 4px;
+    margin-bottom: 14px;
+
+    button {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: $text-muted;
+      padding: 7px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      transition: 0.15s;
+
+      &.active {
+        background: rgba($yellow, 0.15);
+        color: $yellow;
+        border: 1px solid rgba($yellow, 0.3);
+      }
+
+      &:hover:not(.active) {
+        color: white;
+        background: rgba(255,255,255,0.05);
+      }
+    }
+  }
+
+  .auto-mode-hint {
+    font-size: 12px;
+    color: $text-muted;
+    margin: 0 0 16px;
+    line-height: 1.5;
+
+    em { color: $yellow; font-style: normal; font-weight: 600; }
+  }
+
+  .auto-toggle-row {
+    margin-bottom: 14px;
+
+    .toggle-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      font-size: 13px;
+      color: rgba(255,255,255,0.7);
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 36px;
+      height: 20px;
+      flex-shrink: 0;
+
+      input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+        position: absolute;
+
+        &:checked + .toggle-slider {
+          background: $teal;
+          &::before { transform: translateX(16px); }
+        }
+      }
+
+      .toggle-slider {
+        position: absolute;
+        inset: 0;
+        background: rgba(255,255,255,0.15);
+        border-radius: 20px;
+        transition: 0.2s;
+        cursor: pointer;
+
+        &::before {
+          content: '';
+          position: absolute;
+          height: 14px;
+          width: 14px;
+          left: 3px;
+          top: 3px;
+          background: white;
+          border-radius: 50%;
+          transition: 0.2s;
+        }
+      }
+    }
+  }
+
+  .btn-auto-run {
+    background: $yellow !important;
+    color: $bg-main !important;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    .spinner {
+      width: 12px;
+      height: 12px;
+      border: 2px solid rgba(0,11,16,0.3);
+      border-top-color: $bg-main;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+  }
+
+  // Результат
+  .auto-result {
+    .auto-result-stats {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+
+      .auto-stat {
+        flex: 1;
+        background: rgba(255,255,255,0.04);
+        border: 1px solid $border;
+        border-radius: 10px;
+        padding: 12px;
+        text-align: center;
+
+        &.auto-stat-warn { border-color: rgba($yellow, 0.3); }
+
+        .auto-stat-num {
+          display: block;
+          font-size: 24px;
+          font-weight: 700;
+          color: $teal;
+          line-height: 1;
+          margin-bottom: 4px;
+        }
+
+        &.auto-stat-warn .auto-stat-num { color: $yellow; }
+
+        .auto-stat-label {
+          font-size: 11px;
+          color: $text-muted;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+      }
+    }
+
+    .auto-result-msg {
+      font-size: 13px;
+      color: rgba(255,255,255,0.7);
+      margin: 0 0 10px;
+    }
+
+    .auto-result-hint {
+      font-size: 12px;
+      color: $text-muted;
+      margin: 0;
+      line-height: 1.5;
+      padding: 10px 12px;
+      background: rgba($yellow, 0.06);
+      border-left: 2px solid rgba($yellow, 0.4);
+      border-radius: 0 6px 6px 0;
+
+      strong { color: $yellow; }
+    }
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }

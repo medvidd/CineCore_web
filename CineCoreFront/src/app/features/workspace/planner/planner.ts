@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DragDropModule, CdkDragDrop, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
@@ -57,6 +57,29 @@ export class Planner implements OnInit {
   editCalendarWeeks: (number | null)[][] = [];
   monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
+  // AUTO-SCHEDULE MODAL
+  isAutoModalOpen = false;
+  isAutoLoading = false;
+  autoScheduleResult: any = null;
+
+  autoForm = {
+    mode: 'fill' as 'fill' | 'generate',
+    startDate: '',
+    maxShiftHours: 10,
+    skipWeekends: true,
+    bufferMinutes: 15,
+    groupBy: 'location' as 'location' | 'sequence',
+    defaultShiftStart: '09:00',
+    defaultShiftEnd: '19:00',
+  };
+
+// Auto-calendar (для вибору startDate у режимі generate)
+  autoDisplayMonth = 0;
+  autoDisplayYear = 0;
+  autoSelectedDateObj: Date | null = null;
+  autoCalendarWeeks: (number | null)[][] = [];
+
+
   ngOnInit() {
     this.route.parent?.params.subscribe(params => {
       this.projectId = +params['id'];
@@ -108,9 +131,14 @@ export class Planner implements OnInit {
   }
 
   loadBoard() {
-    if (!this.projectId) return;
     this.api.getPlannerBoard(this.projectId).subscribe({
-      next: (data) => { this.board = data; this.applyFilters(); this.cdr.detectChanges(); }
+      next: (data) => {
+        this.board = data;
+        // Тимчасово:
+        console.log('Board days statuses:', data.shootDays?.map((d: any) => ({ id: d.id, status: d.status })));
+        this.applyFilters();
+        this.cdr.detectChanges();
+      }
     });
   }
 
@@ -240,14 +268,12 @@ export class Planner implements OnInit {
 
   get visibleShootDays() {
     if (!this.board.shootDays) return [];
-
-    // Якщо це менеджер - показуємо все
     if (this.canEdit) return this.board.shootDays;
 
     // Якщо це актор - фільтруємо
     return this.board.shootDays.filter((day: any) => {
       // 1. Актори не бачать чорнетки (draft)
-      if (day.status === 'draft') return false;
+      if (day.status === 'draft' || day.status === 'generated') return false;
 
       // 2. Якщо увімкнено "Мій розклад" (personal)
       if (this.viewMode === 'personal') {
@@ -296,4 +322,128 @@ export class Planner implements OnInit {
   isSelected(day: number): boolean { if (!this.selectedDateObj) return false; return day === this.selectedDateObj.getDate() && this.displayMonth === this.selectedDateObj.getMonth() && this.displayYear === this.selectedDateObj.getFullYear(); }
   isEditSelected(day: number): boolean { if (!this.editSelectedDateObj) return false; return day === this.editSelectedDateObj.getDate() && this.editDisplayMonth === this.editSelectedDateObj.getMonth() && this.editDisplayYear === this.editSelectedDateObj.getFullYear(); }
   formatTimeInput(event: any) { let val = event.target.value.replace(/\D/g, ''); if (val.length > 2) val = val.substring(0,2) + ':' + val.substring(2,4); event.target.value = val; }
+
+  openAutoModal() {
+    const today = new Date();
+    this.autoDisplayMonth = today.getMonth();
+    this.autoDisplayYear = today.getFullYear();
+    this.generateAutoCalendar();
+    this.autoScheduleResult = null;
+    this.isAutoModalOpen = true;
+  }
+
+  closeAutoModal() {
+    this.isAutoModalOpen = false;
+    this.autoScheduleResult = null;
+  }
+
+  generateAutoCalendar() {
+    this.autoCalendarWeeks = this.buildCalendarWeeks(
+      this.autoDisplayYear, this.autoDisplayMonth
+    );
+  }
+
+  prevAutoMonth() {
+    if (this.autoDisplayMonth === 0) {
+      this.autoDisplayMonth = 11; this.autoDisplayYear--;
+    } else { this.autoDisplayMonth--; }
+    this.generateAutoCalendar();
+  }
+
+  nextAutoMonth() {
+    if (this.autoDisplayMonth === 11) {
+      this.autoDisplayMonth = 0; this.autoDisplayYear++;
+    } else { this.autoDisplayMonth++; }
+    this.generateAutoCalendar();
+  }
+
+  get autoCurrentMonthName() { return this.monthNames[this.autoDisplayMonth]; }
+
+  selectAutoDate(day: number | null) {
+    if (!day) return;
+    this.autoSelectedDateObj = new Date(this.autoDisplayYear, this.autoDisplayMonth, day);
+    this.autoForm.startDate = this.formatDate(this.autoSelectedDateObj);
+  }
+
+  isAutoSelected(day: number): boolean {
+    if (!this.autoSelectedDateObj) return false;
+    return day === this.autoSelectedDateObj.getDate()
+      && this.autoDisplayMonth === this.autoSelectedDateObj.getMonth()
+      && this.autoDisplayYear === this.autoSelectedDateObj.getFullYear();
+  }
+
+  isAutoToday(day: number): boolean {
+    const t = new Date();
+    return day === t.getDate()
+      && this.autoDisplayMonth === t.getMonth()
+      && this.autoDisplayYear === t.getFullYear();
+  }
+
+  submitAutoSchedule() {
+    if (this.autoForm.mode === 'generate' && !this.autoForm.startDate) return;
+    this.isAutoLoading = true;
+
+    const payload = {
+      mode: this.autoForm.mode,
+      startDate: this.autoForm.startDate || null,
+      maxShiftMinutes: this.autoForm.maxShiftHours * 60,
+      skipWeekends: this.autoForm.skipWeekends,
+      bufferMinutes: this.autoForm.bufferMinutes,
+      groupBy: this.autoForm.groupBy,
+      defaultShiftStart: this.autoForm.defaultShiftStart,
+      defaultShiftEnd: this.autoForm.defaultShiftEnd,
+    };
+
+    this.api.autoSchedule(this.projectId, payload).subscribe({
+      next: (result) => {
+        this.isAutoLoading = false;
+        this.autoScheduleResult = result;
+        this.loadBoard();
+        console.log('Auto result:', result);
+
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.isAutoLoading = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+// Підтвердження/відхилення конкретного дня
+  confirmGeneratedDay(dayId: number) {
+    this.api.confirmDay(this.projectId, dayId, true).subscribe({
+      next: () => this.loadBoard()
+    });
+  }
+
+  rejectGeneratedDay(dayId: number) {
+    this.api.confirmDay(this.projectId, dayId, false).subscribe({
+      next: () => this.loadBoard()
+    });
+  }
+
+// Масове підтвердження
+  confirmAllGeneratedDays() {
+    this.api.confirmAllGenerated(this.projectId).subscribe({
+      next: () => { this.closeAutoModal(); this.loadBoard(); }
+    });
+  }
+
+  get hasGeneratedDays(): boolean {
+    return this.board.shootDays?.some((d: any) => d.status === 'generated') ?? false;
+  }
+
+  get generatedDaysCount(): number {
+    return this.board.shootDays?.filter((d: any) => d.status === 'generated').length ?? 0;
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent) {
+    const target = event.target as HTMLElement;
+    if (!target.closest('.status-dropdown-wrapper')) {
+      this.board.shootDays?.forEach((d: any) => d._statusOpen = false);
+      this.cdr.detectChanges();
+    }
+  }
 }
