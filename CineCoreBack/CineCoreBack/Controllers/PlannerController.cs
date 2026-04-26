@@ -295,6 +295,8 @@ public class PlannerController : ControllerBase
             .Select(r => string.IsNullOrEmpty(r.ColorHex) ? "#3AB9A0" : r.ColorHex)
             .ToList();
 
+        var roleIds = uniqueRoles.Select(r => r.Id).ToList();
+
         return new PlannerSceneDto
         {
             Id = scene.Id,
@@ -305,6 +307,7 @@ public class PlannerController : ControllerBase
             Location = locationName,
             Cast = castList,
             CastColors = castColors,
+            RoleIds = roleIds,
             Order = order
         };
     }

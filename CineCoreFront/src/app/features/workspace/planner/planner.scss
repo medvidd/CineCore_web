@@ -269,6 +269,38 @@ $border: rgba(255, 255, 255, 0.08);
       filter: brightness(1.1);
     }
   }
+
+  .view-toggle {
+    display: flex;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+
+    button {
+      background: transparent;
+      border: none;
+      color: $text-muted;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: inherit;
+
+      &.active {
+        background: $teal;
+        color: $bg-main;
+        box-shadow: 0 2px 8px rgba($teal, 0.2);
+      }
+
+      &:hover:not(.active) {
+        color: white;
+        background: rgba(255, 255, 255, 0.05);
+      }
+    }
+  }
 }
 
 // -------------------------------------------------------

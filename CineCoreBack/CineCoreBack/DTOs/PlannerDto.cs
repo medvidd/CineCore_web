@@ -42,6 +42,7 @@ public class PlannerSceneDto
     public string TimeOfDay { get; set; } = "INT/DAY"; // Зазвичай береться з Slugline
     public List<string> Cast { get; set; } = new(); // Ініціали ролей
     public List<string> CastColors { get; set; } = new(); // HEX-кольори ролей (паралельний список)
+    public List<int> RoleIds { get; set; } = new();
     public int Order { get; set; } // Порядок у дні
 }
 

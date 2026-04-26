@@ -29,6 +29,9 @@ export class Planner implements OnInit {
   currentUserRole: string = 'none';
   canEdit: boolean = false;
 
+  viewMode: 'general' | 'personal' = 'general';
+  myApprovedRoleIds: number[] = [];
+
   // Модалка СТВОРЕННЯ
   isModalOpen = false;
   newDayForm = {
@@ -57,17 +60,47 @@ export class Planner implements OnInit {
   ngOnInit() {
     this.route.parent?.params.subscribe(params => {
       this.projectId = +params['id'];
-      if (this.projectId) { this.loadBoard(); this.loadLocations(); }
+      if (this.projectId) {
+        this.loadBoard();
+        this.loadLocations();
+        this.checkActorRoles();
+      }
     });
     this.api.currentRole$.subscribe(role => {
       this.currentUserRole = role;
       this.canEdit = (role === 'owner' || role === 'manager');
+
+      this.checkActorRoles();
       this.cdr.detectChanges();
     });
     const today = new Date();
     this.displayMonth = today.getMonth(); this.displayYear = today.getFullYear();
     this.editDisplayMonth = today.getMonth(); this.editDisplayYear = today.getFullYear();
     this.generateCalendar(); this.generateEditCalendar();
+  }
+
+  checkActorRoles() {
+    // Виконуємо лише якщо це актор і ми вже маємо projectId
+    if (!this.canEdit && this.projectId) {
+
+      // 1. Отримуємо ID користувача (як у script.ts)
+      const user = JSON.parse(localStorage.getItem('cinecore_user') || '{}');
+
+      if (user && user.id) {
+        // 2. Отримуємо заявки/кастинги актора (як у casting.ts)
+        this.api.getActorCastingsInProject(this.projectId, user.id).subscribe({
+          next: (castings: any[]) => {
+            // 3. Залишаємо тільки ті roleId, де статус 'approved'
+            this.myApprovedRoleIds = castings
+              .filter(c => c.status?.toLowerCase() === 'approved')
+              .map(c => c.roleId);
+
+            this.cdr.detectChanges();
+          },
+          error: (err) => console.error('Error loading approved roles:', err)
+        });
+      }
+    }
   }
 
   loadLocations() {
@@ -202,6 +235,30 @@ export class Planner implements OnInit {
         day.status = previousStatus; // revert on error
         this.cdr.detectChanges();
       }
+    });
+  }
+
+  get visibleShootDays() {
+    if (!this.board.shootDays) return [];
+
+    // Якщо це менеджер - показуємо все
+    if (this.canEdit) return this.board.shootDays;
+
+    // Якщо це актор - фільтруємо
+    return this.board.shootDays.filter((day: any) => {
+      // 1. Актори не бачать чорнетки (draft)
+      if (day.status === 'draft') return false;
+
+      // 2. Якщо увімкнено "Мій розклад" (personal)
+      if (this.viewMode === 'personal') {
+        // Перевіряємо, чи є в цьому дні хоча б одна сцена, де RoleIds збігається з myApprovedRoleIds актора
+        const hasMyScene = day.scenes.some((scene: any) =>
+          scene.roleIds?.some((id: number) => this.myApprovedRoleIds.includes(id))
+        );
+        if (!hasMyScene) return false; // Якщо немає його сцен - приховуємо день
+      }
+
+      return true;
     });
   }
 
