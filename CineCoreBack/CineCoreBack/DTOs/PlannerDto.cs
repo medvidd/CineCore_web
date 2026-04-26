@@ -51,7 +51,6 @@ public class CreateShootDayDto
 {
     public string Unit { get; set; } = null!;
     public string ShootDate { get; set; } = null!; // YYYY-MM-DD
-    public string CallTime { get; set; } = null!; // HH:MM
     public string ShiftStart { get; set; } = null!; // HH:MM
     public string ShiftEnd { get; set; } = null!; // HH:MM
     public int? BaseLocationId { get; set; }
@@ -70,7 +69,6 @@ public class UpdateShootDayDto
 {
     public string? Unit { get; set; }
     public string? ShootDate { get; set; } // YYYY-MM-DD
-    public string? CallTime { get; set; }
     public string? ShiftStart { get; set; }
     public string? ShiftEnd { get; set; }
     public int? BaseLocationId { get; set; }

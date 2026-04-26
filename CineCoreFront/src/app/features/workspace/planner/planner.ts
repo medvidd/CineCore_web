@@ -35,7 +35,7 @@ export class Planner implements OnInit {
   // Модалка СТВОРЕННЯ
   isModalOpen = false;
   newDayForm = {
-    unit: 'MAIN UNIT', shootDate: '', callTime: '08:00',
+    unit: 'MAIN UNIT', shootDate: '',
     shiftStart: '09:00', shiftEnd: '19:00',
     baseLocationId: null as number | null, notes: ''
   };
@@ -44,7 +44,7 @@ export class Planner implements OnInit {
   isEditModalOpen = false;
   editingDay: any = null;
   editDayForm = {
-    unit: '', shootDate: '', callTime: '',
+    unit: '', shootDate: '',
     shiftStart: '', shiftEnd: '',
     baseLocationId: null as number | null, notes: '', status: ''
   };
@@ -208,7 +208,6 @@ export class Planner implements OnInit {
     this.editDayForm = {
       unit: day.unit || 'MAIN UNIT',
       shootDate: shootDateStr,
-      callTime: day.callTime || '08:00',
       shiftStart: day.shiftStartTime || day.callTime || '09:00',
       shiftEnd: day.shiftEndTime || '19:00',
       baseLocationId: day.baseLocationId ?? null,
@@ -220,11 +219,15 @@ export class Planner implements OnInit {
   closeEditModal() { this.isEditModalOpen = false; this.editingDay = null; }
   submitEditDay() {
     if (!this.editingDay) return;
-    const payload: any = { unit: this.editDayForm.unit, status: this.editDayForm.status, generalNotes: this.editDayForm.notes };
+
+    // Прибрали status з payload, оскільки він змінюється через dropdown на самій картці
+    const payload: any = { unit: this.editDayForm.unit, generalNotes: this.editDayForm.notes };
+
     if (this.editDayForm.shootDate) payload.shootDate = this.editDayForm.shootDate;
     if (this.editDayForm.shiftStart) payload.shiftStart = this.editDayForm.shiftStart;
     if (this.editDayForm.shiftEnd) payload.shiftEnd = this.editDayForm.shiftEnd;
     if (this.editDayForm.baseLocationId) payload.baseLocationId = this.editDayForm.baseLocationId;
+
     this.api.updateShootDay(this.projectId, this.editingDay.id, payload).subscribe({
       next: () => { this.closeEditModal(); this.loadBoard(); }
     });

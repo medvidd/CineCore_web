@@ -267,10 +267,6 @@
                 <option value="MAIN UNIT"></option><option value="SECOND UNIT"></option><option value="SPLINTER UNIT"></option>
               </datalist>
             </div>
-            <div class="form-group">
-              <label>Call Time</label>
-              <input type="text" class="form-control" [(ngModel)]="newDayForm.callTime" name="callTime" placeholder="08:00" (input)="formatTimeInput($event)">
-            </div>
           </div>
           <div class="form-row">
             <div class="form-group">
@@ -339,17 +335,6 @@
               <datalist id="unitOptionsEdit">
                 <option value="MAIN UNIT"></option><option value="SECOND UNIT"></option><option value="SPLINTER UNIT"></option>
               </datalist>
-            </div>
-            <div class="form-group">
-              <label>Status</label>
-              <select class="form-control" [(ngModel)]="editDayForm.status" name="status">
-                <option value="draft">Draft</option>
-                <option value="generated" [disabled]="editingDay?.status !== 'generated'">
-                  Generated (auto)
-                </option>
-                <option value="published">Published</option>
-                <option value="completed">Completed</option>
-              </select>
             </div>
           </div>
           <div class="form-row">

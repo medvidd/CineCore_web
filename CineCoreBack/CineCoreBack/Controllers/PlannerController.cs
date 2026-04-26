@@ -183,23 +183,34 @@ public class PlannerController : ControllerBase
 
         if (day == null) return NotFound();
 
-        // Оновлюємо лише ті поля, які передані
+        // Оновлюємо текстові поля
         if (!string.IsNullOrEmpty(dto.Unit)) day.UnitName = dto.Unit;
         if (!string.IsNullOrEmpty(dto.Status)) day.Status = dto.Status;
         if (dto.BaseLocationId.HasValue) day.BaseLocationId = dto.BaseLocationId;
         day.GeneralNotes = dto.GeneralNotes;
 
-        // Обробка дат (враховуючи ваш формат ShiftStart/End у ShootDay.cs)
-        // Приклад з UpdateShootDay:
-        if (!string.IsNullOrEmpty(dto.ShootDate))
+        // Оновлюємо дати і час
+        DateTime newDate = day.ShiftStart.Date;
+        if (!string.IsNullOrEmpty(dto.ShootDate) && DateTime.TryParse(dto.ShootDate, out var dateParsed))
         {
-            if (DateTime.TryParse(dto.ShootDate, out var date))
-            {
-                // Зберігаємо старий час, але оновлюємо дату, ставлячи UTC
-                day.ShiftStart = DateTime.SpecifyKind(date.Date.Add(day.ShiftStart.TimeOfDay), DateTimeKind.Utc);
-                day.ShiftEnd = DateTime.SpecifyKind(date.Date.Add(day.ShiftEnd.TimeOfDay), DateTimeKind.Utc);
-            }
+            newDate = dateParsed.Date;
         }
+
+        TimeSpan startTime = day.ShiftStart.TimeOfDay;
+        if (!string.IsNullOrEmpty(dto.ShiftStart) && TimeSpan.TryParse(dto.ShiftStart, out var startParsed))
+        {
+            startTime = startParsed;
+        }
+
+        TimeSpan endTime = day.ShiftEnd.TimeOfDay;
+        if (!string.IsNullOrEmpty(dto.ShiftEnd) && TimeSpan.TryParse(dto.ShiftEnd, out var endParsed))
+        {
+            endTime = endParsed;
+        }
+
+        // Зберігаємо в UTC
+        day.ShiftStart = DateTime.SpecifyKind(newDate.Add(startTime), DateTimeKind.Utc);
+        day.ShiftEnd = DateTime.SpecifyKind(newDate.Add(endTime), DateTimeKind.Utc);
 
         await _context.SaveChangesAsync();
         return Ok(day);
