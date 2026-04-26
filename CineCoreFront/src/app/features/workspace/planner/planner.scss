@@ -5,6 +5,7 @@ $teal: #3AB9A0;
 $yellow: #E9A60F;
 $purple: #9810FA;
 $danger: #FB2C36;
+$warning: #E9A60F;
 $text-muted: rgba(255, 255, 255, 0.45);
 $border: rgba(255, 255, 255, 0.08);
 
@@ -1363,4 +1364,88 @@ $border: rgba(255, 255, 255, 0.08);
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+// -------------------------------------------------------
+// NEW / PATCHED STYLES
+// -------------------------------------------------------
+
+// Reject All button in auto-banner
+.auto-banner {
+  .auto-banner-right {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .btn-reject-all {
+    background: transparent;
+    color: $danger;
+    border: 1px solid $danger;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: 0.15s;
+
+    &:hover {
+      background: rgba($danger, 0.1);
+    }
+  }
+}
+
+// Reject All in auto modal footer
+.btn-danger-outline {
+  background: transparent;
+  color: $danger;
+  border: 1px solid $danger;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: 0.15s;
+
+  &:hover { background: rgba($danger, 0.08); }
+}
+
+// Scene card: warning for no location resource
+.scene-card.no-location {
+  border-left: 2px solid $danger;
+}
+
+.detail-loc.loc-warning {
+  color: $danger;
+}
+
+// Shoot time hint on scene card in pool
+.shoot-time-hint {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--text-secondary, rgba(255,255,255,0.4));
+  margin-top: 4px;
+
+  svg { flex-shrink: 0; }
+}
+
+// Auto-schedule ratio note
+.auto-ratio-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  font-size: 11px;
+  color: rgba(255,255,255,0.5);
+  margin: 8px 0;
+  line-height: 1.5;
+
+  svg { flex-shrink: 0; margin-top: 1px; }
 }

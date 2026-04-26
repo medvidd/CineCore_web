@@ -433,6 +433,30 @@ export class Planner implements OnInit {
     });
   }
 
+// Масове відхилення всіх generated днів
+  rejectAllGeneratedDays() {
+    const generatedIds = this.board.shootDays
+      ?.filter((d: any) => d.status === 'generated')
+      .map((d: any) => d.id) ?? [];
+
+    if (!generatedIds.length) return;
+
+    // Відхиляємо всі по черзі (або можна додати окремий endpoint)
+    const requests = generatedIds.map((id: number) =>
+      this.api.confirmDay(this.projectId, id, false)
+    );
+
+    // Виконуємо послідовно через Promise chain
+    requests.reduce(
+      (chain: Promise<any>, req: any) =>
+        chain.then(() => req.toPromise()),
+      Promise.resolve()
+    ).then(() => {
+      this.closeAutoModal();
+      this.loadBoard();
+    });
+  }
+
   get hasGeneratedDays(): boolean {
     return this.board.shootDays?.some((d: any) => d.status === 'generated') ?? false;
   }
