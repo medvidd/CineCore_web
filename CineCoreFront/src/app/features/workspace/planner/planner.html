@@ -24,21 +24,25 @@
          [cdkDropListData]="filteredScenePool"
          (cdkDropListDropped)="drop($event, null)">
       @for (scene of filteredScenePool; track scene.id) {
-        <div class="scene-card" cdkDrag>
+        <div class="scene-card" [class.no-location]="!scene.hasLocationResource" cdkDrag>
           <div class="scene-header">
             <span class="scene-id">{{ scene.displayId }}</span>
-            <span class="time-badge">{{ scene.timeOfDay }}</span>
           </div>
           <h3>{{ scene.title }}</h3>
           <div class="scene-details">
-            <span class="detail-loc">
+            <span class="detail-loc" [class.loc-warning]="!scene.hasLocationResource" [title]="!scene.hasLocationResource ? 'No location resource linked — auto-schedule may group incorrectly' : ''">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
               {{ scene.location }}
             </span>
-            <span class="detail-dur">
+            <span class="detail-dur" [title]="'Screen duration: ' + scene.duration">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
               {{ scene.duration }}
             </span>
+          </div>
+          <!-- Час зйомки (shoot time ≈ screen × 6) -->
+          <div class="shoot-time-hint" [title]="'Estimated shoot time (screen time × ~6)'">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+            {{ scene.shootDuration }}
           </div>
           <div class="cast-initials">
             @for (init of scene.cast; track $index) {
@@ -93,6 +97,7 @@
       </div>
     </div>
 
+    <!-- AUTO-SCHEDULE BANNER -->
     @if (hasGeneratedDays) {
       <div class="auto-banner">
         <div class="auto-banner-left">
@@ -102,6 +107,9 @@
           <span>{{ generatedDaysCount }} auto-generated day{{ generatedDaysCount > 1 ? 's' : '' }} pending review</span>
         </div>
         <div class="auto-banner-right">
+          <button class="btn-reject-all" (click)="rejectAllGeneratedDays()">
+            Reject All
+          </button>
           <button class="btn-confirm-all" (click)="confirmAllGeneratedDays()">
             Approve All
           </button>
@@ -139,18 +147,18 @@
                   </button>
                 }
                 @else {
-                <button class="btn-icon" (click)="openEditModal(day)" title="Edit">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                  </svg>
-                </button>
-                <button class="btn-icon btn-icon-danger" (click)="deleteDay(day.id)" title="Delete">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
-                    <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                    <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
-                  </svg>
-                </button>
+                  <button class="btn-icon" (click)="openEditModal(day)" title="Edit">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                  </button>
+                  <button class="btn-icon btn-icon-danger" (click)="deleteDay(day.id)" title="Delete">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+                      <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                      <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+                    </svg>
+                  </button>
                 }
               </div>
             </div>
@@ -160,7 +168,7 @@
               Call: {{ day.callTime }}
             </div>
 
-            <!-- CAPACITY BAR -->
+            <!-- CAPACITY BAR (на основі shoot time) -->
             <div class="capacity-section">
               <div class="cap-bar">
                 <div class="cap-fill" [style.width.%]="day.capacityPct"
@@ -168,12 +176,12 @@
                      [class.cap-danger]="day.capacityPct > 95"></div>
               </div>
               <div class="cap-labels">
-                <span>Capacity</span>
+                <span>Shoot time</span>
                 <span>{{ day.capacityStr }}</span>
               </div>
             </div>
 
-            <!-- STATUS — кликабельний для зміни -->
+            <!-- STATUS -->
             <div class="status-row" *ngIf="canEdit">
               <div class="status-dropdown-wrapper" (click)="toggleStatusDropdown(day)">
                 <span class="status-badge clickable" [ngClass]="day.status?.toLowerCase()">
@@ -217,15 +225,14 @@
                [cdkDropListData]="day.scenes"
                (cdkDropListDropped)="drop($event, day.id)">
             @for (scene of day.scenes; track scene.id) {
-              <div class="scene-card scene-card-sm" cdkDrag>
+              <div class="scene-card scene-card-sm" [class.no-location]="!scene.hasLocationResource" cdkDrag>
                 <div class="scene-header">
                   <span class="scene-id">{{ scene.displayId }}</span>
-                  <span class="time-badge">{{ scene.timeOfDay }}</span>
                 </div>
                 <h3>{{ scene.title }}</h3>
                 <div class="scene-details">
-                  <span class="detail-loc">{{ scene.location }}</span>
-                  <span class="detail-dur">{{ scene.duration }}</span>
+                  <span class="detail-loc" [class.loc-warning]="!scene.hasLocationResource">{{ scene.location }}</span>
+                  <span class="detail-dur" [title]="'Screen: ' + scene.duration">{{ scene.shootDuration }}</span>
                 </div>
                 <div class="cast-initials">
                   @for (init of scene.cast; track $index) {
@@ -245,7 +252,8 @@
         <div class="empty-board">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
           <p *ngIf="canEdit">No shoot days yet. Add your first day to start scheduling.</p>
-          <p *ngIf="!canEdit">No scheduled days available yet.</p>        </div>
+          <p *ngIf="!canEdit">No scheduled days available yet.</p>
+        </div>
       }
     </div>
   </div>
@@ -403,6 +411,7 @@
     </div>
   }
 
+  <!-- AUTO-SCHEDULE МОДАЛКА -->
   @if (isAutoModalOpen) {
     <div class="modal-backdrop" (click)="closeAutoModal()">
       <div class="modal-content modal-auto" (click)="$event.stopPropagation()">
@@ -429,9 +438,9 @@
 
           <p class="auto-mode-hint">
             @if (autoForm.mode === 'fill') {
-              The algorithm will distribute unscheduled scenes among existing days with Draft status.
+              Distributes unscheduled scenes among existing Draft days. Days will be temporarily marked as <em>Generated</em> for review.
             } @else {
-              The algorithm will automatically create new shoot days with <em>Generated</em> status and fill them with scenes.
+              Creates new shoot days with <em>Generated</em> status, then fills them with scenes. Shoot time = screen time × ~6 (industry average ratio).
             }
           </p>
 
@@ -489,6 +498,12 @@
             </select>
           </div>
 
+          <!-- Підказка про shooting ratio -->
+          <div class="auto-ratio-note">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Shoot time is calculated as screen time × 6 (industry average). Scenes without a location resource will be scheduled last within each day.
+          </div>
+
           @if (autoForm.mode === 'generate') {
             <div class="auto-toggle-row">
               <label class="toggle-label">
@@ -544,6 +559,9 @@
 
           <div class="modal-footer">
             <button class="btn-cancel" (click)="closeAutoModal()">Review on Board</button>
+            <button class="btn-danger-outline" (click)="rejectAllGeneratedDays(); closeAutoModal()">
+              Reject All
+            </button>
             <button class="btn-submit" (click)="confirmAllGeneratedDays()">
               Approve All {{ autoScheduleResult.generatedDays?.length }} Days
             </button>
