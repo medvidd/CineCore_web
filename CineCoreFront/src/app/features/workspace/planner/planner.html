@@ -429,9 +429,9 @@
 
           <p class="auto-mode-hint">
             @if (autoForm.mode === 'fill') {
-              Алгоритм розподілить незаплановані сцени між вже існуючими днями зі статусом Draft.
+              The algorithm will distribute unscheduled scenes among existing days with Draft status.
             } @else {
-              Алгоритм автоматично створить нові знімальні дні зі статусом <em>Generated</em> і заповнить їх сценами.
+              The algorithm will automatically create new shoot days with <em>Generated</em> status and fill them with scenes.
             }
           </p>
 
@@ -537,7 +537,7 @@
             </div>
             <p class="auto-result-msg">{{ autoScheduleResult.message }}</p>
             <p class="auto-result-hint">
-              Generated days are highlighted in <strong>yellow</strong> on the board.
+              Generated days are highlighted in <strong style="color: #FB2C36;">red</strong> on the board.
               Review, drag scenes to adjust, then confirm each day or approve all at once.
             </p>
           </div>
