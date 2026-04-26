@@ -14,10 +14,15 @@ public class PlannerBoardDto
 public class PlannerShootDayDto
 {
     public int Id { get; set; }
-    public string Date { get; set; } = null!; // Формат "MMM dd" (напр. "Mar 24")
+    public string Date { get; set; } = null!;         // "Mar 24" — для відображення на картці (InvariantCulture)
+    public string ShootDateIso { get; set; } = null!;  // "YYYY-MM-DD" — для pre-fill форми редагування
+    public string ShiftStartTime { get; set; } = null!; // "HH:mm" — для поля Shift Start у формі
+    public string ShiftEndTime { get; set; } = null!;   // "HH:mm" — для поля Shift End у формі
+    public int? BaseLocationId { get; set; }            // для pre-select локації у формі
     public string Unit { get; set; } = null!;
     public string Status { get; set; } = null!;
     public string CallTime { get; set; } = null!;
+    public string? Notes { get; set; }
 
     // Для прогрес-бару на фронті
     public string CapacityStr { get; set; } = null!;
@@ -35,7 +40,8 @@ public class PlannerSceneDto
     public string Duration { get; set; } = null!;
     public string Location { get; set; } = "TBD";
     public string TimeOfDay { get; set; } = "INT/DAY"; // Зазвичай береться з Slugline
-    public List<string> Cast { get; set; } = new(); // Ініціали акторів або ролей
+    public List<string> Cast { get; set; } = new(); // Ініціали ролей
+    public List<string> CastColors { get; set; } = new(); // HEX-кольори ролей (паралельний список)
     public int Order { get; set; } // Порядок у дні
 }
 
@@ -47,7 +53,7 @@ public class CreateShootDayDto
     public string CallTime { get; set; } = null!; // HH:MM
     public string ShiftStart { get; set; } = null!; // HH:MM
     public string ShiftEnd { get; set; } = null!; // HH:MM
-    public string? BaseLocation { get; set; }
+    public int? BaseLocationId { get; set; }
     public string? Notes { get; set; }
 }
 
@@ -55,8 +61,8 @@ public class CreateShootDayDto
 public class ReorderSceneDto
 {
     public int SceneId { get; set; }
-    public int? ShootDayId { get; set; } // null, якщо сцену повернули в Pool
-    public int NewOrder { get; set; }
+    public int? TargetShootDayId { get; set; } // null, якщо сцену повернули в Pool
+    public int NewIndex { get; set; }
 }
 
 public class UpdateShootDayDto

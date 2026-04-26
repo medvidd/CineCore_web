@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System;
+using System.Globalization;
 
 namespace CineCoreBack.Controllers;
 
@@ -20,7 +21,7 @@ public class PlannerController : ControllerBase
         _context = context;
     }
 
-    [HttpGet("project/{projectId}/board")] 
+    [HttpGet("project/{projectId}/board")]
     public async Task<ActionResult<PlannerBoardDto>> GetPlannerBoard(int projectId)
     {
         var board = new PlannerBoardDto();
@@ -87,10 +88,16 @@ public class PlannerController : ControllerBase
             board.ShootDays.Add(new PlannerShootDayDto
             {
                 Id = day.Id,
-                Date = day.ShiftStart.ToString("MMM dd"),
+                // InvariantCulture гарантує англійські назви місяців ("Mar", "Apr") незалежно від локалі сервера
+                Date = day.ShiftStart.ToString("MMM dd", CultureInfo.InvariantCulture),
+                ShootDateIso = day.ShiftStart.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                ShiftStartTime = day.ShiftStart.ToString("HH:mm", CultureInfo.InvariantCulture),
+                ShiftEndTime = day.ShiftEnd.ToString("HH:mm", CultureInfo.InvariantCulture),
+                BaseLocationId = day.BaseLocationId,
                 Unit = string.IsNullOrEmpty(day.UnitName) ? "MAIN UNIT" : day.UnitName.ToUpper(),
                 Status = string.IsNullOrEmpty(day.Status) ? "draft" : day.Status,
-                CallTime = day.ShiftStart.ToString("HH:mm"),
+                CallTime = day.ShiftStart.ToString("HH:mm", CultureInfo.InvariantCulture),
+                Notes = day.GeneralNotes,
                 CapacityStr = capacityStr,
                 CapacityPct = capacityPct,
                 Scenes = dayScenesDtos
@@ -100,93 +107,67 @@ public class PlannerController : ControllerBase
         return Ok(board);
     }
 
-    [HttpPost("project/{projectId}/shoot-day")] 
-    public async Task<ActionResult<PlannerShootDayDto>> CreateShootDay(int projectId, [FromBody] CreateShootDayDto dto)
+    [HttpPost("project/{projectId}/shoot-day")]
+    public async Task<IActionResult> CreateShootDay(int projectId, [FromBody] CreateShootDayDto dto)
     {
-        // Надійна валідація та парсинг часу з фронтенду
-        if (!DateTime.TryParse(dto.ShootDate, out DateTime shootDate))
-            return BadRequest("Invalid ShootDate format.");
-        if (!TimeSpan.TryParse(dto.ShiftStart, out TimeSpan shiftStart))
-            return BadRequest("Invalid ShiftStart format.");
-        if (!TimeSpan.TryParse(dto.ShiftEnd, out TimeSpan shiftEnd))
-            return BadRequest("Invalid ShiftEnd format.");
-
-        var startDateTime = shootDate.Date.Add(shiftStart);
-        var endDateTime = shootDate.Date.Add(shiftEnd);
-
-        // Якщо кінець зміни менший за початок (нічна зміна), переносимо кінець на наступний день
-        if (endDateTime <= startDateTime)
+        // 1. Парсимо базову дату (напр. "2024-03-25")
+        if (!DateTime.TryParse(dto.ShootDate, out var baseDate))
         {
-            endDateTime = endDateTime.AddDays(1);
+            return BadRequest("Недійсний формат дати (ShootDate).");
         }
 
-        var newDay = new ShootDay
+        // 2. Парсимо час (напр. "09:00" та "19:00"). Якщо формат невірний, ставимо дефолтні значення
+        TimeSpan start = TimeSpan.TryParse(dto.ShiftStart, out var s) ? s : new TimeSpan(9, 0, 0);
+        TimeSpan end = TimeSpan.TryParse(dto.ShiftEnd, out var e) ? e : new TimeSpan(19, 0, 0);
+
+        // 3. З'єднуємо дату і час та ОБОВ'ЯЗКОВО вказуємо DateTimeKind.Utc для PostgreSQL
+        DateTime shiftStartUtc = DateTime.SpecifyKind(baseDate.Date.Add(start), DateTimeKind.Utc);
+        DateTime shiftEndUtc = DateTime.SpecifyKind(baseDate.Date.Add(end), DateTimeKind.Utc);
+
+        var shootDay = new ShootDay
         {
             ProjectId = projectId,
             UnitName = dto.Unit,
-            ShiftStart = startDateTime,
-            ShiftEnd = endDateTime,
+            ShiftStart = shiftStartUtc,
+            ShiftEnd = shiftEndUtc,
+            BaseLocationId = dto.BaseLocationId,
             GeneralNotes = dto.Notes,
             Status = "draft"
         };
 
-        _context.ShootDays.Add(newDay);
+        _context.ShootDays.Add(shootDay);
         await _context.SaveChangesAsync();
 
-        TimeSpan totalShiftDuration = newDay.ShiftEnd - newDay.ShiftStart;
-
-        return Ok(new PlannerShootDayDto
-        {
-            Id = newDay.Id,
-            Date = newDay.ShiftStart.ToString("MMM dd"),
-            Unit = newDay.UnitName.ToUpper(),
-            Status = newDay.Status,
-            CallTime = newDay.ShiftStart.ToString("HH:mm"),
-            CapacityStr = $"0h 0m / {(int)totalShiftDuration.TotalHours}h {totalShiftDuration.Minutes}m",
-            CapacityPct = 0,
-            Scenes = new List<PlannerSceneDto>()
-        });
+        return Ok(shootDay);
     }
 
-    [HttpPut("project/{projectId}/move-scene")] 
-    public async Task<IActionResult> ReorderScenes(int projectId, [FromBody] List<ReorderSceneDto> reorderRequests)
+    [HttpPut("project/{projectId}/move-scene")]
+    public async Task<IActionResult> ReorderScenes(int projectId, [FromBody] ReorderSceneDto req)
     {
-        var sceneIds = reorderRequests.Select(r => r.SceneId).ToList();
-        var existingSchedules = await _context.SceneSchedules
-            .Where(ss => sceneIds.Contains(ss.SceneId))
-            .ToListAsync();
+        var existingSchedule = await _context.SceneSchedules
+            .FirstOrDefaultAsync(ss => ss.SceneId == req.SceneId);
 
-        foreach (var req in reorderRequests)
+        if (req.TargetShootDayId == null)
         {
-            var schedule = existingSchedules.FirstOrDefault(ss => ss.SceneId == req.SceneId);
-
-            if (req.ShootDayId == null)
+            // Сцену повернули в Pool — видаляємо SceneSchedule
+            if (existingSchedule != null)
+                _context.SceneSchedules.Remove(existingSchedule);
+        }
+        else
+        {
+            if (existingSchedule != null)
             {
-                // Сцену викинули назад у Pool
-                if (schedule != null)
-                {
-                    _context.SceneSchedules.Remove(schedule);
-                }
+                existingSchedule.ShootDayId = req.TargetShootDayId.Value;
+                existingSchedule.SceneOrder = req.NewIndex;
             }
             else
             {
-                if (schedule != null)
+                _context.SceneSchedules.Add(new SceneSchedule
                 {
-                    // Оновлення існуючого запису
-                    schedule.ShootDayId = req.ShootDayId.Value;
-                    schedule.SceneOrder = req.NewOrder;
-                    _context.Entry(schedule).State = EntityState.Modified;
-                }
-                else
-                {
-                    // Нове перетягування з Pool у день
-                    _context.SceneSchedules.Add(new SceneSchedule
-                    {
-                        SceneId = req.SceneId,
-                        ShootDayId = req.ShootDayId.Value,
-                        SceneOrder = req.NewOrder
-                    });
-                }
+                    SceneId = req.SceneId,
+                    ShootDayId = req.TargetShootDayId.Value,
+                    SceneOrder = req.NewIndex
+                });
             }
         }
 
@@ -209,13 +190,14 @@ public class PlannerController : ControllerBase
         day.GeneralNotes = dto.GeneralNotes;
 
         // Обробка дат (враховуючи ваш формат ShiftStart/End у ShootDay.cs)
+        // Приклад з UpdateShootDay:
         if (!string.IsNullOrEmpty(dto.ShootDate))
         {
             if (DateTime.TryParse(dto.ShootDate, out var date))
             {
-                // Тут логіка оновлення дати в ShiftStart/End, зберігаючи час
-                day.ShiftStart = date.Date.Add(day.ShiftStart.TimeOfDay);
-                day.ShiftEnd = date.Date.Add(day.ShiftEnd.TimeOfDay);
+                // Зберігаємо старий час, але оновлюємо дату, ставлячи UTC
+                day.ShiftStart = DateTime.SpecifyKind(date.Date.Add(day.ShiftStart.TimeOfDay), DateTimeKind.Utc);
+                day.ShiftEnd = DateTime.SpecifyKind(date.Date.Add(day.ShiftEnd.TimeOfDay), DateTimeKind.Utc);
             }
         }
 
@@ -266,7 +248,14 @@ public class PlannerController : ControllerBase
         if (scene.EstimatedDuration.HasValue)
         {
             var dur = scene.EstimatedDuration.Value;
-            durationStr = dur.Hours > 0 ? $"{dur.Hours}h {dur.Minutes}m" : $"{dur.Minutes}m";
+            if (dur.Hours > 0 && dur.Seconds > 0)
+                durationStr = $"{dur.Hours}h {dur.Minutes}m {dur.Seconds}s";
+            else if (dur.Hours > 0)
+                durationStr = $"{dur.Hours}h {dur.Minutes}m";
+            else if (dur.Seconds > 0)
+                durationStr = $"{dur.Minutes}m {dur.Seconds}s";
+            else
+                durationStr = $"{dur.Minutes}m";
         }
 
         // 3. Location: Пошук першого ресурсу типу Location
@@ -294,12 +283,16 @@ public class PlannerController : ControllerBase
             }
         }
 
-        // 4. Cast: Унікальні ролі з елементів сценарію
-        var castList = scene.ScriptElements
+        // 4. Cast: Унікальні ролі з елементів сценарію (разом із кольорами)
+        var uniqueRoles = scene.ScriptElements
             .Where(se => se.Role != null && !string.IsNullOrEmpty(se.Role.RoleName))
-            .Select(se => se.Role.RoleName)
-            .Distinct()
-            .Select(GetInitials)
+            .Select(se => se.Role)
+            .DistinctBy(r => r.Id)
+            .ToList();
+
+        var castList = uniqueRoles.Select(r => GetInitials(r.RoleName)).ToList();
+        var castColors = uniqueRoles
+            .Select(r => string.IsNullOrEmpty(r.ColorHex) ? "#3AB9A0" : r.ColorHex)
             .ToList();
 
         return new PlannerSceneDto
@@ -311,6 +304,7 @@ public class PlannerController : ControllerBase
             TimeOfDay = timeOfDay,
             Location = locationName,
             Cast = castList,
+            CastColors = castColors,
             Order = order
         };
     }

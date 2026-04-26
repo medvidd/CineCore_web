@@ -1,24 +1,29 @@
 <div class="planner-wrapper" cdkDropListGroup>
 
+  <!-- ЛІВА ПАНЕЛЬ: SCENE POOL -->
   <aside class="scene-pool-panel">
     <div class="pool-header">
-      <h2>Scene Pool ({{ board.scenePool.length }})</h2>
+      <h2>Scene Pool <span class="pool-count">{{ filteredScenePool.length }}</span></h2>
       <div class="search-box">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-        <input type="text" placeholder="Search scenes...">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" placeholder="Search scenes..." [(ngModel)]="searchQuery" (ngModelChange)="applyFilters()">
       </div>
       <div class="filters">
-        <select><option>All Locations</option></select>
-        <select><option>All Actors</option></select>
+        <select [(ngModel)]="selectedLocation" (ngModelChange)="applyFilters()">
+          @for (loc of uniqueLocations; track loc) { <option [value]="loc">{{ loc }}</option> }
+        </select>
+        <select [(ngModel)]="selectedRole" (ngModelChange)="applyFilters()">
+          @for (role of uniqueRoles; track role) { <option [value]="role">{{ role }}</option> }
+        </select>
       </div>
     </div>
 
     <div class="scenes-scroll-area"
          cdkDropList
-         [cdkDropListData]="board.scenePool"
+         id="poolList"
+         [cdkDropListData]="filteredScenePool"
          (cdkDropListDropped)="drop($event, null)">
-
-      @for (scene of board.scenePool; track scene.id) {
+      @for (scene of filteredScenePool; track scene.id) {
         <div class="scene-card" cdkDrag>
           <div class="scene-header">
             <span class="scene-id">{{ scene.displayId }}</span>
@@ -26,18 +31,18 @@
           </div>
           <h3>{{ scene.title }}</h3>
           <div class="scene-details">
-            <span>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+            <span class="detail-loc">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
               {{ scene.location }}
             </span>
-            <span class="duration">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            <span class="detail-dur">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
               {{ scene.duration }}
             </span>
           </div>
           <div class="cast-initials">
-            @for (init of scene.cast; track init) {
-              <span class="initial-bubble">{{ init }}</span>
+            @for (init of scene.cast; track $index) {
+              <span class="initial-bubble" [style.background]="scene.castColors?.[$index] ?? '#3AB9A0'" [style.color]="'#000B10'">{{ init }}</span>
             }
           </div>
         </div>
@@ -45,98 +50,178 @@
     </div>
   </aside>
 
-
+  <!-- ПРАВА ПАНЕЛЬ: SHOOT DAYS BOARD -->
   <div class="days-board">
-    <div class="board-controls">
-      <div class="view-toggles">
-        <button class="active">Board</button>
-        <button>List</button>
+
+    <!-- BOARD HEADER -->
+    <div class="board-header">
+      <div class="board-title-area">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/>
+          <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+        <h2>Shooting Schedule</h2>
+        <div class="board-badges">
+          <span class="board-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            {{ filteredScenePool.length }} Unscheduled
+          </span>
+          <span class="board-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            {{ board.shootDays?.length ?? 0 }} Shoot Days
+          </span>
+        </div>
       </div>
-      <button class="btn-add-day" (click)="openModal()" *ngIf="canEdit">
-        <span>+</span> Add Shoot Day
-      </button>
+      <div class="board-actions" *ngIf="canEdit">
+        <button class="btn-auto">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          Auto-Schedule
+        </button>
+        <button class="btn-add-day" (click)="openModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add Shoot Day
+        </button>
+      </div>
     </div>
 
+    <!-- DAYS SCROLL -->
     <div class="days-scroll-container">
       @for (day of board.shootDays; track day.id) {
-        <div class="shoot-day-column" [class.auto-draft]="day.status === 'draft'">
+        <div class="shoot-day-column" [class.status-draft]="day.status === 'draft'" [class.status-published]="day.status === 'published'" [class.status-completed]="day.status === 'completed'">
 
-          <header class="day-header">
-            <div class="day-info">
-              <h3>{{ day.date }}</h3>
-              <span class="unit-label">{{ day.unit }}</span>
-            </div>
-
-            <button class="btn-delete" (click)="deleteDay(day.id)" *ngIf="canEdit">×</button>
-
-            <div class="capacity-section">
-              <div class="progress-container">
-                <div class="progress-fill" [style.width.%]="day.capacityPct"></div>
+          <!-- DAY HEADER INFO -->
+          <div class="day-header">
+            <div class="day-top-row">
+              <div class="day-date-unit">
+                <span class="unit-tag">{{ day.unit }}</span>
+                <h3 class="day-date">{{ day.date }}</h3>
               </div>
-              <span class="capacity-text">{{ day.capacityStr }}</span>
+              <div class="day-controls" *ngIf="canEdit">
+                <button class="btn-icon" (click)="openEditModal(day)" title="Edit">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                </button>
+                <button class="btn-icon btn-icon-danger" (click)="deleteDay(day.id)" title="Delete">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+                    <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                    <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+                  </svg>
+                </button>
+              </div>
             </div>
 
-            <div class="day-meta">
-              <span class="call-time">Call: {{ day.callTime }}</span>
-              <span class="status-badge" [ngClass]="day.status.toLowerCase()">{{ day.status }}</span>
+            <div class="day-call-row">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              Call: {{ day.callTime }}
             </div>
-          </header>
 
+            <!-- CAPACITY BAR -->
+            <div class="capacity-section">
+              <div class="cap-bar">
+                <div class="cap-fill" [style.width.%]="day.capacityPct"
+                     [class.cap-warning]="day.capacityPct > 75"
+                     [class.cap-danger]="day.capacityPct > 95"></div>
+              </div>
+              <div class="cap-labels">
+                <span>Capacity</span>
+                <span>{{ day.capacityStr }}</span>
+              </div>
+            </div>
+
+            <!-- STATUS — кликабельний для зміни -->
+            <div class="status-row" *ngIf="canEdit">
+              <div class="status-dropdown-wrapper" (click)="toggleStatusDropdown(day)" (clickOutside)="closeStatusDropdown(day)">
+                <span class="status-badge clickable" [ngClass]="day.status?.toLowerCase()">
+                  <span class="status-dot"></span>
+                  {{ day.status }}
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="10" height="10"><polyline points="6 9 12 15 18 9"/></svg>
+                </span>
+                @if (day._statusOpen) {
+                  <div class="status-menu">
+                    <button (click)="changeStatus(day, 'draft'); $event.stopPropagation()">
+                      <span class="dot draft"></span> Draft
+                    </button>
+                    <button (click)="changeStatus(day, 'published'); $event.stopPropagation()">
+                      <span class="dot published"></span> Published
+                    </button>
+                    <button (click)="changeStatus(day, 'completed'); $event.stopPropagation()">
+                      <span class="dot completed"></span> Completed
+                    </button>
+                  </div>
+                }
+              </div>
+            </div>
+            <div class="status-row" *ngIf="!canEdit">
+              <span class="status-badge" [ngClass]="day.status?.toLowerCase()">
+                <span class="status-dot"></span>{{ day.status }}
+              </span>
+            </div>
+          </div>
+
+          <!-- SCENES LIST -->
           <div class="day-scenes-list"
                cdkDropList
+               [id]="'day-' + day.id"
                [cdkDropListData]="day.scenes"
                (cdkDropListDropped)="drop($event, day.id)">
-
             @for (scene of day.scenes; track scene.id) {
-              <div class="scene-card" cdkDrag>
+              <div class="scene-card scene-card-sm" cdkDrag>
                 <div class="scene-header">
                   <span class="scene-id">{{ scene.displayId }}</span>
                   <span class="time-badge">{{ scene.timeOfDay }}</span>
                 </div>
                 <h3>{{ scene.title }}</h3>
                 <div class="scene-details">
-                  <span>{{ scene.location }}</span>
-                  <span class="duration">{{ scene.duration }}</span>
+                  <span class="detail-loc">{{ scene.location }}</span>
+                  <span class="detail-dur">{{ scene.duration }}</span>
                 </div>
                 <div class="cast-initials">
-                  @for (init of scene.cast; track init) {
-                    <span class="initial-bubble small">{{ init }}</span>
+                  @for (init of scene.cast; track $index) {
+                    <span class="initial-bubble small" [style.background]="scene.castColors?.[$index] ?? '#3AB9A0'" [style.color]="'#000B10'">{{ init }}</span>
                   }
                 </div>
               </div>
             }
+            @if (day.scenes.length === 0) {
+              <div class="empty-drop-hint">Drop scenes here</div>
+            }
           </div>
+        </div>
+      }
+
+      @if (board.shootDays?.length === 0) {
+        <div class="empty-board">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <p>No shoot days yet. Add your first day to start scheduling.</p>
         </div>
       }
     </div>
   </div>
 
-
+  <!-- МОДАЛКА СТВОРЕННЯ -->
   @if (isModalOpen) {
     <div class="modal-backdrop" (click)="closeModal()">
       <div class="modal-content" (click)="$event.stopPropagation()">
-
         <div class="modal-header">
           <h2>New Shoot Day</h2>
           <button class="close-btn" (click)="closeModal()">×</button>
         </div>
-
         <form (ngSubmit)="submitNewDay()">
           <div class="form-row">
             <div class="form-group">
               <label>Unit</label>
-              <select class="form-control" [(ngModel)]="newDayForm.unit" name="unit">
-                <option value="MAIN UNIT">MAIN UNIT</option>
-                <option value="SECOND UNIT">SECOND UNIT</option>
-                <option value="SPLINTER UNIT">SPLINTER UNIT</option>
-              </select>
+              <input list="unitOptions" class="form-control" [(ngModel)]="newDayForm.unit" name="unit" placeholder="Type or select...">
+              <datalist id="unitOptions">
+                <option value="MAIN UNIT"></option><option value="SECOND UNIT"></option><option value="SPLINTER UNIT"></option>
+              </datalist>
             </div>
             <div class="form-group">
               <label>Call Time</label>
               <input type="text" class="form-control" [(ngModel)]="newDayForm.callTime" name="callTime" placeholder="08:00" (input)="formatTimeInput($event)">
             </div>
           </div>
-
           <div class="form-row">
             <div class="form-group">
               <label>Shift Start</label>
@@ -147,53 +232,122 @@
               <input type="text" class="form-control" [(ngModel)]="newDayForm.shiftEnd" name="shiftEnd" placeholder="19:00" (input)="formatTimeInput($event)">
             </div>
           </div>
-
           <div class="form-group mt-3">
             <label>Date <span *ngIf="newDayForm.shootDate" class="selected-date-preview">({{ newDayForm.shootDate }})</span></label>
-
             <div class="calendar-widget">
               <div class="cal-header">
                 <button type="button" (click)="prevMonth()">&lt;</button>
                 <span>{{ currentMonthName }} {{ displayYear }}</span>
                 <button type="button" (click)="nextMonth()">&gt;</button>
               </div>
-
               <div class="cal-body">
-                <div class="cal-weekdays">
-                  <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
-                </div>
+                <div class="cal-weekdays"><span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span></div>
                 <div class="cal-days-grid">
                   @for (week of calendarWeeks; track $index) {
                     @for (day of week; track $index) {
-                      @if (day === null) {
-                        <div class="day-cell empty"></div>
-                      } @else {
-                        <div class="day-cell"
-                             [class.selected]="isSelected(day)"
-                             [class.today]="isToday(day)"
-                             (click)="selectDate(day)">
-                          {{ day }}
-                        </div>
-                      }
+                      @if (day === null) { <div class="day-cell empty"></div> }
+                      @else { <div class="day-cell" [class.selected]="isSelected(day)" [class.today]="isToday(day)" (click)="selectDate(day)">{{ day }}</div> }
                     }
                   }
                 </div>
               </div>
             </div>
           </div>
-
           <div class="form-group mt-3">
-            <label>Notes</label>
-            <textarea class="form-control" [(ngModel)]="newDayForm.notes" name="notes" rows="2" placeholder="Special requirements..."></textarea>
+            <label>Base Location</label>
+            <select class="form-control" [(ngModel)]="newDayForm.baseLocationId" name="baseLocationId">
+              <option [ngValue]="null">Select Base Location...</option>
+              @for (loc of projectLocations; track loc.id) { <option [value]="loc.id">{{ loc.name }}</option> }
+            </select>
           </div>
-
+          <div class="form-group">
+            <label>Notes</label>
+            <textarea class="form-control" [(ngModel)]="newDayForm.notes" name="notes" rows="2" placeholder="Special requirements, weather contingencies, etc."></textarea>
+          </div>
           <div class="modal-footer">
             <button type="button" class="btn-cancel" (click)="closeModal()">Cancel</button>
-            <button type="submit" class="btn-submit">Create Shoot Day</button>
+            <button type="submit" class="btn-submit" [disabled]="!newDayForm.shootDate">Create Shoot Day</button>
           </div>
         </form>
-
       </div>
     </div>
   }
+
+  <!-- МОДАЛКА РЕДАГУВАННЯ -->
+  @if (isEditModalOpen) {
+    <div class="modal-backdrop" (click)="closeEditModal()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2>Edit Shoot Day</h2>
+          <button class="close-btn" (click)="closeEditModal()">×</button>
+        </div>
+        <form (ngSubmit)="submitEditDay()">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Unit</label>
+              <input list="unitOptionsEdit" class="form-control" [(ngModel)]="editDayForm.unit" name="unit">
+              <datalist id="unitOptionsEdit">
+                <option value="MAIN UNIT"></option><option value="SECOND UNIT"></option><option value="SPLINTER UNIT"></option>
+              </datalist>
+            </div>
+            <div class="form-group">
+              <label>Status</label>
+              <select class="form-control" [(ngModel)]="editDayForm.status" name="status">
+                <option value="draft">Draft</option>
+                <option value="published">Published</option>
+                <option value="completed">Completed</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Shift Start</label>
+              <input type="text" class="form-control" [(ngModel)]="editDayForm.shiftStart" name="shiftStart" placeholder="09:00" (input)="formatTimeInput($event)">
+            </div>
+            <div class="form-group">
+              <label>Shift End</label>
+              <input type="text" class="form-control" [(ngModel)]="editDayForm.shiftEnd" name="shiftEnd" placeholder="19:00" (input)="formatTimeInput($event)">
+            </div>
+          </div>
+          <div class="form-group mt-3">
+            <label>Change Date <span *ngIf="editDayForm.shootDate" class="selected-date-preview">({{ editDayForm.shootDate }})</span></label>
+            <div class="calendar-widget">
+              <div class="cal-header">
+                <button type="button" (click)="prevEditMonth()">&lt;</button>
+                <span>{{ editCurrentMonthName }} {{ editDisplayYear }}</span>
+                <button type="button" (click)="nextEditMonth()">&gt;</button>
+              </div>
+              <div class="cal-body">
+                <div class="cal-weekdays"><span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span></div>
+                <div class="cal-days-grid">
+                  @for (week of editCalendarWeeks; track $index) {
+                    @for (day of week; track $index) {
+                      @if (day === null) { <div class="day-cell empty"></div> }
+                      @else { <div class="day-cell" [class.selected]="isEditSelected(day)" [class.today]="isEditToday(day)" (click)="selectEditDate(day)">{{ day }}</div> }
+                    }
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="form-group mt-3">
+            <label>Base Location</label>
+            <select class="form-control" [(ngModel)]="editDayForm.baseLocationId" name="baseLocationId">
+              <option [ngValue]="null">Keep current...</option>
+              @for (loc of projectLocations; track loc.id) { <option [value]="loc.id">{{ loc.name }}</option> }
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Notes</label>
+            <textarea class="form-control" [(ngModel)]="editDayForm.notes" name="notes" rows="2"></textarea>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn-cancel" (click)="closeEditModal()">Cancel</button>
+            <button type="submit" class="btn-submit">Save Changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
 </div>

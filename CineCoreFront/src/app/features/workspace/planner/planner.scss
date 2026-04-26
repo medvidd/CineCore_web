@@ -1,210 +1,1031 @@
 $bg-main: #000B10;
 $bg-card: #1D1D1D;
+$bg-card-alt: #161616;
 $teal: #3AB9A0;
 $yellow: #E9A60F;
 $purple: #9810FA;
 $danger: #FB2C36;
+$text-muted: rgba(255, 255, 255, 0.45);
+$border: rgba(255, 255, 255, 0.08);
 
+// -------------------------------------------------------
+// WRAPPER
+// -------------------------------------------------------
 .planner-wrapper {
-  display: flex; gap: 24px; height: 100%; color: white;
-  font-family: 'Space Grotesk', sans-serif;
+  display: flex;
+  width: 100%;           // Додано: чітка ширина
+  max-width: 100vw;      // Додано: заборона виходити за екран
+  gap: 0;
+  height: 100%;
+  color: white;
+  font-family: 'DM Sans', 'Space Grotesk', sans-serif;
   overflow: hidden;
+  background: $bg-main;
+
+  > * {
+    min-width: 0;
+  }
 }
 
-// --- ЛІВА ПАНЕЛЬ (POOL) ---
+// -------------------------------------------------------
+// LEFT PANEL — SCENE POOL
+// -------------------------------------------------------
 .scene-pool-panel {
-  width: 320px; display: flex; flex-direction: column; gap: 16px;
-  border-right: 0.8px solid rgba(255, 255, 255, 0.1); padding-right: 24px;
+  width: 300px;
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  border-right: 1px solid $border;
+  padding: 20px 20px 20px 0;
 
   .pool-header {
-    display: flex; flex-direction: column; gap: 12px;
-    h2 { font-size: 20px; font-weight: 500; margin: 0; }
-    .search-box {
-      display: flex; align-items: center; gap: 8px; background: $bg-card; border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 8px; padding: 8px 12px;
-      svg { width: 16px; height: 16px; color: rgba(255,255,255,0.4); }
-      input { background: none; border: none; color: white; outline: none; font-size: 14px; width: 100%;
-        &::placeholder { color: rgba(255,255,255,0.3); }
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+
+    h2 {
+      font-size: 15px;
+      font-weight: 600;
+      margin: 0;
+      color: white;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      .pool-count {
+        background: rgba(255, 255, 255, 0.08);
+        color: $text-muted;
+        font-size: 12px;
+        font-weight: 500;
+        padding: 2px 7px;
+        border-radius: 20px;
       }
     }
+
+    .search-box {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid $border;
+      border-radius: 8px;
+      padding: 8px 10px;
+      transition: border-color 0.2s;
+
+      &:focus-within {
+        border-color: rgba(58, 185, 160, 0.4);
+      }
+
+      svg {
+        width: 14px;
+        height: 14px;
+        color: $text-muted;
+        flex-shrink: 0;
+      }
+
+      input {
+        background: none;
+        border: none;
+        color: white;
+        outline: none;
+        font-size: 13px;
+        width: 100%;
+        font-family: inherit;
+
+        &::placeholder {
+          color: $text-muted;
+        }
+      }
+    }
+
     .filters {
-      display: flex; gap: 8px;
-      select { flex: 1; background: $bg-card; border: 1px solid rgba(255,255,255,0.1); color: white;
-        padding: 6px 8px; border-radius: 6px; font-size: 12px; outline: none; cursor: pointer; }
+      display: flex;
+      gap: 6px;
+
+      select {
+        flex: 1;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid $border;
+        color: rgba(255, 255, 255, 0.7);
+        padding: 6px 8px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-family: inherit;
+        outline: none;
+        cursor: pointer;
+        appearance: none;
+
+        &:hover {
+          border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        option {
+          background: #1D1D1D;
+        }
+      }
     }
   }
 
   .scenes-scroll-area {
-    flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;
-    padding-right: 8px; padding-bottom: 24px; min-height: 200px;
-    &::-webkit-scrollbar { width: 4px; }
-    &::-webkit-scrollbar-track { background: transparent; }
-    &::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-right: 2px;
+    padding-bottom: 24px;
+    min-height: 100px;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
   }
 }
 
-// --- ПРАВА ПАНЕЛЬ (DAYS) ---
+// -------------------------------------------------------
+// RIGHT PANEL — DAYS BOARD
+// -------------------------------------------------------
 .days-board {
-  flex: 1; display: flex; flex-direction: column; gap: 20px; overflow: hidden;
+  flex: 1;
+  min-width: 0;
+  width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  gap: 0;
+}
 
-  .board-controls {
-    display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;
-    .view-toggles { display: flex; background: rgba(255,255,255,0.05); border-radius: 8px; padding: 4px;
-      button { background: none; border: none; color: rgba(255,255,255,0.5); padding: 6px 16px;
-        border-radius: 6px; font-size: 14px; cursor: pointer; transition: 0.2s;
-        &.active { background: $bg-card; color: white; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
-      }
+// -------------------------------------------------------
+// BOARD HEADER — fixed, never scrolls
+// -------------------------------------------------------
+.board-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  width: 100%;
+  box-sizing: border-box;
+  gap: 16px;
+  padding: 20px 20px 16px 24px;
+  border-bottom: 1px solid $border;
+  min-width: 0;
+
+  .board-title-area {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;          // allow this side to shrink/clip if needed
+    overflow: hidden;
+
+    svg {
+      color: $teal;
+      flex-shrink: 0;
     }
-    .btn-add-day {
-      background: $teal; color: $bg-main; border: none; padding: 8px 16px; border-radius: 8px;
-      font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 8px; cursor: pointer;
-      span { font-size: 18px; line-height: 1; }
-      &:hover { opacity: 0.9; }
+
+    h2 {
+      font-size: 16px;
+      font-weight: 600;
+      margin: 0;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .board-badges {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .board-badge {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      font-weight: 500;
+      color: $text-muted;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid $border;
+      padding: 3px 9px;
+      border-radius: 20px;
+      white-space: nowrap;
+
+      svg {
+        color: $text-muted;
+        flex-shrink: 0;
+      }
     }
   }
 
-  .days-scroll-container {
-    flex: 1; display: flex; gap: 16px; overflow-x: auto; padding-bottom: 24px; align-items: flex-start;
-    &::-webkit-scrollbar { height: 8px; }
-    &::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); border-radius: 4px; }
-    &::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+  .board-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;        // buttons NEVER shrink or disappear
+    margin-left: auto;     // push to the right always
+  }
+
+  .btn-auto {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid $border;
+    color: rgba(255, 255, 255, 0.7);
+    padding: 7px 14px;
+    border-radius: 30px;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    transition: 0.2s;
+    white-space: nowrap;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: white;
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+  }
+
+  .btn-add-day {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: $teal;
+    color: $bg-main;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 30px;
+    font-size: 13px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: 0.15s;
+    white-space: nowrap;
+
+    &:hover {
+      filter: brightness(1.1);
+    }
   }
 }
 
-// --- СТОВПЧИК ДНЯ ---
+// -------------------------------------------------------
+// DAYS SCROLL CONTAINER
+// fills all remaining vertical space after the header,
+// scrolls horizontally when days overflow
+// -------------------------------------------------------
+.days-scroll-container {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 16px 20px 20px 24px;
+  align-items: flex-start;
+  scrollbar-width: none;
+
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+// empty state
+.empty-board {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  padding: 60px 0;
+  color: $text-muted;
+
+  svg {
+    opacity: 0.3;
+  }
+
+  p {
+    font-size: 13px;
+    margin: 0;
+  }
+}
+
+// -------------------------------------------------------
+// SHOOT DAY COLUMN
+// -------------------------------------------------------
 .shoot-day-column {
-  width: 320px; background: rgba(29, 29, 29, 0.4); border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 12px; display: flex; flex-direction: column; flex-shrink: 0;
-  max-height: 100%; position: relative;
+  width: 280px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid $border;
+  overflow: hidden;
 
-  &.auto-draft {
-    border: 1px dashed $yellow; background: rgba(233, 166, 15, 0.05);
+  // Fill the available height of the scroll row,
+  // but never grow beyond it (scenes scroll inside)
+  align-self: stretch;
+  max-height: 100%;
+
+  // accent left border by status
+  border-left: 3px solid transparent;
+
+  &.status-draft {
+    border-left-color: $yellow;
   }
 
-  .btn-delete {
-    position: absolute; right: 12px; top: 12px; background: none; border: none;
-    color: rgba(255,255,255,0.3); font-size: 20px; cursor: pointer; padding: 0; line-height: 1;
-    &:hover { color: $danger; }
+  &.status-published {
+    border-left-color: $purple;
   }
 
-  .day-header {
-    padding: 16px; border-bottom: 1px solid rgba(255,255,255,0.05);
-    .day-info { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;
-      h3 { margin: 0; font-size: 16px; font-weight: 600; }
-      .unit-label { font-size: 11px; font-weight: bold; background: rgba(255,255,255,0.1); padding: 4px 8px; border-radius: 4px; }
-    }
-    .capacity-section {
-      margin-bottom: 12px;
-      .progress-container {
-        height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden;
-        .progress-fill { height: 100%; background: $teal; transition: width 0.3s ease; }
-      }
-      .capacity-text { font-size: 11px; color: rgba(255,255,255,0.5); display: block; margin-top: 6px; text-align: right; }
-    }
-    .day-meta { display: flex; justify-content: space-between; align-items: center; font-size: 12px;
-      .call-time { color: rgba(255,255,255,0.6); }
-      .status-badge { padding: 4px 8px; border-radius: 12px; font-weight: 500; font-size: 11px;
-        &.completed { background: rgba(58, 185, 160, 0.1); color: $teal; }
-        &.draft { background: rgba(233, 166, 15, 0.1); color: $yellow; }
-        &.published { background: rgba(152, 16, 250, 0.1); color: $purple; }
-      }
-    }
+  &.status-completed {
+    border-left-color: $teal;
   }
-
-  .day-scenes-list { padding: 12px; display: flex; flex-direction: column; gap: 8px; flex: 1; overflow-y: auto; min-height: 100px; }
 }
 
-// --- КАРТКА СЦЕНИ ---
-.scene-card {
-  background: $bg-card; border: 1px solid rgba(255,255,255,0.05); border-radius: 8px;
-  padding: 12px; cursor: grab; transition: transform 0.2s, box-shadow 0.2s;
+// -------------------------------------------------------
+// DAY HEADER
+// -------------------------------------------------------
+.day-header {
+  padding: 14px 14px 12px;
+  border-bottom: 1px solid $border;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.02);
 
-  &:active { cursor: grabbing; }
-  &:hover { border-color: rgba(255,255,255,0.2); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+  .day-top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
 
-  .scene-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;
-    .scene-id { font-size: 12px; font-weight: bold; color: $teal; }
-    .time-badge { font-size: 10px; background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px; color: rgba(255,255,255,0.7); }
+    .day-date-unit {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .unit-tag {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: $text-muted;
+    }
+
+    .day-date {
+      font-size: 18px;
+      font-weight: 700;
+      margin: 0;
+      color: white;
+      line-height: 1.1;
+    }
+
+    .day-controls {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+
+    .btn-icon {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid $border;
+      color: $text-muted;
+      border-radius: 6px;
+      width: 26px;
+      height: 26px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: 0.15s;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        border-color: rgba(255, 255, 255, 0.2);
+      }
+
+      &.btn-icon-danger:hover {
+        background: rgba(251, 44, 54, 0.12);
+        border-color: rgba(251, 44, 54, 0.3);
+        color: $danger;
+      }
+    }
   }
 
-  h3 { margin: 0 0 10px 0; font-size: 14px; font-weight: 500; line-height: 1.4; color: #fff; }
+  .day-call-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    color: $text-muted;
+    margin-bottom: 10px;
+  }
+}
 
-  .scene-details { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: rgba(255,255,255,0.5);
-    span { display: flex; align-items: center; gap: 6px; }
-    svg { width: 14px; height: 14px; opacity: 0.7; }
-    .duration { color: rgba(255,255,255,0.8); }
+// -------------------------------------------------------
+// CAPACITY BAR
+// -------------------------------------------------------
+.capacity-section {
+  margin-bottom: 10px;
+
+  .cap-bar {
+    height: 3px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 5px;
+
+    .cap-fill {
+      height: 100%;
+      background: $teal;
+      border-radius: 2px;
+      transition: width 0.4s ease;
+
+      &.cap-warning {
+        background: $yellow;
+      }
+
+      &.cap-danger {
+        background: $danger;
+      }
+    }
+  }
+
+  .cap-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: $text-muted;
+  }
+}
+
+// -------------------------------------------------------
+// STATUS BADGE + INLINE DROPDOWN
+// -------------------------------------------------------
+.status-row {
+  position: relative;
+}
+
+.status-dropdown-wrapper {
+  display: inline-flex;
+  position: relative;
+  cursor: pointer;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 3px 8px;
+  border-radius: 20px;
+  border: 1px solid transparent;
+
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  &.draft {
+    background: rgba(233, 166, 15, 0.12);
+    color: $yellow;
+    border-color: rgba(233, 166, 15, 0.2);
+
+    .status-dot {
+      background: $yellow;
+    }
+  }
+
+  &.published {
+    background: rgba(152, 16, 250, 0.12);
+    color: $purple;
+    border-color: rgba(152, 16, 250, 0.2);
+
+    .status-dot {
+      background: $purple;
+    }
+  }
+
+  &.completed {
+    background: rgba(58, 185, 160, 0.12);
+    color: $teal;
+    border-color: rgba(58, 185, 160, 0.2);
+
+    .status-dot {
+      background: $teal;
+    }
+  }
+
+  &.clickable {
+    cursor: pointer;
+    transition: filter 0.15s;
+
+    &:hover {
+      filter: brightness(1.2);
+    }
+  }
+}
+
+.status-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  background: #242424;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  z-index: 200;
+  min-width: 130px;
+  overflow: hidden;
+  padding: 4px;
+
+  button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 12px;
+    font-family: inherit;
+    padding: 7px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    text-align: left;
+    transition: 0.15s;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.06);
+      color: white;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+
+      &.draft {
+        background: $yellow;
+      }
+
+      &.published {
+        background: $purple;
+      }
+
+      &.completed {
+        background: $teal;
+      }
+    }
+  }
+}
+
+// -------------------------------------------------------
+// DAY SCENES LIST (vertical scroll, no scrollbar)
+// -------------------------------------------------------
+.day-scenes-list {
+  flex: 1;
+  min-height: 0;          // allow shrink inside flex column
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 10px 10px 16px; // extra bottom padding so last card isn't clipped
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.empty-drop-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 52px;
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.2);
+  letter-spacing: 0.04em;
+}
+
+// -------------------------------------------------------
+// SCENE CARDS
+// -------------------------------------------------------
+.scene-card {
+  background: $bg-card;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  padding: 11px 12px;
+  cursor: grab;
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+
+  &:active {
+    cursor: grabbing;
+  }
+
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.15);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  }
+
+  .scene-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+
+    .scene-id {
+      font-size: 11px;
+      font-weight: 700;
+      color: $teal;
+      letter-spacing: 0.04em;
+    }
+
+    .time-badge {
+      font-size: 9px;
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: rgba(255, 255, 255, 0.6);
+      letter-spacing: 0.04em;
+    }
+  }
+
+  h3 {
+    margin: 0 0 8px 0;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.4;
+    color: #fff;
+  }
+
+  .scene-details {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    .detail-loc,
+    .detail-dur {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      color: $text-muted;
+
+      svg {
+        width: 12px;
+        height: 12px;
+        flex-shrink: 0;
+        opacity: 0.7;
+      }
+    }
+
+    .detail-dur {
+      color: rgba(255, 255, 255, 0.7);
+    }
   }
 
   .cast-initials {
-    display: flex; gap: 4px; margin-top: 10px; flex-wrap: wrap;
+    display: flex;
+    gap: 4px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+
     .initial-bubble {
-      width: 24px; height: 24px; border-radius: 50%; background: $teal; color: $bg-main;
-      font-size: 10px; font-weight: bold; display: flex; align-items: center; justify-content: center;
-      &.small { width: 20px; height: 20px; font-size: 9px; }
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      font-size: 9px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      &.small {
+        width: 18px;
+        height: 18px;
+        font-size: 8px;
+      }
+    }
+  }
+
+  // Smaller variant inside day columns
+  &.scene-card-sm {
+    padding: 9px 10px;
+
+    h3 {
+      font-size: 12px;
+      margin-bottom: 6px;
     }
   }
 }
 
-// CDK DRAG PREVIEW
+// -------------------------------------------------------
+// CDK DRAG
+// -------------------------------------------------------
 .cdk-drag-preview {
-  box-sizing: border-box; border-radius: 8px; box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
-  background: lighten($bg-card, 5%); border: 1px solid $teal; opacity: 0.9;
+  box-sizing: border-box;
+  border-radius: 8px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5);
+  background: lighten($bg-card, 4%);
+  border: 1px solid rgba(58, 185, 160, 0.5);
+  opacity: 0.95;
 }
-.cdk-drag-placeholder { opacity: 0.2; border: 1px dashed rgba(255,255,255,0.5); background: transparent; }
-.cdk-drag-animating { transition: transform 250ms cubic-bezier(0, 0, 0.2, 1); }
 
-// --- МОДАЛКА КАЛЕНДАРЯ ---
+.cdk-drag-placeholder {
+  opacity: 0.15;
+  border: 1px dashed rgba(58, 185, 160, 0.4);
+  background: rgba(58, 185, 160, 0.04);
+  border-radius: 8px;
+}
+
+.cdk-drag-animating {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+// -------------------------------------------------------
+// MODALS
+// -------------------------------------------------------
 .modal-backdrop {
-  position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6);
-  backdrop-filter: blur(4px); display: flex; justify-content: center; align-items: center; z-index: 1000;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(6px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
 }
 
 .modal-content {
-  background: $bg-card; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px;
-  width: 100%; max-width: 480px; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+  background: #1a1a1a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 460px;
+  padding: 24px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+  max-height: 90vh;
+  overflow-y: auto;
+  scrollbar-width: none;
 
-  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;
-    h2 { margin: 0; font-size: 20px; font-weight: 500; }
-    .close-btn { background: none; border: none; color: rgba(255,255,255,0.5); font-size: 24px; cursor: pointer; &:hover { color: white; } }
+  &::-webkit-scrollbar {
+    display: none;
   }
 
-  .form-row { display: flex; gap: 16px; margin-bottom: 16px;
-    .form-group { flex: 1; }
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+
+    h2 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      color: $text-muted;
+      font-size: 22px;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0;
+
+      &:hover {
+        color: white;
+      }
+    }
+  }
+
+  .form-row {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 0;
+
+    .form-group {
+      flex: 1;
+    }
   }
 
   .form-group {
-    display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;
-    label { font-size: 13px; color: rgba(255,255,255,0.7); font-weight: 500;
-      .selected-date-preview { color: $teal; }
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin-bottom: 14px;
+
+    &.mt-3 {
+      margin-top: 8px;
     }
-    .form-control { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 8px; padding: 10px 12px; color: white; font-family: inherit; font-size: 14px; outline: none;
-      &:focus { border-color: $teal; }
+
+    label {
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.6);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+
+      .selected-date-preview {
+        color: $teal;
+        font-weight: 400;
+        text-transform: none;
+        letter-spacing: 0;
+      }
     }
-    select.form-control { appearance: none; }
-    textarea.form-control { resize: vertical; }
+
+    .form-control {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid $border;
+      border-radius: 8px;
+      padding: 9px 12px;
+      color: white;
+      font-family: inherit;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.2s;
+
+      &:focus {
+        border-color: rgba(58, 185, 160, 0.5);
+      }
+    }
+
+    select.form-control {
+      appearance: none;
+      cursor: pointer;
+
+      option {
+        background: #1a1a1a;
+      }
+    }
+
+    textarea.form-control {
+      resize: vertical;
+    }
   }
 
-  .modal-footer { display: flex; justify-content: flex-end; gap: 12px; margin-top: 32px;
-    .btn-cancel { background: none; border: 1px solid rgba(255,255,255,0.2); color: white; padding: 10px 20px; border-radius: 8px; font-weight: 500; cursor: pointer; &:hover { background: rgba(255,255,255,0.05); } }
-    .btn-submit { background: $teal; color: $bg-main; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; &:hover { filter: brightness(1.1); } }
+  .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 24px;
+
+    .btn-cancel {
+      background: none;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: rgba(255, 255, 255, 0.7);
+      padding: 9px 18px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      transition: 0.15s;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.05);
+        color: white;
+      }
+    }
+
+    .btn-submit {
+      background: $teal;
+      color: $bg-main;
+      border: none;
+      padding: 9px 20px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      transition: 0.15s;
+
+      &:hover {
+        filter: brightness(1.1);
+      }
+
+      &:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        filter: none;
+      }
+    }
   }
 
-  .calendar-widget { background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 16px;
-    .cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;
-      button { background: none; border: none; color: white; cursor: pointer; font-size: 16px; opacity: 0.7; &:hover { opacity: 1; } }
-      span { font-weight: 600; font-size: 15px; }
+  // CALENDAR WIDGET
+  .calendar-widget {
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid $border;
+    border-radius: 10px;
+    padding: 14px;
+
+    .cal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+
+      button {
+        background: none;
+        border: none;
+        color: rgba(255, 255, 255, 0.6);
+        cursor: pointer;
+        font-size: 14px;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        transition: 0.15s;
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.08);
+          color: white;
+        }
+      }
+
+      span {
+        font-weight: 600;
+        font-size: 14px;
+      }
     }
-    .cal-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; margin-bottom: 8px;
-      span { color: rgba(255,255,255,0.4); font-size: 11px; font-weight: 500; }
+
+    .cal-weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      text-align: center;
+      margin-bottom: 6px;
+
+      span {
+        color: $text-muted;
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
     }
-    .cal-days-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; row-gap: 8px;
-      .day-cell { display: flex; justify-content: center; align-items: center; height: 28px; width: 28px; margin: 0 auto; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; transition: 0.2s;
-        &:hover:not(.empty):not(.selected) { background: rgba(255,255,255,0.1); }
-        &.empty { cursor: default; }
-        &.today { border: 1px solid rgba(255,255,255,0.4); font-weight: bold; }
-        &.selected { background: $teal; color: $bg-main; box-shadow: 0 4px 10px rgba(58, 185, 160, 0.3); border: none; }
+
+    .cal-days-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+
+      .day-cell {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 26px;
+        font-size: 12px;
+        font-weight: 500;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: 0.15s;
+
+        &:hover:not(.empty):not(.selected) {
+          background: rgba(255, 255, 255, 0.08);
+        }
+
+        &.empty {
+          cursor: default;
+        }
+
+        &.today {
+          border: 1px solid rgba(255, 255, 255, 0.3);
+          font-weight: 700;
+        }
+
+        &.selected {
+          background: $teal;
+          color: $bg-main;
+          font-weight: 700;
+          box-shadow: 0 2px 10px rgba(58, 185, 160, 0.35);
+        }
       }
     }
   }
