@@ -29,6 +29,34 @@ $blue: #2B7FFF;
     .stat-number { color: $teal; font-size: 24px; font-weight: 400; }
     .stat-label { color: rgba(255, 255, 255, 0.6); font-size: 12px; }
   }
+
+  .btn-edit-icon {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.4); // Початковий колір (приглушений як у вкладках)
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease-in-out;
+    border-radius: 6px;
+
+    &:hover {
+      color: $teal; // Зміна кольору на фірмовий
+      background: none !important; // Гарантуємо відсутність фону
+      transform: scale(1.0); // Залишаємо оригінальний розмір за вашим запитом
+
+      // Додаємо ефект світіння саме для SVG контуру
+      filter: drop-shadow(0 0 5px rgba(58, 185, 160, 0.8));
+    }
+
+    &:active {
+      // Легкий відгук при натисканні без зміни фону
+      filter: drop-shadow(0 0 2px rgba(58, 185, 160, 1));
+      opacity: 0.8;
+    }
+  }
 }
 
 .widgets-grid {
@@ -150,3 +178,5 @@ $blue: #2B7FFF;
     }
   }
 }
+
+

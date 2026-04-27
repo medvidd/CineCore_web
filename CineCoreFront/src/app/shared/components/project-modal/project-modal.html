@@ -16,8 +16,8 @@
           </svg>
         </div>
         <div class="header-text">
-          <h2>Create New Project</h2>
-          <p>Fill in the details to start your new film project</p>
+          <h2>{{ mode === 'edit' ? 'Edit Project' : 'Create New Project' }}</h2>
+          <p>{{ mode === 'edit' ? 'Update your project details' : 'Fill in the details to start your new film project' }}</p>
         </div>
       </div>
 
@@ -67,7 +67,7 @@
 
         <div class="form-actions">
           <button type="button" class="btn-cancel" (click)="closeModal()">Cancel</button>
-          <button type="submit" class="btn-submit">Create Project</button>
+          <button type="submit" class="btn-submit">{{ mode === 'edit' ? 'Save Changes' : 'Create Project' }}</button>
         </div>
 
       </form>

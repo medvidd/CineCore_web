@@ -3,8 +3,16 @@
   <div class="project-summary-card">
     <div class="poster-placeholder"></div>
     <div class="summary-info">
-      <h1>{{ data.projectSummary.title }}</h1>
-      <p>{{ data.projectSummary.synopsis }}</p>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <h1 style="margin: 0;">{{ data.projectSummary.title }}</h1>
+        <button *ngIf="canEdit" (click)="openEditModal()" class="btn-edit-icon" title="Edit Project">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+          </svg>
+        </button>
+      </div>
+      <p style="margin-top: 8px;">{{ data.projectSummary.synopsis }}</p>
     </div>
     <div class="team-stat-box">
       <span class="stat-number">{{ data.projectSummary.teamMembersCount }}</span>
@@ -168,3 +176,11 @@
     <p>Loading project statistics...</p>
   </div>
 </ng-template>
+
+<app-project-modal
+  [isOpen]="isProjectModalOpen"
+  mode="edit"
+  [projectData]="editProjectData"
+  (close)="isProjectModalOpen = false"
+  (projectUpdated)="onProjectUpdated()">
+</app-project-modal>

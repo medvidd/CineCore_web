@@ -272,7 +272,8 @@ namespace CineCoreBack.Controllers
                 Title = project.Title,
                 Synopsis = project.Synopsis,
                 StartDate = project.StartDate,
-                Genre = genres
+                Genre = genres,
+                GenreIds = project.ProjectGenres?.Select(pg => pg.GenreId).ToList() ?? new List<int>()
             });
         }
 

@@ -36,6 +36,7 @@
         public string Duration { get; set; } = null!;
         public List<CrewDto> Crew { get; set; } = new();
         public bool IsJoined { get; set; }
+        public List<int> GenreIds { get; set; } = new();
     }
 
     public class CrewDto

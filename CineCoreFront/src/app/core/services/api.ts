@@ -268,4 +268,8 @@ export class Api {
   getDashboardStats(projectId: number): Observable<any> {
     return this.http.get(`${this.PROJECTS_API_URL}/${projectId}/dashboard`);
   }
+
+  updateProject(id: number, projectData: any): Observable<any> {
+    return this.http.put(`${this.PROJECTS_API_URL}/${id}`, projectData);
+  }
 }

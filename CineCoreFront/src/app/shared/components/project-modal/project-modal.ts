@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, inject, OnInit } from '@angular/core';
+import { Component, EventEmitter, Input, Output, inject, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Api } from '../../../core/services/api';
@@ -6,18 +6,22 @@ import { Api } from '../../../core/services/api';
 @Component({
   selector: 'app-project-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule], // Обов'язково додаємо FormsModule
+  imports: [CommonModule, FormsModule],
   templateUrl: './project-modal.html',
   styleUrl: './project-modal.scss'
 })
-export class ProjectModal implements OnInit {
+export class ProjectModal implements OnInit, OnChanges {
   private api = inject(Api);
 
-  @Input() isOpen = false; // Керує тим, чи показувати вікно
-  @Output() close = new EventEmitter<void>(); // Сигнал для закриття вікна
-  @Output() projectCreated = new EventEmitter<any>(); // Сигнал про успішне створення
+  @Input() isOpen = false;
+  @Input() mode: 'create' | 'edit' = 'create'; // РЕЖИМ РОБОТИ
+  @Input() projectData: any = null; // ДАНІ ПРОЕКТУ ДЛЯ РЕДАГУВАННЯ
 
-  dbGenres: any[] = []; // Сюди завантажаться жанри з БД
+  @Output() close = new EventEmitter<void>();
+  @Output() projectCreated = new EventEmitter<any>();
+  @Output() projectUpdated = new EventEmitter<any>(); // СИГНАЛ ПРО ОНОВЛЕННЯ
+
+  dbGenres: any[] = [];
 
   formData = {
     title: '',
@@ -30,8 +34,32 @@ export class ProjectModal implements OnInit {
   customGenreValue = '';
 
   ngOnInit() {
-    // Завантажуємо жанри при ініціалізації компоненти
     this.api.getGenres().subscribe(res => this.dbGenres = res);
+  }
+
+  // Відстежуємо зміни, щоб підставити дані при відкритті вікна
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['isOpen'] && this.isOpen) {
+      if (this.mode === 'edit' && this.projectData) {
+        this.formData.title = this.projectData.title;
+        this.formData.synopsis = this.projectData.synopsis || '';
+        this.formData.startDate = this.projectData.startDate || '';
+
+        // Підстановка жанру
+        if (this.projectData.genreIds && this.projectData.genreIds.length > 0) {
+          this.formData.genreId = this.projectData.genreIds[0].toString();
+          this.isCustomGenre = false;
+        } else if (this.projectData.genre && this.projectData.genre !== 'No genre') {
+          this.isCustomGenre = true;
+          this.customGenreValue = this.projectData.genre;
+        }
+      } else {
+        // Очищаємо для режиму створення
+        this.formData = { title: '', synopsis: '', startDate: '', genreId: '' };
+        this.isCustomGenre = false;
+        this.customGenreValue = '';
+      }
+    }
   }
 
   onGenreChange(event: any) {
@@ -48,47 +76,49 @@ export class ProjectModal implements OnInit {
   }
 
   onSubmit() {
-    // Дістаємо ID поточного користувача
     const user = JSON.parse(localStorage.getItem('cinecore_user') || '{}');
     if (!user.id) {
       alert("Error: User is not authorized");
       return;
     }
 
-    // Формуємо об'єкт ТОЧНО ТАК, ЯК ОЧІКУЄ C# DTO
     const payload = {
       title: this.formData.title,
       synopsis: this.formData.synopsis || null,
       startDate: this.formData.startDate || null,
       ownerId: user.id,
-      // Якщо вибрали з випадного списку - масив з одним числом, інакше порожній
       genreIds: this.formData.genreId ? [Number(this.formData.genreId)] : [],
-      // Якщо ввели вручну - розділяємо по комі, інакше порожній
       customGenres: this.isCustomGenre && this.customGenreValue
         ? this.customGenreValue.split(',').map(g => g.trim())
         : []
     };
 
-    console.log("Sending to the backend:", payload);
-
-    this.api.createProject(payload).subscribe({
-      next: (res) => {
-        console.log("The project has been created!", res);
-        this.projectCreated.emit(res); // Повідомляємо батьківську компоненту
-        this.closeModal(); // Закриваємо вікно
-      },
-      error: (err) => {
-        console.error("Creation error:", err);
-        alert("Failed to create the project.");
-      }
-    });
+    if (this.mode === 'create') {
+      this.api.createProject(payload).subscribe({
+        next: (res) => {
+          this.projectCreated.emit(res);
+          this.closeModal();
+        },
+        error: (err) => {
+          console.error(err);
+          alert("Failed to create the project.");
+        }
+      });
+    } else {
+      this.api.updateProject(this.projectData.id, payload).subscribe({
+        next: (res) => {
+          this.projectUpdated.emit(res);
+          this.closeModal();
+        },
+        error: (err) => {
+          console.error(err);
+          alert("Failed to update the project.");
+        }
+      });
+    }
   }
 
   closeModal() {
-    // Очищаємо форму
-    this.formData = { title: '', synopsis: '', startDate: '', genreId: '' };
-    this.isCustomGenre = false;
-    this.customGenreValue = '';
-    this.close.emit(); // Сигналізуємо батькові сховати вікно
+    this.close.emit();
   }
 }

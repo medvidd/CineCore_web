@@ -28,8 +28,8 @@ namespace CineCoreBack.Controllers
                 return NotFound(new { message = "Project not found" });
             }
 
-            // 1. Project Summary
-            var teamMembersCount = await _context.ProjectMembers.CountAsync(pm => pm.ProjectId == projectId);
+            // 1. Project Summary5
+            var teamMembersCount = await _context.ProjectMembers.CountAsync(pm => pm.ProjectId == projectId) + 1;
 
             // 2. Script Progress
             // Сцена вважається "completed" якщо:
@@ -40,6 +40,7 @@ namespace CineCoreBack.Controllers
                     .ThenInclude(ss => ss.ShootDay)
                 .Include(s => s.SceneResources)
                     .ThenInclude(sr => sr.Resource)
+                        .ThenInclude(r => r.Location) // <--- ДОДАЙТЕ ЦЕЙ РЯДОК
                 .Where(s => s.ProjectId == projectId)
                 .ToListAsync();
 
@@ -47,13 +48,13 @@ namespace CineCoreBack.Controllers
 
             var completedScenes = allScenes.Count(s =>
             {
-                // Перевірка 1: чи є прив'язана локація
+                // Перевірка 1: чи є прив'язана локація (якщо Location != null, значить це локація)
                 bool hasLocation = s.SceneResources != null &&
-                    s.SceneResources.Any(sr => sr.Resource != null && sr.Resource.Type == "location");
+                    s.SceneResources.Any(sr => sr.Resource != null && sr.Resource.Location != null);
 
-                // Перевірка 2: чи є у підтвердженому shoot day
+                // Перевірка 2: чи є у підтвердженому shoot day (шукаємо статус "confirmed")
                 bool isScheduledInConfirmedDay = s.SceneSchedules != null &&
-                    s.SceneSchedules.Any(ss => ss.ShootDay != null && ss.ShootDay.IsConfirmed == true);
+                    s.SceneSchedules.Any(ss => ss.ShootDay != null && ss.ShootDay.Status == "published");
 
                 return hasLocation && isScheduledInConfirmedDay;
             });
@@ -80,7 +81,7 @@ namespace CineCoreBack.Controllers
                 .Where(sd =>
                     sd.ProjectId == projectId &&
                     sd.ShiftStart > DateTime.UtcNow &&
-                    sd.IsConfirmed == true)
+                    sd.Status == "published") // <--- ЗМІНЕНО ТУТ
                 .OrderBy(sd => sd.ShiftStart)
                 .FirstOrDefaultAsync();
 
