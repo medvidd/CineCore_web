@@ -32,31 +32,55 @@ namespace CineCoreBack.Controllers
             var teamMembersCount = await _context.ProjectMembers.CountAsync(pm => pm.ProjectId == projectId);
 
             // 2. Script Progress
-            // Примітка: якщо у моделі Scene є поле Status, розкоментуйте логіку для draft/complete.
-            // Поки що я імітую перевірку, або можна вважати всі сцени без певних даних як draft.
-            var allScenes = await _context.Scenes.Where(s => s.ProjectId == projectId).ToListAsync();
-            var totalScenes = allScenes.Count;
-            // var completedScenes = allScenes.Count(s => s.Status == "complete"); 
-            // var draftScenes = totalScenes - completedScenes;
-            var completedScenes = 0; // Тимчасово: замініть на перевірку статусу, якщо він є у моделі Scene
-            var draftScenes = totalScenes;
+            // Сцена вважається "completed" якщо:
+            //   - має прив'язану локацію (Location через Resources)
+            //   - І була запланована у підтвердженому (IsConfirmed == true) shoot day
+            var allScenes = await _context.Scenes
+                .Include(s => s.SceneSchedules)
+                    .ThenInclude(ss => ss.ShootDay)
+                .Include(s => s.SceneResources)
+                    .ThenInclude(sr => sr.Resource)
+                .Where(s => s.ProjectId == projectId)
+                .ToListAsync();
 
-            var scriptProgressPct = totalScenes > 0 ? (int)Math.Round((double)completedScenes / totalScenes * 100) : 0;
+            var totalScenes = allScenes.Count;
+
+            var completedScenes = allScenes.Count(s =>
+            {
+                // Перевірка 1: чи є прив'язана локація
+                bool hasLocation = s.SceneResources != null &&
+                    s.SceneResources.Any(sr => sr.Resource != null && sr.Resource.Type == "location");
+
+                // Перевірка 2: чи є у підтвердженому shoot day
+                bool isScheduledInConfirmedDay = s.SceneSchedules != null &&
+                    s.SceneSchedules.Any(ss => ss.ShootDay != null && ss.ShootDay.IsConfirmed == true);
+
+                return hasLocation && isScheduledInConfirmedDay;
+            });
+
+            var draftScenes = totalScenes - completedScenes;
+            var scriptProgressPct = totalScenes > 0
+                ? (int)Math.Round((double)completedScenes / totalScenes * 100)
+                : 0;
 
             // 3. Casting
             var totalRoles = await _context.Roles.CountAsync(r => r.ProjectId == projectId);
-            // Рахуємо ролі, у яких є хоча б один кастинг зі статусом "approved"
             var castRoles = await _context.Roles
                 .Where(r => r.ProjectId == projectId && r.Castings.Any(c => c.CastStatus == "approved"))
                 .CountAsync();
             var pendingRoles = totalRoles - castRoles;
-            var castingProgressPct = totalRoles > 0 ? (int)Math.Round((double)castRoles / totalRoles * 100) : 0;
+            var castingProgressPct = totalRoles > 0
+                ? (int)Math.Round((double)castRoles / totalRoles * 100)
+                : 0;
 
-            // 4. Upcoming Shoot
+            // 4. Upcoming Shoot — ТІЛЬКИ підтверджені дні (IsConfirmed == true)
             var upcomingShoot = await _context.ShootDays
                 .Include(sd => sd.BaseLocation)
                 .Include(sd => sd.SceneSchedules)
-                .Where(sd => sd.ProjectId == projectId && sd.ShiftStart > DateTime.UtcNow)
+                .Where(sd =>
+                    sd.ProjectId == projectId &&
+                    sd.ShiftStart > DateTime.UtcNow &&
+                    sd.IsConfirmed == true)
                 .OrderBy(sd => sd.ShiftStart)
                 .FirstOrDefaultAsync();
 
@@ -74,7 +98,6 @@ namespace CineCoreBack.Controllers
             }
 
             // 5. Quick Stats
-            // Location та Prop дістаємо через зв'язок з Resource
             var totalLocations = await _context.Locations
                 .CountAsync(l => l.IdNavigation.ProjectId == projectId);
 
@@ -88,7 +111,6 @@ namespace CineCoreBack.Controllers
             var pendingInvites = await _context.ProjectInvitations
                 .CountAsync(pi => pi.ProjectId == projectId);
 
-            // Формуємо фінальний DTO
             var dashboardData = new DashboardDto
             {
                 ProjectSummary = new ProjectSummaryDto

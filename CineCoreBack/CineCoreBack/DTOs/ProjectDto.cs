@@ -5,9 +5,19 @@
         public string Title { get; set; } = null!;
         public string? Synopsis { get; set; }
         public DateOnly? StartDate { get; set; }
-        public List<int> GenreIds { get; set; } = new(); 
+        public List<int> GenreIds { get; set; } = new();
         public List<string> CustomGenres { get; set; } = new();
         public int OwnerId { get; set; }
+    }
+
+    // DTO для оновлення проекту (без OwnerId — власника не змінюємо)
+    public class ProjectUpdateDto
+    {
+        public string Title { get; set; } = null!;
+        public string? Synopsis { get; set; }
+        public DateOnly? StartDate { get; set; }
+        public List<int> GenreIds { get; set; } = new();
+        public List<string> CustomGenres { get; set; } = new();
     }
 
     public class ProjectResponseDto
@@ -17,8 +27,8 @@
         public string? Synopsis { get; set; }
         public DateOnly? StartDate { get; set; }
 
-        public string Role { get; set; } = null!; // Тут буде SysRole (для списку)
-        public string JobTitle { get; set; } = null!; // ДОДАНО: Тут буде Job Title (для деталей)
+        public string Role { get; set; } = null!;
+        public string JobTitle { get; set; } = null!;
 
         public string Genre { get; set; } = null!;
         public string Director { get; set; } = null!;
@@ -28,7 +38,6 @@
         public bool IsJoined { get; set; }
     }
 
-    // Клас для передачі інформації про учасників команди
     public class CrewDto
     {
         public string Name { get; set; } = null!;

@@ -20,7 +20,6 @@ namespace CineCoreBack.Controllers
         [HttpPost]
         public async Task<ActionResult<ProjectResponseDto>> CreateProject(ProjectCreateDto projectDto)
         {
-            // 1. Створюємо основну сутність проекту
             var project = new Project
             {
                 Title = projectDto.Title,
@@ -31,9 +30,8 @@ namespace CineCoreBack.Controllers
             };
 
             _context.Projects.Add(project);
-            await _context.SaveChangesAsync(); // Зберігаємо, щоб отримати Id проекту
+            await _context.SaveChangesAsync();
 
-            // 2. Стандартні жанри (ті, що вибрали з випадаючого списку)
             if (projectDto.GenreIds != null && projectDto.GenreIds.Any())
             {
                 foreach (var genreId in projectDto.GenreIds)
@@ -46,7 +44,6 @@ namespace CineCoreBack.Controllers
                 }
             }
 
-            // 3. Кастомні жанри (написані вручну)
             if (projectDto.CustomGenres != null && projectDto.CustomGenres.Any())
             {
                 foreach (var customGenreName in projectDto.CustomGenres)
@@ -54,7 +51,6 @@ namespace CineCoreBack.Controllers
                     var cleanName = customGenreName.Trim();
                     if (string.IsNullOrEmpty(cleanName)) continue;
 
-                    // Шукаємо в базі без врахування регістру
                     var existingGenre = await _context.Genres
                         .FirstOrDefaultAsync(g => g.Name.ToLower() == cleanName.ToLower());
 
@@ -66,15 +62,87 @@ namespace CineCoreBack.Controllers
                     }
                     else
                     {
-                        // Створюємо новий жанр із ТИМ регістром, який ввів користувач (для красивого відображення потім)
                         var newGenre = new Genre { Name = cleanName };
                         _context.Genres.Add(newGenre);
                         await _context.SaveChangesAsync();
                         targetGenreId = newGenre.Id;
                     }
 
-                    // Перевіряємо, чи ми вже не додали цей жанр на кроці 2
                     if (projectDto.GenreIds == null || !projectDto.GenreIds.Contains(targetGenreId))
+                    {
+                        _context.ProjectGenres.Add(new ProjectGenre { ProjectId = project.Id, GenreId = targetGenreId });
+                    }
+                }
+            }
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new ProjectResponseDto
+            {
+                Id = project.Id,
+                Title = project.Title,
+                Synopsis = project.Synopsis,
+                StartDate = project.StartDate
+            });
+        }
+
+        // PUT: api/projects/{id}
+        [HttpPut("{id}")]
+        public async Task<ActionResult<ProjectResponseDto>> UpdateProject(int id, ProjectUpdateDto updateDto)
+        {
+            var project = await _context.Projects
+                .Include(p => p.ProjectGenres)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (project == null)
+                return NotFound(new { message = "Project not found" });
+
+            // Оновлюємо базові поля
+            project.Title = updateDto.Title;
+            project.Synopsis = updateDto.Synopsis;
+            project.StartDate = updateDto.StartDate;
+
+            // Оновлюємо жанри: спочатку видаляємо старі
+            _context.ProjectGenres.RemoveRange(project.ProjectGenres);
+
+            // Стандартні жанри
+            if (updateDto.GenreIds != null && updateDto.GenreIds.Any())
+            {
+                foreach (var genreId in updateDto.GenreIds)
+                {
+                    _context.ProjectGenres.Add(new ProjectGenre
+                    {
+                        ProjectId = project.Id,
+                        GenreId = genreId
+                    });
+                }
+            }
+
+            // Кастомні жанри
+            if (updateDto.CustomGenres != null && updateDto.CustomGenres.Any())
+            {
+                foreach (var customGenreName in updateDto.CustomGenres)
+                {
+                    var cleanName = customGenreName.Trim();
+                    if (string.IsNullOrEmpty(cleanName)) continue;
+
+                    var existingGenre = await _context.Genres
+                        .FirstOrDefaultAsync(g => g.Name.ToLower() == cleanName.ToLower());
+
+                    int targetGenreId;
+                    if (existingGenre != null)
+                    {
+                        targetGenreId = existingGenre.Id;
+                    }
+                    else
+                    {
+                        var newGenre = new Genre { Name = cleanName };
+                        _context.Genres.Add(newGenre);
+                        await _context.SaveChangesAsync();
+                        targetGenreId = newGenre.Id;
+                    }
+
+                    if (updateDto.GenreIds == null || !updateDto.GenreIds.Contains(targetGenreId))
                     {
                         _context.ProjectGenres.Add(new ProjectGenre { ProjectId = project.Id, GenreId = targetGenreId });
                     }
@@ -111,14 +179,12 @@ namespace CineCoreBack.Controllers
                     .ThenInclude(pg => pg.Genre)
                 .AsQueryable();
 
-            // 1. ПРАВИЛЬНА ФІЛЬТРАЦІЯ (тепер по SysRole, а не JobTitle)
             if (role == "Project owner")
             {
                 query = query.Where(p => p.OwnerId == ownerId);
             }
             else if (role != "All" && !string.IsNullOrEmpty(role))
             {
-                // Переводимо в нижній регістр для точного порівняння з БД
                 string searchRole = role.ToLower();
                 query = query.Where(p => p.ProjectMembers.Any(pm => pm.UserId == ownerId && pm.SysRole.ToLower() == searchRole));
             }
@@ -129,7 +195,6 @@ namespace CineCoreBack.Controllers
 
             var projects = await query.OrderByDescending(p => p.Id).ToListAsync();
 
-            // 2. МАПІНГ ДАНИХ
             var result = projects.Select(p =>
             {
                 var memberEntry = p.ProjectMembers.FirstOrDefault(pm => pm.UserId == ownerId);
@@ -158,12 +223,10 @@ namespace CineCoreBack.Controllers
                     ? string.Join(", ", p.ProjectGenres.Select(pg => pg.Genre.Name))
                     : "No genre";
 
-                // Формуємо System Role (для списку і фільтрів) - робимо першу літеру великою
                 string sysRole = p.OwnerId == ownerId
                     ? "Project owner"
                     : (memberEntry?.SysRole != null ? char.ToUpper(memberEntry.SysRole[0]) + memberEntry.SysRole.Substring(1) : "Actor");
 
-                // Формуємо конкретну посаду (для деталей)
                 string jobTitle = p.OwnerId == ownerId
                     ? "Creator"
                     : (memberEntry?.JobTitle ?? "—");
@@ -174,8 +237,8 @@ namespace CineCoreBack.Controllers
                     Title = p.Title,
                     Synopsis = string.IsNullOrEmpty(p.Synopsis) ? "No synopsis provided." : p.Synopsis,
                     StartDate = p.StartDate,
-                    Role = sysRole,          // Це поле Angular покаже в списку зліва
-                    JobTitle = jobTitle,     // Це поле ми використаємо в правій панелі
+                    Role = sysRole,
+                    JobTitle = jobTitle,
                     Genre = genres,
                     Director = p.Owner != null ? $"{p.Owner.FirstName} {p.Owner.LastName}" : "None",
                     TeamSize = (p.ProjectMembers?.Count ?? 0) + 1,
@@ -191,26 +254,31 @@ namespace CineCoreBack.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<ProjectResponseDto>> GetProjectById(int id)
         {
-            var project = await _context.Projects.FindAsync(id);
+            var project = await _context.Projects
+                .Include(p => p.ProjectGenres)
+                    .ThenInclude(pg => pg.Genre)
+                .FirstOrDefaultAsync(p => p.Id == id);
 
             if (project == null)
-            {
                 return NotFound();
-            }
+
+            string genres = project.ProjectGenres != null && project.ProjectGenres.Any()
+                ? string.Join(", ", project.ProjectGenres.Select(pg => pg.Genre.Name))
+                : "No genre";
 
             return Ok(new ProjectResponseDto
             {
                 Id = project.Id,
                 Title = project.Title,
                 Synopsis = project.Synopsis,
-                StartDate = project.StartDate
+                StartDate = project.StartDate,
+                Genre = genres
             });
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteProject(int id)
         {
-            // Знаходимо проект разом із усіма залежностями для видалення
             var project = await _context.Projects
                 .Include(p => p.ProjectGenres)
                 .Include(p => p.ProjectMembers)
@@ -220,17 +288,13 @@ namespace CineCoreBack.Controllers
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (project == null)
-            {
                 return NotFound();
-            }
 
-            // Видаляємо всі пов'язані записи перед видаленням самого проекту
             _context.ProjectGenres.RemoveRange(project.ProjectGenres);
             _context.ProjectMembers.RemoveRange(project.ProjectMembers);
             _context.Scenes.RemoveRange(project.Scenes);
             _context.ShootDays.RemoveRange(project.ShootDays);
             _context.Roles.RemoveRange(project.Roles);
-
             _context.Projects.Remove(project);
 
             await _context.SaveChangesAsync();
@@ -238,7 +302,6 @@ namespace CineCoreBack.Controllers
             return NoContent();
         }
 
-        // GET: api/projects/5/role/12
         [HttpGet("{projectId}/role/{userId}")]
         public async Task<ActionResult> GetUserRoleInProject(int projectId, int userId)
         {
