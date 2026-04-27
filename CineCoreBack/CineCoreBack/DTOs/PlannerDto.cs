@@ -111,11 +111,19 @@ public class AutoScheduleRequestDto
     // Пропускати вихідні
     public bool SkipWeekends { get; set; } = true;
 
-    // Буфер між сценами (хвилини)
+    // Буфер між сценами (хвилини) — час на перестановку обладнання, зміну освітлення тощо
     public int BufferMinutes { get; set; } = 15;
 
-    // Пріоритет: "location" або "sequence"
+    // Пріоритет групування: "location" — мінімізувати переїзди | "sequence" — зберегти порядок
     public string GroupBy { get; set; } = "location";
+
+    // Час на setup на початку кожного дня (хвилини):
+    // розігрів команди, розвантаження техніки, брифінг — зазвичай 20-45 хвилин
+    public int SetupMinutes { get; set; } = 30;
+
+    // Додатковий час при зміні локації всередині дня (хвилини):
+    // переїзд, перевантаження обладнання, новий rehearsal — зазвичай 15-30 хвилин
+    public int LocationSwitchMinutes { get; set; } = 20;
 }
 
 // Результат Auto-Schedule

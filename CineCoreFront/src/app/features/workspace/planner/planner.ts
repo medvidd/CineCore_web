@@ -71,9 +71,12 @@ export class Planner implements OnInit {
     groupBy: 'location' as 'location' | 'sequence',
     defaultShiftStart: '09:00',
     defaultShiftEnd: '19:00',
+    // Нові поля для покращеного алгоритму
+    setupMinutes: 30,           // час на setup на початку дня
+    locationSwitchMinutes: 20,  // overhead при зміні локації всередині дня
   };
 
-// Auto-calendar (для вибору startDate у режимі generate)
+  // Auto-calendar (для вибору startDate у режимі generate)
   autoDisplayMonth = 0;
   autoDisplayYear = 0;
   autoSelectedDateObj: Date | null = null;
@@ -103,17 +106,12 @@ export class Planner implements OnInit {
   }
 
   checkActorRoles() {
-    // Виконуємо лише якщо це актор і ми вже маємо projectId
     if (!this.canEdit && this.projectId) {
-
-      // 1. Отримуємо ID користувача (як у script.ts)
       const user = JSON.parse(localStorage.getItem('cinecore_user') || '{}');
 
       if (user && user.id) {
-        // 2. Отримуємо заявки/кастинги актора (як у casting.ts)
         this.api.getActorCastingsInProject(this.projectId, user.id).subscribe({
           next: (castings: any[]) => {
-            // 3. Залишаємо тільки ті roleId, де статус 'approved'
             this.myApprovedRoleIds = castings
               .filter(c => c.status?.toLowerCase() === 'approved')
               .map(c => c.roleId);
@@ -134,29 +132,52 @@ export class Planner implements OnInit {
     this.api.getPlannerBoard(this.projectId).subscribe({
       next: (data) => {
         this.board = data;
-        // Тимчасово:
-        console.log('Board days statuses:', data.shootDays?.map((d: any) => ({ id: d.id, status: d.status })));
         this.applyFilters();
         this.cdr.detectChanges();
       }
     });
   }
 
+  // ВИПРАВЛЕННЯ: фільтр локацій тепер показує лише:
+  //   - "All Locations" (завжди перший)
+  //   - реальні назви локацій тільки з scenes що мають hasLocationResource === true
+  //   - "No Location" (для сцен без прив'язаного location-ресурсу)
   get uniqueLocations(): string[] {
-    const locs = this.board.scenePool.map((s: any) => s.location).filter((l: string) => l && l !== 'TBD');
-    return ['All Locations', ...new Set(locs)] as string[];
+    const locs = this.board.scenePool
+      .filter((s: any) => s.hasLocationResource === true)
+      .map((s: any) => s.location as string)
+      .filter((l: string) => !!l && l !== 'TBD');
+
+    const unique = [...new Set(locs)].sort() as string[];
+    return ['All Locations', ...unique, 'No Location'];
   }
+
   get uniqueRoles(): string[] {
     const roles: string[] = [];
     this.board.scenePool.forEach((s: any) => { if (s.cast) roles.push(...s.cast); });
     return ['All Roles', ...new Set(roles)] as string[];
   }
+
   applyFilters() {
     this.filteredScenePool = this.board.scenePool.filter((scene: any) => {
       const q = this.searchQuery.toLowerCase();
-      const matchesSearch = !this.searchQuery || scene.title?.toLowerCase().includes(q) || scene.displayId?.toLowerCase().includes(q);
-      const matchesLoc = this.selectedLocation === 'All Locations' || scene.location === this.selectedLocation;
-      const matchesRole = this.selectedRole === 'All Roles' || (scene.cast && scene.cast.includes(this.selectedRole));
+      const matchesSearch = !this.searchQuery
+        || scene.title?.toLowerCase().includes(q)
+        || scene.displayId?.toLowerCase().includes(q);
+
+      // ВИПРАВЛЕННЯ: фільтр за локацією з підтримкою "No Location"
+      let matchesLoc: boolean;
+      if (this.selectedLocation === 'All Locations') {
+        matchesLoc = true;
+      } else if (this.selectedLocation === 'No Location') {
+        matchesLoc = !scene.hasLocationResource;
+      } else {
+        matchesLoc = scene.hasLocationResource && scene.location === this.selectedLocation;
+      }
+
+      const matchesRole = this.selectedRole === 'All Roles'
+        || (scene.cast && scene.cast.includes(this.selectedRole));
+
       return matchesSearch && matchesLoc && matchesRole;
     });
   }
@@ -176,7 +197,7 @@ export class Planner implements OnInit {
       }
     }
     this.api.moveScene(this.projectId, scene.id, targetDayId, event.currentIndex).subscribe({
-      next: () => this.loadBoard(),   // reload so capacityStr/capacityPct update
+      next: () => this.loadBoard(),
       error: () => this.loadBoard()
     });
   }
@@ -216,11 +237,12 @@ export class Planner implements OnInit {
     };
     this.isEditModalOpen = true;
   }
+
   closeEditModal() { this.isEditModalOpen = false; this.editingDay = null; }
+
   submitEditDay() {
     if (!this.editingDay) return;
 
-    // Прибрали status з payload, оскільки він змінюється через dropdown на самій картці
     const payload: any = { unit: this.editDayForm.unit, generalNotes: this.editDayForm.notes };
 
     if (this.editDayForm.shootDate) payload.shootDate = this.editDayForm.shootDate;
@@ -244,7 +266,6 @@ export class Planner implements OnInit {
   // -------------------------------------------------------
   toggleStatusDropdown(day: any) {
     const wasOpen = day._statusOpen;
-    // close all other open dropdowns first
     this.board.shootDays?.forEach((d: any) => d._statusOpen = false);
     day._statusOpen = !wasOpen;
     this.cdr.detectChanges();
@@ -258,12 +279,12 @@ export class Planner implements OnInit {
   changeStatus(day: any, newStatus: string) {
     day._statusOpen = false;
     const previousStatus = day.status;
-    day.status = newStatus; // optimistic update
+    day.status = newStatus;
     this.cdr.detectChanges();
 
     this.api.updateShootDay(this.projectId, day.id, { status: newStatus }).subscribe({
       error: () => {
-        day.status = previousStatus; // revert on error
+        day.status = previousStatus;
         this.cdr.detectChanges();
       }
     });
@@ -275,16 +296,15 @@ export class Planner implements OnInit {
 
     // Якщо це актор - фільтруємо
     return this.board.shootDays.filter((day: any) => {
-      // 1. Актори не бачать чорнетки (draft)
+      // Актори не бачать чорнетки (draft) і generated
       if (day.status === 'draft' || day.status === 'generated') return false;
 
-      // 2. Якщо увімкнено "Мій розклад" (personal)
+      // Якщо увімкнено "Мій розклад" (personal)
       if (this.viewMode === 'personal') {
-        // Перевіряємо, чи є в цьому дні хоча б одна сцена, де RoleIds збігається з myApprovedRoleIds актора
         const hasMyScene = day.scenes.some((scene: any) =>
           scene.roleIds?.some((id: number) => this.myApprovedRoleIds.includes(id))
         );
-        if (!hasMyScene) return false; // Якщо немає його сцен - приховуємо день
+        if (!hasMyScene) return false;
       }
 
       return true;
@@ -296,6 +316,7 @@ export class Planner implements OnInit {
   // -------------------------------------------------------
   get currentMonthName() { return this.monthNames[this.displayMonth]; }
   get editCurrentMonthName() { return this.monthNames[this.editDisplayMonth]; }
+
   private buildCalendarWeeks(year: number, month: number): (number | null)[][] {
     const firstDay = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -309,15 +330,18 @@ export class Planner implements OnInit {
     if (dow > 0) weeks.push(week);
     return weeks;
   }
+
   generateCalendar() { this.calendarWeeks = this.buildCalendarWeeks(this.displayYear, this.displayMonth); }
   generateEditCalendar() { this.editCalendarWeeks = this.buildCalendarWeeks(this.editDisplayYear, this.editDisplayMonth); }
   prevMonth() { if (this.displayMonth === 0) { this.displayMonth = 11; this.displayYear--; } else { this.displayMonth--; } this.generateCalendar(); }
   nextMonth() { if (this.displayMonth === 11) { this.displayMonth = 0; this.displayYear++; } else { this.displayMonth++; } this.generateCalendar(); }
   prevEditMonth() { if (this.editDisplayMonth === 0) { this.editDisplayMonth = 11; this.editDisplayYear--; } else { this.editDisplayMonth--; } this.generateEditCalendar(); }
   nextEditMonth() { if (this.editDisplayMonth === 11) { this.editDisplayMonth = 0; this.editDisplayYear++; } else { this.editDisplayMonth++; } this.generateEditCalendar(); }
+
   private formatDate(date: Date): string {
     return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
   }
+
   selectDate(day: number | null) { if (!day) return; this.selectedDateObj = new Date(this.displayYear, this.displayMonth, day); this.newDayForm.shootDate = this.formatDate(this.selectedDateObj); }
   selectEditDate(day: number | null) { if (!day) return; this.editSelectedDateObj = new Date(this.editDisplayYear, this.editDisplayMonth, day); this.editDayForm.shootDate = this.formatDate(this.editSelectedDateObj); }
   isToday(day: number): boolean { const t = new Date(); return day === t.getDate() && this.displayMonth === t.getMonth() && this.displayYear === t.getFullYear(); }
@@ -395,6 +419,9 @@ export class Planner implements OnInit {
       groupBy: this.autoForm.groupBy,
       defaultShiftStart: this.autoForm.defaultShiftStart,
       defaultShiftEnd: this.autoForm.defaultShiftEnd,
+      // Нові параметри алгоритму
+      setupMinutes: this.autoForm.setupMinutes,
+      locationSwitchMinutes: this.autoForm.locationSwitchMinutes,
     };
 
     this.api.autoSchedule(this.projectId, payload).subscribe({
@@ -402,8 +429,6 @@ export class Planner implements OnInit {
         this.isAutoLoading = false;
         this.autoScheduleResult = result;
         this.loadBoard();
-        console.log('Auto result:', result);
-
         this.cdr.detectChanges();
       },
       error: () => {
@@ -413,7 +438,7 @@ export class Planner implements OnInit {
     });
   }
 
-// Підтвердження/відхилення конкретного дня
+  // Підтвердження/відхилення конкретного дня
   confirmGeneratedDay(dayId: number) {
     this.api.confirmDay(this.projectId, dayId, true).subscribe({
       next: () => this.loadBoard()
@@ -426,14 +451,14 @@ export class Planner implements OnInit {
     });
   }
 
-// Масове підтвердження
+  // Масове підтвердження
   confirmAllGeneratedDays() {
     this.api.confirmAllGenerated(this.projectId).subscribe({
       next: () => { this.closeAutoModal(); this.loadBoard(); }
     });
   }
 
-// Масове відхилення всіх generated днів
+  // Масове відхилення всіх generated днів
   rejectAllGeneratedDays() {
     const generatedIds = this.board.shootDays
       ?.filter((d: any) => d.status === 'generated')
@@ -441,12 +466,10 @@ export class Planner implements OnInit {
 
     if (!generatedIds.length) return;
 
-    // Відхиляємо всі по черзі (або можна додати окремий endpoint)
     const requests = generatedIds.map((id: number) =>
       this.api.confirmDay(this.projectId, id, false)
     );
 
-    // Виконуємо послідовно через Promise chain
     requests.reduce(
       (chain: Promise<any>, req: any) =>
         chain.then(() => req.toPromise()),
