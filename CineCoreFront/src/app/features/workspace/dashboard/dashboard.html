@@ -1,13 +1,13 @@
-<div class="dashboard-wrapper">
+<div class="dashboard-wrapper" *ngIf="!isLoading && data; else loadingTpl">
 
   <div class="project-summary-card">
     <div class="poster-placeholder"></div>
     <div class="summary-info">
-      <h1>The Crimson Letter</h1>
-      <p>A gripping psychological thriller exploring the dark secrets of a small coastal town. When mysterious letters begin appearing, journalist Emma Stone must uncover the truth before it's too late.</p>
+      <h1>{{ data.projectSummary.title }}</h1>
+      <p>{{ data.projectSummary.synopsis }}</p>
     </div>
     <div class="team-stat-box">
-      <span class="stat-number">24</span>
+      <span class="stat-number">{{ data.projectSummary.teamMembersCount }}</span>
       <span class="stat-label">Team Members</span>
     </div>
   </div>
@@ -22,13 +22,13 @@
           </div>
           <h3>Script Progress</h3>
         </div>
-        <div class="progress-circle">67%</div>
+        <div class="progress-circle">{{ data.scriptProgress.progressPercentage }}%</div>
         <div class="progress-stats">
-          <div class="stat-row"><small>Completed</small> <span class="text-green">8 scenes</span></div>
-          <div class="stat-row"><small>Draft</small> <span class="text-yellow">4 scenes</span></div>
-          <div class="stat-row total-row"><small>Total</small> <span>12 scenes</span></div>
+          <div class="stat-row"><small>Completed</small> <span class="text-green">{{ data.scriptProgress.completedScenes }} scenes</span></div>
+          <div class="stat-row"><small>Draft</small> <span class="text-yellow">{{ data.scriptProgress.draftScenes }} scenes</span></div>
+          <div class="stat-row total-row"><small>Total</small> <span>{{ data.scriptProgress.totalScenes }} scenes</span></div>
         </div>
-        <a href="#" class="widget-link">View Script Breakdown →</a>
+        <a [routerLink]="['../script']" class="widget-link">View Script Breakdown →</a>
       </div>
     </div>
 
@@ -42,8 +42,12 @@
         </div>
 
         <div class="cast-progress">
-          <div class="labels"><small>Roles Cast</small> <span>7 / 10</span></div>
-          <div class="progress-bar"><div class="fill" style="width: 70%">70%</div></div>
+          <div class="labels"><small>Roles Cast</small> <span>{{ data.castingProgress.castRoles }} / {{ data.castingProgress.totalRoles }}</span></div>
+          <div class="progress-bar">
+            <div class="fill" [style.width.%]="data.castingProgress.progressPercentage">
+              {{ data.castingProgress.progressPercentage }}%
+            </div>
+          </div>
         </div>
 
         <div class="roles-status">
@@ -52,18 +56,18 @@
               <svg class="status-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
               <span>Cast</span>
             </div>
-            <span class="status-count">7 roles</span>
+            <span class="status-count">{{ data.castingProgress.castRoles }} roles</span>
           </div>
           <div class="status-box pending">
             <div class="status-left">
               <svg class="status-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
               <span>Pending</span>
             </div>
-            <span class="status-count">3 roles</span>
+            <span class="status-count">{{ data.castingProgress.pendingRoles }} roles</span>
           </div>
         </div>
 
-        <a href="#" class="widget-link text-purple">View Casting →</a>
+        <a [routerLink]="['../casting']" class="widget-link text-purple">View Casting →</a>
       </div>
     </div>
 
@@ -76,19 +80,27 @@
           <h3>Upcoming Shoots</h3>
         </div>
 
-        <div class="shoot-item">
-          <div class="shoot-header">
-            <span class="shoot-date">Mar 24, Tuesday</span>
-            <span class="shoot-year">2026</span>
+        <ng-container *ngIf="data.upcomingShoot.hasUpcoming; else noShoots">
+          <div class="shoot-item">
+            <div class="shoot-header">
+              <span class="shoot-date">{{ formatDate(data.upcomingShoot.date).day }}</span>
+              <span class="shoot-year">{{ formatDate(data.upcomingShoot.date).year }}</span>
+            </div>
+            <div class="shoot-details">
+              <p><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> Call time: {{ data.upcomingShoot.callTime }}</p>
+              <p><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg> {{ data.upcomingShoot.locationName }}</p>
+              <p><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg> {{ data.upcomingShoot.scenesCount }} scenes</p>
+            </div>
           </div>
-          <div class="shoot-details">
-            <p><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> Call time: 08:00</p>
-            <p><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg> Old Abandoned Factory</p>
-            <p><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg> 2 scenes</p>
-          </div>
-        </div>
+        </ng-container>
 
-        <a href="#" class="widget-link">View Full Schedule →</a>
+        <ng-template #noShoots>
+          <div class="shoot-item empty-state">
+            <p>No upcoming shoots scheduled.</p>
+          </div>
+        </ng-template>
+
+        <a [routerLink]="['../planner']" class="widget-link">View Full Schedule →</a>
       </div>
     </div>
 
@@ -102,7 +114,7 @@
         <div class="icon-wrapper icon-teal">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
         </div>
-        <div class="stat-num">12</div>
+        <div class="stat-num">{{ data.quickStats.totalScenes }}</div>
         <div class="stat-label">Total Scenes</div>
       </div>
 
@@ -110,7 +122,7 @@
         <div class="icon-wrapper icon-pink">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
         </div>
-        <div class="stat-num">10</div>
+        <div class="stat-num">{{ data.quickStats.totalRoles }}</div>
         <div class="stat-label">Total Roles</div>
       </div>
 
@@ -118,7 +130,7 @@
         <div class="icon-wrapper icon-green">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
         </div>
-        <div class="stat-num">5</div>
+        <div class="stat-num">{{ data.quickStats.totalLocations }}</div>
         <div class="stat-label">Total Locations</div>
       </div>
 
@@ -126,7 +138,7 @@
         <div class="icon-wrapper icon-purple">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
         </div>
-        <div class="stat-num">45</div>
+        <div class="stat-num">{{ data.quickStats.totalProps }}</div>
         <div class="stat-label">Total Props</div>
       </div>
 
@@ -134,7 +146,7 @@
         <div class="icon-wrapper icon-yellow">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
         </div>
-        <div class="stat-num">4</div>
+        <div class="stat-num">{{ data.quickStats.unscheduledScenes }}</div>
         <div class="stat-label">Unscheduled Scenes</div>
       </div>
 
@@ -142,7 +154,7 @@
         <div class="icon-wrapper icon-blue">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
         </div>
-        <div class="stat-num">3</div>
+        <div class="stat-num">{{ data.quickStats.pendingInvites }}</div>
         <div class="stat-label">Pending Invites</div>
       </div>
 
@@ -150,3 +162,9 @@
   </div>
 
 </div>
+
+<ng-template #loadingTpl>
+  <div class="loading-container">
+    <p>Loading project statistics...</p>
+  </div>
+</ng-template>

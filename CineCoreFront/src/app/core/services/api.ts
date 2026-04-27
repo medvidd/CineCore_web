@@ -264,4 +264,8 @@ export class Api {
   confirmAllGenerated(projectId: number): Observable<any> {
     return this.http.post(`${this.PLANNER_API_URL}/project/${projectId}/confirm-all-generated`, {});
   }
+
+  getDashboardStats(projectId: number): Observable<any> {
+    return this.http.get(`${this.PROJECTS_API_URL}/${projectId}/dashboard`);
+  }
 }
