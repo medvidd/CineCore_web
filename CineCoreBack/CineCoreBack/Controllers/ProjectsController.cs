@@ -2,7 +2,6 @@
 using CineCoreBack.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace CineCoreBack.Controllers
 {
@@ -20,6 +19,20 @@ namespace CineCoreBack.Controllers
         [HttpPost]
         public async Task<ActionResult<ProjectResponseDto>> CreateProject(ProjectCreateDto projectDto)
         {
+            // ВАЛІДАЦІЯ: Перевіряємо, чи немає в цього власника проекту з такою ж назвою
+            bool titleExists = await _context.Projects
+                .AnyAsync(p => p.OwnerId == projectDto.OwnerId && p.Title.ToLower() == projectDto.Title.ToLower());
+
+            if (titleExists)
+            {
+                return BadRequest(new { message = "You already have a project with this title." });
+            }
+
+            if (projectDto.StartDate.HasValue && projectDto.StartDate.Value < DateOnly.FromDateTime(DateTime.UtcNow))
+            {
+                return BadRequest(new { message = "Start date cannot be in the past." });
+            }
+
             var project = new Project
             {
                 Title = projectDto.Title,
@@ -86,7 +99,6 @@ namespace CineCoreBack.Controllers
             });
         }
 
-        // PUT: api/projects/{id}
         [HttpPut("{id}")]
         public async Task<ActionResult<ProjectResponseDto>> UpdateProject(int id, ProjectUpdateDto updateDto)
         {
@@ -96,6 +108,23 @@ namespace CineCoreBack.Controllers
 
             if (project == null)
                 return NotFound(new { message = "Project not found" });
+
+            // ВАЛІДАЦІЯ: Перевіряємо, чи немає ІНШОГО проекту з такою назвою у цього ж власника
+            bool titleExists = await _context.Projects
+                .AnyAsync(p => p.OwnerId == project.OwnerId && p.Id != id && p.Title.ToLower() == updateDto.Title.ToLower());
+
+            if (titleExists)
+            {
+                return BadRequest(new { message = "You already have another project with this title." });
+            }
+
+            if (updateDto.StartDate.HasValue && project.StartDate != updateDto.StartDate)
+            {
+                if (updateDto.StartDate.Value < DateOnly.FromDateTime(DateTime.UtcNow))
+                {
+                    return BadRequest(new { message = "New start date cannot be in the past." });
+                }
+            }
 
             // Оновлюємо базові поля
             project.Title = updateDto.Title;

@@ -21,29 +21,48 @@
         </div>
       </div>
 
-      <form (ngSubmit)="onSubmit()" class="modal-form">
+      <form #projectForm="ngForm" (ngSubmit)="onSubmit(projectForm.valid)" class="modal-form">
+
+        @if (serverError) {
+          <div class="server-error-alert">{{ serverError }}</div>
+        }
 
         <div class="form-group">
-          <label>Project Title</label>
-          <input type="text" name="title" [(ngModel)]="formData.title" class="form-control" placeholder="Enter project title" required>
+          <label>Project Title *</label>
+          <input type="text" name="title" [(ngModel)]="formData.title" #title="ngModel" required
+                 class="form-control" [class.is-invalid]="title.invalid && title.touched"
+                 placeholder="Enter project title">
+          @if (title.invalid && title.touched) {
+            <span class="error-text">Title is required.</span>
+          }
         </div>
 
         <div class="form-group">
-          <label>Genre</label>
+          <label>Genre *</label>
 
           @if (!isCustomGenre) {
-            <select name="genreId" [(ngModel)]="formData.genreId" (change)="onGenreChange($event)" class="form-control select-control" required>
+            <select name="genreId" [(ngModel)]="formData.genreId" #genre="ngModel" required
+                    (change)="onGenreChange($event)" class="form-control select-control"
+                    [class.is-invalid]="genre.invalid && genre.touched">
               <option value="" disabled selected>Select a genre</option>
               @for (g of dbGenres; track g.id) {
                 <option [value]="g.id">{{ g.name }}</option>
               }
               <option value="custom" class="custom-option">+ Custom Genre</option>
             </select>
+            @if (genre.invalid && genre.touched) {
+              <span class="error-text">Genre is required.</span>
+            }
           } @else {
             <div class="custom-genre-row">
-              <input type="text" name="customGenre" [(ngModel)]="customGenreValue" class="form-control" placeholder="e.g. Cyberpunk, Space Opera" required>
+              <input type="text" name="customGenre" [(ngModel)]="customGenreValue" #customG="ngModel" required
+                     class="form-control" [class.is-invalid]="customG.invalid && customG.touched"
+                     placeholder="e.g. Cyberpunk, Space Opera">
               <button type="button" class="btn-back" (click)="cancelCustomGenre()">Back</button>
             </div>
+            @if (customG?.invalid && customG?.touched) {
+              <span class="error-text">Custom genre cannot be empty.</span>
+            }
           }
         </div>
 
@@ -54,10 +73,16 @@
               type="date"
               name="startDate"
               [(ngModel)]="formData.startDate"
+              #startDateCtrl="ngModel"
+              [min]="minAllowedDate"
               class="form-control"
+              [class.is-invalid]="startDateCtrl.invalid && startDateCtrl.touched"
               style="width: 100%; height: 48px; padding-right: 40px; cursor: text;"
             >
           </div>
+          @if (startDateCtrl.errors?.['min']) {
+            <span class="error-text">Start date cannot be in the past.</span>
+          }
         </div>
 
         <div class="form-group">
@@ -67,7 +92,10 @@
 
         <div class="form-actions">
           <button type="button" class="btn-cancel" (click)="closeModal()">Cancel</button>
-          <button type="submit" class="btn-submit">{{ mode === 'edit' ? 'Save Changes' : 'Create Project' }}</button>
+          <!-- Кнопка блокується, якщо форма невалідна (включно з датою в минулому) -->
+          <button type="submit" class="btn-submit" [disabled]="projectForm.invalid || isLoading">
+            {{ isLoading ? 'Saving...' : (mode === 'edit' ? 'Save Changes' : 'Create Project') }}
+          </button>
         </div>
 
       </form>

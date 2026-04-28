@@ -92,3 +92,36 @@
     }
   }
 }
+
+// ... ваш існуючий код project-modal.scss ...
+
+// ДОДАТКОВІ КЛАСИ ДЛЯ ВАЛІДАЦІЇ
+.form-control.is-invalid {
+  border-color: #FF3B30 !important;
+  background-color: rgba(255, 59, 48, 0.05);
+}
+
+.error-text {
+  color: #FF3B30;
+  font-size: 12px;
+  margin-top: -4px;
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+.server-error-alert {
+  width: 100%;
+  padding: 12px 16px;
+  background: rgba(255, 59, 48, 0.1);
+  border: 1px solid rgba(255, 59, 48, 0.3);
+  border-radius: 12px;
+  color: #FF3B30;
+  font-size: 14px;
+  text-align: center;
+  font-weight: 500;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed !important;
+  pointer-events: none;
+}

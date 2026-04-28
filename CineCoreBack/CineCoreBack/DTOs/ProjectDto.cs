@@ -1,19 +1,28 @@
-﻿namespace CineCoreBack.DTOs
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace CineCoreBack.DTOs
 {
     public class ProjectCreateDto
     {
+        [Required(ErrorMessage = "Project title is required")]
+        [MaxLength(200, ErrorMessage = "Title cannot exceed 200 characters")]
         public string Title { get; set; } = null!;
+
         public string? Synopsis { get; set; }
         public DateOnly? StartDate { get; set; }
         public List<int> GenreIds { get; set; } = new();
         public List<string> CustomGenres { get; set; } = new();
+
+        [Required]
         public int OwnerId { get; set; }
     }
 
-    // DTO для оновлення проекту (без OwnerId — власника не змінюємо)
     public class ProjectUpdateDto
     {
+        [Required(ErrorMessage = "Project title is required")]
+        [MaxLength(200, ErrorMessage = "Title cannot exceed 200 characters")]
         public string Title { get; set; } = null!;
+
         public string? Synopsis { get; set; }
         public DateOnly? StartDate { get; set; }
         public List<int> GenreIds { get; set; } = new();
