@@ -16,12 +16,9 @@ namespace CineCoreBack.Controllers
             _context = context;
         }
 
-        // GET: api/Props
         [HttpGet("project/{projectId}")]
         public async Task<ActionResult<IEnumerable<PropResponseDto>>> GetPropsByProject(
-    int projectId,
-    [FromQuery] string category = "All",
-    [FromQuery] string search = "")
+            int projectId, [FromQuery] string category = "All", [FromQuery] string search = "")
         {
             var query = _context.Props
                 .Include(p => p.IdNavigation)
@@ -54,19 +51,19 @@ namespace CineCoreBack.Controllers
             return Ok(props);
         }
 
-        // POST: api/Props
         [HttpPost]
         public async Task<ActionResult<PropResponseDto>> CreateProp(PropCreateUpdateDto dto)
         {
-            // 1. Створюємо ресурс з прив'язкою до проекту
-            var resource = new Resource
-            {
-                ProjectId = dto.ProjectId
-            };
+            // ВАЛІДАЦІЯ: Перевірка на унікальність назви реквізиту в проекті
+            bool exists = await _context.Props
+                .AnyAsync(p => p.IdNavigation.ProjectId == dto.ProjectId && p.PropName.ToLower() == dto.PropName.ToLower());
+
+            if (exists) return BadRequest(new { message = "A prop with this name already exists in this project." });
+
+            var resource = new Resource { ProjectId = dto.ProjectId };
             _context.Resources.Add(resource);
             await _context.SaveChangesAsync();
 
-            // 2. Створюємо проп
             var prop = new Prop
             {
                 Id = resource.Id,
@@ -83,12 +80,17 @@ namespace CineCoreBack.Controllers
             return Ok(new { Id = prop.Id, Message = "Prop created successfully" });
         }
 
-        // PUT: api/Props/5
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateProp(int id, PropCreateUpdateDto dto)
         {
             var prop = await _context.Props.FindAsync(id);
-            if (prop == null) return NotFound();
+            if (prop == null) return NotFound(new { message = "Prop not found" });
+
+            // ВАЛІДАЦІЯ: Унікальність при перейменуванні
+            bool exists = await _context.Props
+                .AnyAsync(p => p.IdNavigation.ProjectId == dto.ProjectId && p.Id != id && p.PropName.ToLower() == dto.PropName.ToLower());
+
+            if (exists) return BadRequest(new { message = "A prop with this name already exists in this project." });
 
             prop.PropName = dto.PropName;
             prop.Description = dto.Description;
@@ -100,7 +102,6 @@ namespace CineCoreBack.Controllers
             return NoContent();
         }
 
-        // DELETE: api/Props/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteProp(int id)
         {

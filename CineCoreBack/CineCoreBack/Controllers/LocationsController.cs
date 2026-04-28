@@ -16,25 +16,20 @@ namespace CineCoreBack.Controllers
             _context = context;
         }
 
-        // GET: api/Locations
         [HttpGet("project/{projectId}")]
         public async Task<ActionResult<IEnumerable<LocationResponseDto>>> GetLocationsByProject(
-    int projectId,
-    [FromQuery] string type = "All",
-    [FromQuery] string search = "")
+            int projectId, [FromQuery] string type = "All", [FromQuery] string search = "")
         {
             var query = _context.Locations
                 .Include(l => l.IdNavigation)
                 .Where(l => l.IdNavigation.ProjectId == projectId)
                 .AsQueryable();
 
-            // Фільтрація за типом (Enum)
             if (type != "All" && !string.IsNullOrEmpty(type))
             {
                 query = query.Where(l => l.LocationType == type.ToLower());
             }
 
-            // Пошук за назвою або адресою
             if (!string.IsNullOrEmpty(search))
             {
                 var s = search.ToLower();
@@ -59,19 +54,19 @@ namespace CineCoreBack.Controllers
             return Ok(locations);
         }
 
-        // POST: api/Locations
         [HttpPost]
         public async Task<ActionResult<LocationResponseDto>> CreateLocation(LocationCreateUpdateDto dto)
         {
-            // 1. Створюємо ресурс з прив'язкою до проекту
-            var resource = new Resource
-            {
-                ProjectId = dto.ProjectId
-            };
+            // ВАЛІДАЦІЯ: Перевірка на унікальність назви локації в межах проекту
+            bool exists = await _context.Locations
+                .AnyAsync(l => l.IdNavigation.ProjectId == dto.ProjectId && l.LocationName.ToLower() == dto.LocationName.ToLower());
+
+            if (exists) return BadRequest(new { message = "A location with this name already exists in this project." });
+
+            var resource = new Resource { ProjectId = dto.ProjectId };
             _context.Resources.Add(resource);
             await _context.SaveChangesAsync();
 
-            // 2. Створюємо локацію
             var location = new Location
             {
                 Id = resource.Id,
@@ -89,12 +84,17 @@ namespace CineCoreBack.Controllers
             return Ok(new { Id = location.Id, Message = "Location created successfully" });
         }
 
-        // PUT: api/Locations/5
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateLocation(int id, LocationCreateUpdateDto dto)
         {
             var location = await _context.Locations.FindAsync(id);
-            if (location == null) return NotFound();
+            if (location == null) return NotFound(new { message = "Location not found" });
+
+            // ВАЛІДАЦІЯ: Перевірка на унікальність (якщо перейменовують)
+            bool exists = await _context.Locations
+                .AnyAsync(l => l.IdNavigation.ProjectId == dto.ProjectId && l.Id != id && l.LocationName.ToLower() == dto.LocationName.ToLower());
+
+            if (exists) return BadRequest(new { message = "A location with this name already exists in this project." });
 
             location.LocationName = dto.LocationName;
             location.City = dto.City;
@@ -107,19 +107,15 @@ namespace CineCoreBack.Controllers
             return NoContent();
         }
 
-        // DELETE: api/Locations/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteLocation(int id)
         {
-            // Шукаємо ресурс (оскільки Location залежить від Resource)
             var resource = await _context.Resources
                 .Include(r => r.Location)
                 .FirstOrDefaultAsync(r => r.Id == id);
 
             if (resource == null) return NotFound();
 
-            // Видалення Resource автоматично видалить і Location (якщо налаштований Cascade),
-            // але для надійності видалимо явно:
             if (resource.Location != null)
             {
                 _context.Locations.Remove(resource.Location);

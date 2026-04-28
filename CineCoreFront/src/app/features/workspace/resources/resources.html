@@ -7,10 +7,12 @@
       <h1>Resources</h1>
     </div>
 
-    <button class="btn btn-primary" (click)="openAddResourceModal()">
-      <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-      Add Resource
-    </button>
+    @if (canEdit) {
+      <button class="btn btn-primary" (click)="openAddResourceModal()">
+        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        Add Resource
+      </button>
+    }
   </div>
 
   <div class="tabs-container">
@@ -46,6 +48,10 @@
     </div>
   </div>
 
+  @if (propServerError && activeTab === 'props') {
+    <div class="server-error-alert" style="margin-bottom: 0;">{{ propServerError }}</div>
+  }
+
   <div class="table-container">
     @if (activeTab === 'locations') {
       <div class="locations-grid">
@@ -53,21 +59,21 @@
           <div class="location-card">
             <div class="loc-image-placeholder">
               @if (canEdit) {
-              <div class="card-actions">
-                <button class="btn-edit" (click)="editLocation(loc)" title="Edit">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                </button>
-                <button class="btn-delete" (click)="deleteLocation(loc.id)" title="Delete">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                </button>
-              </div>
+                <div class="card-actions">
+                  <button class="btn-edit" (click)="editLocation(loc)" title="Edit">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                  </button>
+                  <button class="btn-delete" (click)="deleteLocation(loc.id)" title="Delete">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                  </button>
+                </div>
               }
             </div>
 
             <div class="loc-info">
               <span class="status-badge" [ngClass]="'color-' + loc.typeColor">{{ loc.type }}</span>
               <h3>{{ loc.name }}</h3>
-              <p class="address"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg> {{ loc.desc }}</p>
+              <p class="address"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg> {{ loc.desc || 'Address not provided' }}</p>
 
               <div class="loc-manager">
                 <div class="manager-details">
@@ -82,6 +88,11 @@
             </div>
           </div>
         }
+        @if (locations.length === 0) {
+          <div style="grid-column: 1 / -1; text-align: center; color: rgba(255,255,255,0.4); padding: 40px;">
+            No locations found.
+          </div>
+        }
       </div>
     } @else {
       <table class="data-table">
@@ -94,7 +105,7 @@
           <th>Status</th>
           <th>Scenes</th>
           @if (canEdit) {
-          <th>Actions</th>
+            <th>Actions</th>
           }
         </tr>
         </thead>
@@ -102,7 +113,12 @@
           @for (prop of props; track prop.id) {
             <tr>
               @if (editingPropId === prop.id) {
-                <td><input type="text" [(ngModel)]="propForm.propName" class="table-input" placeholder="Prop Name"></td>
+                <!-- INLINE EDITING -->
+                <td>
+                  <input type="text" [(ngModel)]="propForm.propName" name="inlinePropName" #inlinePropName="ngModel"
+                         class="table-input" [class.is-invalid]="inlinePropName.invalid && inlinePropName.touched"
+                         placeholder="Prop Name *" required>
+                </td>
                 <td><input type="text" [(ngModel)]="propForm.description" class="table-input" placeholder="Description"></td>
                 <td>
                   <select [(ngModel)]="propForm.propType" class="table-input select-input">
@@ -122,13 +138,16 @@
                 <td>-</td>
                 <td>
                   <div class="inline-actions">
-                    <button class="btn-save-sm" (click)="saveProp()">Save</button>
+                    <button class="btn-save-sm" [disabled]="inlinePropName.invalid || isPropLoading" (click)="saveProp(inlinePropName.valid)">
+                      {{ isPropLoading ? '...' : 'Save' }}
+                    </button>
                     <button class="btn-cancel-sm" (click)="cancelPropEdit()">Cancel</button>
                   </div>
                 </td>
               } @else {
+                <!-- NORMAL VIEW -->
                 <td><strong>{{ prop.name }}</strong></td>
-                <td><span class="desc-text">{{ prop.desc }}</span></td>
+                <td><span class="desc-text">{{ prop.desc || '—' }}</span></td>
                 <td><span class="category-badge" [ngClass]="'color-' + prop.categoryColor">{{ prop.category }}</span></td>
                 <td>{{ prop.acquisition }}</td>
                 <td><span class="category-badge" [ngClass]="'color-' + prop.statusColor">{{ prop.status }}</span></td>
@@ -138,18 +157,23 @@
                   </div>
                 </td>
                 @if (canEdit) {
-                <td>
-                  <div class="inline-actions">
-                    <button class="btn-edit-icon" (click)="editProp(prop)" title="Edit">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                    </button>
-                    <button class="btn-delete-icon-tbl" (click)="deleteProp(prop.id)" title="Delete">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                    </button>
-                  </div>
-                </td>
+                  <td>
+                    <div class="inline-actions">
+                      <button class="btn-edit-icon" (click)="editProp(prop)" title="Edit">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                      </button>
+                      <button class="btn-delete-icon-tbl" (click)="deleteProp(prop.id)" title="Delete">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                      </button>
+                    </div>
+                  </td>
                 }
               }
+            </tr>
+          }
+          @if (props.length === 0) {
+            <tr>
+              <td colspan="7" style="text-align: center; color: rgba(255,255,255,0.4); padding: 40px;">No props found.</td>
             </tr>
           }
         </tbody>
@@ -158,7 +182,7 @@
   </div>
 </div>
 
-
+<!-- МОДАЛКА ЛОКАЦІЙ -->
 @if (isLocationModalOpen) {
   <div class="modal-overlay" (click)="closeLocationModal()">
     <div class="modal-container" (click)="$event.stopPropagation()">
@@ -166,15 +190,22 @@
         <h2>{{ locationForm.id ? 'Edit Location' : 'Add New Location' }}</h2>
       </div>
 
-      <form (ngSubmit)="saveLocation()" class="modal-form">
+      <form #locFormNg="ngForm" (ngSubmit)="saveLocation(locFormNg.valid)" class="modal-form">
+
+        @if (locationServerError) {
+          <div class="server-error-alert">{{ locationServerError }}</div>
+        }
+
         <div class="form-group">
-          <label>Location Name</label>
-          <input type="text" [(ngModel)]="locationForm.locationName" name="lName" class="form-control" required>
+          <label>Location Name *</label>
+          <input type="text" [(ngModel)]="locationForm.locationName" name="lName" #lName="ngModel"
+                 class="form-control" [class.is-invalid]="lName.invalid && lName.touched" required maxlength="255">
+          @if (lName.invalid && lName.touched) { <span class="error-text">Location name is required.</span> }
         </div>
 
         <div class="form-group">
-          <label>Type</label>
-          <select [(ngModel)]="locationForm.locationType" name="lType" class="form-control">
+          <label>Type *</label>
+          <select [(ngModel)]="locationForm.locationType" name="lType" class="form-control" required>
             @for(t of locationTypes; track t) { <option [value]="t">{{ t }}</option> }
           </select>
         </div>
@@ -182,28 +213,30 @@
         <div class="form-row">
           <div class="form-group">
             <label>City</label>
-            <input type="text" [(ngModel)]="locationForm.city" name="lCity" class="form-control">
+            <input type="text" [(ngModel)]="locationForm.city" name="lCity" class="form-control" maxlength="100">
           </div>
           <div class="form-group">
             <label>Street</label>
-            <input type="text" [(ngModel)]="locationForm.street" name="lStreet" class="form-control">
+            <input type="text" [(ngModel)]="locationForm.street" name="lStreet" class="form-control" maxlength="255">
           </div>
         </div>
 
         <div class="form-row">
           <div class="form-group">
             <label>Contact Name</label>
-            <input type="text" [(ngModel)]="locationForm.contactName" name="lCName" class="form-control">
+            <input type="text" [(ngModel)]="locationForm.contactName" name="lCName" class="form-control" maxlength="200">
           </div>
           <div class="form-group">
             <label>Contact Phone</label>
-            <input type="text" [(ngModel)]="locationForm.contactPhone" name="lCPhone" class="form-control">
+            <input type="text" [(ngModel)]="locationForm.contactPhone" name="lCPhone" class="form-control" maxlength="30">
           </div>
         </div>
 
         <div class="form-actions">
           <button type="button" class="btn-cancel" (click)="closeLocationModal()">Cancel</button>
-          <button type="submit" class="btn-submit">Save Location</button>
+          <button type="submit" class="btn-submit" [disabled]="locFormNg.invalid || isLocationLoading">
+            {{ isLocationLoading ? 'Saving...' : 'Save Location' }}
+          </button>
         </div>
       </form>
     </div>
