@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectorRef } from '@angular/core';
 import { Header } from '../../../core/components/header/header';
 import { RouterLink, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -14,6 +14,7 @@ import { Api } from '../../../core/services/api';
 export class Signup {
   private api = inject(Api);
   private router = inject(Router);
+  private cdr = inject(ChangeDetectorRef);
 
   days: number[] = Array.from({ length: 31 }, (_, i) => i + 1);
   months = [
@@ -28,6 +29,10 @@ export class Signup {
   years: number[] = Array.from({ length: 100 }, (_, i) => this.currentYear - i);
 
   showPassword = false;
+  isLoading = false;
+  serverError: string | null = null;
+  agreedToTerms = false;
+
   togglePasswordVisibility() {
     this.showPassword = !this.showPassword;
   }
@@ -46,43 +51,34 @@ export class Signup {
     phoneNum: ''
   };
 
-  onSubmit() {
-    // Формуємо дату народження
+  onSubmit(formValid: boolean | null) {
+    if (!formValid || !this.agreedToTerms) return;
+
+    this.isLoading = true;
+    this.serverError = null;
+
     let birthdayISO = null;
     if (this.selectedBirthDate.day && this.selectedBirthDate.month && this.selectedBirthDate.year) {
-      const date = new Date(
-        Number(this.selectedBirthDate.year),
-        Number(this.selectedBirthDate.month) - 1,
-        Number(this.selectedBirthDate.day),
-        12, 0, 0
-      );
+      const date = new Date(Number(this.selectedBirthDate.year), Number(this.selectedBirthDate.month) - 1, Number(this.selectedBirthDate.day), 12, 0, 0);
       birthdayISO = date.toISOString();
     }
 
-    // Створюємо фінальний об'єкт для бекенду (мапимо на UserRegisterDto)
-    const finalData = {
-      ...this.formData,
-      birthday: birthdayISO
-    };
-
-    console.log('Sending data for registration:', finalData);
+    const finalData = { ...this.formData, birthday: birthdayISO };
 
     this.api.register(finalData).subscribe({
       next: (response) => {
-        // Якщо сервер повернув 200 OK і дані користувача
-        console.log('Successfully registered!', response);
-
-        // Зберігаємо дані (Id, Email, FirstName, LastName) у пам'ять браузера,
-        // щоб сторінка Акаунта знала, хто ми
         localStorage.setItem('cinecore_user', JSON.stringify(response));
-
-        // Переходимо на сторінку акаунта
         this.router.navigate(['/account']);
       },
       error: (err) => {
-        // Якщо сервер повернув помилку (наприклад, 400 або 500)
-        console.error('Registration error:', err);
-        alert('Error during registration. Check the entered data.');
+        this.isLoading = false;
+        if (err.error?.errors) {
+          const firstErrorKey = Object.keys(err.error.errors)[0];
+          this.serverError = err.error.errors[firstErrorKey][0];
+        } else {
+          this.serverError = err.error?.message || err.error || 'Registration failed.';
+        }
+        this.cdr.detectChanges(); // <--- ПРИМУСОВО ОНОВЛЮЄМО
       }
     });
   }

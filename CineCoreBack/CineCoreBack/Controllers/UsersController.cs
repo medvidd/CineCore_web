@@ -76,9 +76,14 @@ namespace CineCoreBack.Controllers
         [HttpPost("register")]
         public async Task<ActionResult<UserResponseDto>> Register(UserRegisterDto registerDto)
         {
+            if (await _context.Users.AnyAsync(u => u.Email.ToLower() == registerDto.Email.ToLower()))
+            {
+                return BadRequest(new { message = "Email is already registered" });
+            }
+
             var user = new User
             {
-                Email = registerDto.Email,
+                Email = registerDto.Email.ToLower(), 
                 PasswordHash = registerDto.Password, 
                 FirstName = registerDto.FirstName,
                 LastName = registerDto.LastName,
@@ -108,6 +113,12 @@ namespace CineCoreBack.Controllers
         {
             var user = await _context.Users.FindAsync(id);
             if (user == null) return NotFound();
+
+            if (user.Email.ToLower() != updateDto.Email.ToLower())
+            {
+                if (await _context.Users.AnyAsync(u => u.Email.ToLower() == updateDto.Email.ToLower()))
+                    return BadRequest(new { message = "Email is already taken by another user" });
+            }
 
             user.FirstName = updateDto.FirstName;
             user.LastName = updateDto.LastName;

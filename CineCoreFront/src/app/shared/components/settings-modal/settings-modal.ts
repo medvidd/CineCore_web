@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, inject, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, EventEmitter, Input, Output, inject, OnChanges, SimpleChanges, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Api } from '../../../core/services/api';
@@ -12,6 +12,7 @@ import { Api } from '../../../core/services/api';
 })
 export class SettingsModal implements OnChanges {
   private api = inject(Api);
+  private cdr = inject(ChangeDetectorRef);
 
   @Input() isOpen = false;
   @Input() userData: any = null;
@@ -28,7 +29,6 @@ export class SettingsModal implements OnChanges {
     avatarTheme: 'theme-teal' // Тема за замовчуванням
   };
 
-  // Доступні теми для аватарки
   // Доступні теми для аватарки
   avatarThemes = [
     { id: 'theme-teal', style: 'linear-gradient(135deg, #3AB9A0 0%, #E9A60F 100%)' },
@@ -48,6 +48,11 @@ export class SettingsModal implements OnChanges {
   // Стан для видалення акаунта
   isDeletingAccount = false;
   deleteConfirmation = '';
+
+  // Стани валідації та повідомлень від сервера
+  updateError: string | null = null;
+  updateSuccess = false;
+  passError: string | null = null;
 
   // Оновлюємо форму, коли передаються дані користувача
   ngOnChanges(changes: SimpleChanges) {
@@ -70,6 +75,7 @@ export class SettingsModal implements OnChanges {
   togglePasswordSection() {
     this.isChangingPassword = !this.isChangingPassword;
     this.passwords = { current: '', new: '', confirm: '' }; // Очищаємо при закритті
+    this.passError = null; // Очищаємо помилки
   }
 
   toggleDeleteSection() {
@@ -80,24 +86,45 @@ export class SettingsModal implements OnChanges {
   resetStates() {
     this.isChangingPassword = false;
     this.isDeletingAccount = false;
+    this.updateError = null;
+    this.updateSuccess = false;
+    this.passError = null;
+    this.passwords = { current: '', new: '', confirm: '' };
+    this.deleteConfirmation = '';
   }
 
   saveProfile() {
+    this.updateError = null;
+    this.updateSuccess = false;
+
     this.api.updateUserProfile(this.userData.id, this.formData).subscribe({
       next: (updatedUserFromDb) => {
+        // Оновлюємо локальні дані
         const updatedUser = { ...this.userData, ...this.formData };
         localStorage.setItem('cinecore_user', JSON.stringify(updatedUser));
 
+        // Сигналізуємо батьківському компоненту
         this.profileUpdated.emit(updatedUser);
-        this.closeModal();
+
+        // Показуємо зелене повідомлення про успіх
+        this.updateSuccess = true;
+        this.cdr.detectChanges();
+        // Автоматично закриваємо модалку через 1.5 секунди
+        setTimeout(() => this.closeModal(), 1500);
       },
-      error: (err) => console.error('Помилка оновлення профілю', err)
+      error: (err) => {
+        // Якщо email зайнятий або інші проблеми
+        this.updateError = err.error?.message || err.error || 'Error updating profile. Please check your data.';
+        this.cdr.detectChanges();
+      }
     });
   }
 
   changePassword() {
+    this.passError = null; // Очищуємо попередні помилки
+
     if (this.passwords.new !== this.passwords.confirm) {
-      alert('New passwords do not match!');
+      this.passError = 'New passwords do not match!';
       return;
     }
 
@@ -108,22 +135,26 @@ export class SettingsModal implements OnChanges {
 
     this.api.updateUserPassword(this.userData.id, payload).subscribe({
       next: () => {
-        alert('Password successfully changed!');
+        // Успіх! Закриваємо форму зміни пароля і очищаємо поля
         this.togglePasswordSection();
       },
-      error: (err) => alert('Error: ' + (err.error || 'Wrong current password'))
+      error: (err) => {
+        // Показуємо червоне повідомлення (наприклад: "Invalid current password")
+        this.passError = err.error?.message || err.error || 'Wrong current password.';
+        this.cdr.detectChanges();
+      }
     });
   }
 
   deleteAccount() {
+    // Додатковий захист, хоча кнопка заблокована в HTML, якщо не 'DELETE'
     if (this.deleteConfirmation !== 'DELETE') {
-      alert('Please type DELETE to confirm.');
       return;
     }
 
     this.api.deleteUserAccount(this.userData.id).subscribe({
       next: () => {
-        this.accountDeleted.emit();
+        this.accountDeleted.emit(); // Сигналізуємо, що юзера видалено (щоб розлогінити)
       },
       error: (err) => console.error('Помилка видалення', err)
     });

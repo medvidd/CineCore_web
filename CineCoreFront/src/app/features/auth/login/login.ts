@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectorRef } from '@angular/core';
 import { Header } from '../../../core/components/header/header';
 import {RouterLink, Router, RouterModule} from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -14,6 +14,7 @@ import { Api } from '../../../core/services/api';
 export class Login {
   private api = inject(Api);
   private router = inject(Router);
+  private cdr = inject(ChangeDetectorRef);
 
   // Об'єкт для збереження даних з форми (email та пароль)
   credentials = {
@@ -23,28 +24,34 @@ export class Login {
 
   showPassword = false;
 
+  isLoading = false;
+  serverError: string | null = null;
+
   togglePasswordVisibility() {
     this.showPassword = !this.showPassword;
   }
 
-  onSubmit() {
-    console.log('Login attempt for:', this.credentials.email);
+  onSubmit(formValid: boolean | null) {
+    if (!formValid) return; // Захист
 
-    // Викликаємо метод login з вашого сервісу
+    this.isLoading = true;
+    this.serverError = null;
+
     this.api.login(this.credentials).subscribe({
       next: (response: any) => {
-        console.log('Login successful!', response);
-
-        // Зберігаємо дані користувача в localStorage, щоб хедер та сторінка акаунта їх бачили
         localStorage.setItem('cinecore_user', JSON.stringify(response));
-
-        // Переходимо на сторінку акаунта
         this.router.navigate(['/account']);
       },
       error: (err: any) => {
-        console.error('Login error:', err);
-        // Тут можна додати більш детальну обробку помилок
-        alert('Incorrect email or password');
+        this.isLoading = false;
+
+        if (typeof err.error === 'string') {
+          this.serverError = err.error; // Для Unauthorized("Wrong email or password")
+        } else {
+          this.serverError = err.error?.message || 'Incorrect email or password';
+        }
+
+        this.cdr.detectChanges(); // <--- 2. ПРИМУСОВО ОНОВЛЮЄМО ІНТЕРФЕЙС
       }
     });
   }
