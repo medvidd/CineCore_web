@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace CineCoreBack.DTOs;
 
@@ -20,11 +21,22 @@ public class RoleDto
 
 public class CreateRoleDto
 {
+    [Required(ErrorMessage = "Role name is required")]
+    [MaxLength(150, ErrorMessage = "Role name cannot exceed 150 characters")]
     public string RoleName { get; set; } = null!;
+
     public string? Description { get; set; }
+
+    [Range(0, 120, ErrorMessage = "Age must be between 0 and 120")]
     public int? Age { get; set; }
+
     public string? Characteristics { get; set; } // JSON
+
+    [Required]
     public string RoleType { get; set; } = "supporting";
+
+    [Required]
+    [RegularExpression("^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$", ErrorMessage = "Invalid color hex format")]
     public string? ColorHex { get; set; }
 }
 
@@ -55,12 +67,14 @@ public class CandidateDto
 
 public class AddCandidateDto
 {
+    [Required(ErrorMessage = "Actor must be selected")]
     public int ActorId { get; set; }
     public string? Notes { get; set; }
 }
 
 public class UpdateCastStatusDto
 {
+    [Required]
     public string CastStatus { get; set; } = null!;
 }
 

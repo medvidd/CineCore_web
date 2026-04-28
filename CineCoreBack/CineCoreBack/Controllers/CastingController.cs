@@ -73,7 +73,7 @@ public class CastingController : ControllerBase
     public async Task<IActionResult> UpdateRole(int projectId, int roleId, UpdateRoleDto dto)
     {
         var role = await _context.Roles.FirstOrDefaultAsync(r => r.Id == roleId && r.ProjectId == projectId);
-        if (role == null) return NotFound("Role not found");
+        if (role == null) return NotFound(new { message = "Role not found" });
 
         role.RoleName = dto.RoleName;
         role.Description = dto.Description;
@@ -90,7 +90,7 @@ public class CastingController : ControllerBase
     public async Task<IActionResult> DeleteRole(int projectId, int roleId)
     {
         var role = await _context.Roles.FirstOrDefaultAsync(r => r.Id == roleId && r.ProjectId == projectId);
-        if (role == null) return NotFound();
+        if (role == null) return NotFound(new { message = "Role not found" });
 
         var resource = await _context.Resources.FindAsync(roleId);
 
@@ -110,8 +110,8 @@ public class CastingController : ControllerBase
     {
         var candidates = await _context.Castings
             .Where(c => c.RoleId == roleId)
-            .Include(c => c.Actor)          // Підключаємо профіль актора
-                .ThenInclude(a => a.User)   // Підключаємо користувача (для імені, пошти)
+            .Include(c => c.Actor)
+                .ThenInclude(a => a.User)
             .Select(c => new CandidateDto
             {
                 ActorId = c.ActorId,
@@ -134,9 +134,8 @@ public class CastingController : ControllerBase
     [HttpPost("projects/{projectId}/roles/{roleId}/candidates")]
     public async Task<IActionResult> AddCandidate(int projectId, int roleId, AddCandidateDto dto)
     {
-        // 1. Перевіряємо, чи існує такий юзер. Якщо так, чи є він актором? Якщо ні - створюємо запис в Actor
         var userExists = await _context.Users.AnyAsync(u => u.Id == dto.ActorId);
-        if (!userExists) return NotFound("User not found");
+        if (!userExists) return NotFound(new { message = "Selected user not found in system." });
 
         var actorExists = await _context.Actors.AnyAsync(a => a.Id == dto.ActorId);
         if (!actorExists)
@@ -145,9 +144,8 @@ public class CastingController : ControllerBase
             await _context.SaveChangesAsync();
         }
 
-        // 2. Перевіряємо, чи він вже не є кандидатом
         var alreadyCasting = await _context.Castings.AnyAsync(c => c.RoleId == roleId && c.ActorId == dto.ActorId);
-        if (alreadyCasting) return BadRequest("Actor is already a candidate for this role.");
+        if (alreadyCasting) return BadRequest(new { message = "This actor is already a candidate for this role." });
 
         var casting = new Casting
         {
@@ -168,7 +166,7 @@ public class CastingController : ControllerBase
     public async Task<IActionResult> UpdateCandidateStatus(int projectId, int roleId, int actorId, UpdateCastStatusDto dto)
     {
         var casting = await _context.Castings.FirstOrDefaultAsync(c => c.RoleId == roleId && c.ActorId == actorId);
-        if (casting == null) return NotFound("Candidate not found");
+        if (casting == null) return NotFound(new { message = "Candidate not found" });
 
         casting.CastStatus = dto.CastStatus;
         await _context.SaveChangesAsync();
@@ -180,7 +178,7 @@ public class CastingController : ControllerBase
     public async Task<IActionResult> RemoveCandidate(int projectId, int roleId, int actorId)
     {
         var casting = await _context.Castings.FirstOrDefaultAsync(c => c.RoleId == roleId && c.ActorId == actorId);
-        if (casting == null) return NotFound();
+        if (casting == null) return NotFound(new { message = "Candidate not found" });
 
         _context.Castings.Remove(casting);
         await _context.SaveChangesAsync();
@@ -194,13 +192,11 @@ public class CastingController : ControllerBase
     [HttpGet("actors/{userId}/profile")]
     public async Task<ActionResult<ActorProfileDto>> GetActorProfile(int userId)
     {
-        // В реальному проекті тут варто перевіряти JWT токен, чи користувач запитує свій профіль
-
         var user = await _context.Users
-            .Include(u => u.Actor) // Actor може бути null, якщо ще не створений
+            .Include(u => u.Actor)
             .FirstOrDefaultAsync(u => u.Id == userId);
 
-        if (user == null) return NotFound("User not found");
+        if (user == null) return NotFound(new { message = "User not found" });
 
         var profile = new ActorProfileDto
         {
@@ -224,7 +220,6 @@ public class CastingController : ControllerBase
 
         if (actor == null)
         {
-            // Якщо профілю актора ще немає, створюємо його
             actor = new Actor { Id = userId, Characteristics = dto.Characteristics };
             _context.Actors.Add(actor);
         }

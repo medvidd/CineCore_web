@@ -24,12 +24,15 @@ export class Casting implements OnInit {
   roles: any[] = [];
   selectedRole: any = null;
   candidates: any[] = [];
-  projectActors: any[] = []; // Учасники проекту з роллю 'actor'
+  projectActors: any[] = [];
 
   // ==========================================
   // СТАН МОДАЛЬНОГО ВІКНА ДЛЯ РОЛІ
   // ==========================================
   isRoleModalOpen = false;
+  isRoleLoading = false;
+  roleServerError: string | null = null;
+
   roleForm = {
     id: null as number | null,
     roleName: '',
@@ -38,15 +41,16 @@ export class Casting implements OnInit {
     age: null as number | null,
     colorHex: '#51A2FF'
   };
-  // Динамічний масив для JSONB характеристик
   charFields: { key: string, value: string }[] = [];
-
   roleTypes = ['lead', 'supporting', 'extra'];
 
   // ==========================================
   // СТАН МОДАЛЬНОГО ВІКНА ДЛЯ КАНДИДАТА
   // ==========================================
   isCandidateModalOpen = false;
+  isCandidateLoading = false;
+  candidateServerError: string | null = null;
+
   candidateForm = {
     actorId: null as number | null,
     notes: ''
@@ -70,16 +74,13 @@ export class Casting implements OnInit {
 
   // Змінні для пошуку
   searchQuery: string = '';
-  statusFilter: string = 'all'; // 'all', 'casted', 'uncasted'
+  statusFilter: string = 'all';
 
-  // Геттер, який замінить масив roles у HTML
   get filteredRoles() {
     return this.roles.filter(role => {
-      // 1. Пошук по тексту (імені)
       const matchesSearch = !this.searchQuery ||
         role.roleName.toLowerCase().includes(this.searchQuery.toLowerCase());
 
-      // 2. Фільтр по статусу
       let matchesStatus = true;
       if (this.statusFilter === 'casted') matchesStatus = role.isCast;
       if (this.statusFilter === 'uncasted') matchesStatus = !role.isCast;
@@ -92,6 +93,7 @@ export class Casting implements OnInit {
   actorProfile: any = null;
   myCastings: any[] = [];
   actorCharFields: { key: string, value: string }[] = [];
+  isActorSaving = false;
 
   ngOnInit() {
     this.api.currentRole$.subscribe(role => {
@@ -110,7 +112,6 @@ export class Casting implements OnInit {
         this.loadProjectActors();
         this.safeLoadActorData();
 
-        // Перевіряємо чи є roleId в URL
         this.route.queryParams.subscribe(queryParams => {
           const targetRoleId = queryParams['roleId'] ? Number(queryParams['roleId']) : null;
           if (targetRoleId && this.roles.length > 0) {
@@ -122,31 +123,38 @@ export class Casting implements OnInit {
     });
   }
 
-
   safeLoadActorData() {
     if (this.currentUserRole === 'actor' && this.projectId > 0) {
       const user = JSON.parse(localStorage.getItem('cinecore_user') || '{}');
       if (user?.id) {
-        // Щоб не завантажувати профіль двічі, робимо перевірку
         if (!this.actorProfile) {
           this.loadActorProfile(user.id);
         }
-        // Кастинги завантажуємо одразу
         this.loadMyCastingsForActor(user.id);
       }
     }
   }
 
-  // НОВИЙ МЕТОД: Примусове оновлення при кліку на вкладку "My Castings"
   switchActorTab(tab: 'profile' | 'castings') {
     this.activeActorTab = tab;
     if (tab === 'castings') {
       const user = JSON.parse(localStorage.getItem('cinecore_user') || '{}');
       if (user?.id && this.projectId > 0) {
-        // Завжди підтягуємо свіжі дані (статуси) з бази
         this.loadMyCastingsForActor(user.id);
       }
     }
+  }
+
+  // ==========================================
+  // HELPERS
+  // ==========================================
+  private getErrorMessage(err: any): string {
+    if (err.error && err.error.message) return err.error.message;
+    if (err.error && err.error.errors) {
+      const firstKey = Object.keys(err.error.errors)[0];
+      return err.error.errors[firstKey][0];
+    }
+    return typeof err.error === 'string' ? err.error : "An unknown error occurred.";
   }
 
   // ==========================================
@@ -156,7 +164,6 @@ export class Casting implements OnInit {
     this.api.getProjectRoles(this.projectId).subscribe({
       next: (data) => {
         this.roles = data;
-        // Якщо роль була вибрана, оновлюємо її або вибираємо першу
         if (this.selectedRole) {
           this.selectedRole = this.roles.find(r => r.id === this.selectedRole.id) || this.roles[0];
         } else if (this.roles.length > 0) {
@@ -181,7 +188,6 @@ export class Casting implements OnInit {
   loadProjectActors() {
     this.api.getProjectCrew(this.projectId).subscribe({
       next: (data) => {
-        // Беремо тільки тих учасників, у яких sysRole === 'actor'
         this.projectActors = (data.activeMembers || []).filter((m: any) => m.sysRole === 'actor');
         this.cdr.detectChanges();
       }
@@ -198,7 +204,9 @@ export class Casting implements OnInit {
   // ==========================================
   openAddRoleModal() {
     this.roleForm = { id: null, roleName: '', roleType: 'supporting', description: '', age: null, colorHex: '#51A2FF' };
-    this.charFields = [{ key: '', value: '' }]; // Одне порожнє поле за замовчуванням
+    this.charFields = [{ key: '', value: '' }];
+    this.roleServerError = null;
+    this.isRoleLoading = false;
     this.isRoleModalOpen = true;
   }
 
@@ -213,7 +221,6 @@ export class Casting implements OnInit {
       colorHex: this.selectedRole.colorHex
     };
 
-    // Парсимо JSONB характеристики назад у масив для форми
     try {
       const parsed = JSON.parse(this.selectedRole.characteristics || '{}');
       this.charFields = Object.keys(parsed).map(k => ({ key: k, value: parsed[k] }));
@@ -222,6 +229,8 @@ export class Casting implements OnInit {
       this.charFields = [{ key: '', value: '' }];
     }
 
+    this.roleServerError = null;
+    this.isRoleLoading = false;
     this.isRoleModalOpen = true;
   }
 
@@ -229,16 +238,15 @@ export class Casting implements OnInit {
     this.isRoleModalOpen = false;
   }
 
-  addCharField() {
-    this.charFields.push({ key: '', value: '' });
-  }
+  addCharField() { this.charFields.push({ key: '', value: '' }); }
+  removeCharField(index: number) { this.charFields.splice(index, 1); }
 
-  removeCharField(index: number) {
-    this.charFields.splice(index, 1);
-  }
+  saveRole(formValid: boolean | null) {
+    if (!formValid) return;
 
-  saveRole() {
-    // Збираємо масив charFields назад у JSON об'єкт
+    this.isRoleLoading = true;
+    this.roleServerError = null;
+
     const charObj: any = {};
     this.charFields.forEach(f => {
       if (f.key && f.key.trim() !== '') {
@@ -253,11 +261,21 @@ export class Casting implements OnInit {
 
     if (this.roleForm.id) {
       this.api.updateRole(this.projectId, this.roleForm.id, payload).subscribe({
-        next: () => { this.loadRoles(); this.closeRoleModal(); }
+        next: () => { this.loadRoles(); this.closeRoleModal(); },
+        error: (err) => {
+          this.isRoleLoading = false;
+          this.roleServerError = this.getErrorMessage(err);
+          this.cdr.detectChanges();
+        }
       });
     } else {
       this.api.createRole(this.projectId, payload).subscribe({
-        next: () => { this.loadRoles(); this.closeRoleModal(); }
+        next: () => { this.loadRoles(); this.closeRoleModal(); },
+        error: (err) => {
+          this.isRoleLoading = false;
+          this.roleServerError = this.getErrorMessage(err);
+          this.cdr.detectChanges();
+        }
       });
     }
   }
@@ -279,6 +297,8 @@ export class Casting implements OnInit {
   // ==========================================
   openAddCandidateModal() {
     this.candidateForm = { actorId: null, notes: '' };
+    this.candidateServerError = null;
+    this.isCandidateLoading = false;
     this.isCandidateModalOpen = true;
   }
 
@@ -286,8 +306,11 @@ export class Casting implements OnInit {
     this.isCandidateModalOpen = false;
   }
 
-  saveCandidate() {
-    if (!this.candidateForm.actorId || !this.selectedRole) return;
+  saveCandidate(formValid: boolean | null) {
+    if (!formValid || !this.candidateForm.actorId || !this.selectedRole) return;
+
+    this.isCandidateLoading = true;
+    this.candidateServerError = null;
 
     this.api.addCandidate(this.projectId, this.selectedRole.id, {
       actorId: Number(this.candidateForm.actorId),
@@ -295,30 +318,30 @@ export class Casting implements OnInit {
     }).subscribe({
       next: () => {
         this.loadCandidates(this.selectedRole.id);
-        this.loadRoles(); // Оновлюємо лічильник
+        this.loadRoles();
         this.closeCandidateModal();
       },
-      error: (err) => alert(err.error?.message || 'Error adding candidate')
+      error: (err) => {
+        this.isCandidateLoading = false;
+        this.candidateServerError = this.getErrorMessage(err);
+        this.cdr.detectChanges();
+      }
     });
   }
 
   // ==========================================
-  // KANBAN ДОШКА (Геттери для колонок)
+  // KANBAN ДОШКА
   // ==========================================
   get pendingCandidates() { return this.candidates.filter(c => c.castStatus === 'pending'); }
   get holdCandidates() { return this.candidates.filter(c => c.castStatus === 'hold'); }
   get approvedCandidates() { return this.candidates.filter(c => c.castStatus === 'approved'); }
   get declinedCandidates() { return this.candidates.filter(c => c.castStatus === 'declined'); }
 
-  // ==========================================
-  // DRAG & DROP ЛОГІКА
-  // ==========================================
   draggedCandidate: any = null;
 
   onDragStart(event: DragEvent, candidate: any) {
     this.draggedCandidate = candidate;
     event.dataTransfer?.setData('text/plain', candidate.actorId.toString());
-    // Робимо картку трохи прозорою під час перетягування
     setTimeout(() => { if (event.target instanceof HTMLElement) event.target.style.opacity = '0.5'; }, 0);
   }
 
@@ -328,21 +351,20 @@ export class Casting implements OnInit {
   }
 
   onDragOver(event: DragEvent) {
-    event.preventDefault(); // Дозволяє кинути об'єкт (Drop)
+    event.preventDefault();
   }
 
   onDrop(event: DragEvent, newStatus: string) {
     event.preventDefault();
     if (this.draggedCandidate && this.draggedCandidate.castStatus !== newStatus) {
       const actorId = this.draggedCandidate.actorId;
-      const oldStatus = this.draggedCandidate.castStatus; // Запам'ятовуємо старий статус
+      const oldStatus = this.draggedCandidate.castStatus;
 
       this.draggedCandidate.castStatus = newStatus;
 
       this.api.updateCandidateStatus(this.projectId, this.selectedRole.id, actorId, newStatus)
         .subscribe({
           next: () => {
-            // Оновлюємо список ролей зліва, якщо ми затвердили актора АБО скасували його затвердження
             if (newStatus === 'approved' || oldStatus === 'approved') {
               this.loadRoles();
             }
@@ -355,7 +377,6 @@ export class Casting implements OnInit {
     }
   }
 
-  // Видалення одного кандидата
   deleteCandidate(candidate: any) {
     if (confirm(`Remove ${candidate.firstName} from this role?`)) {
       this.api.removeCandidate(this.projectId, this.selectedRole.id, candidate.actorId).subscribe({
@@ -364,17 +385,14 @@ export class Casting implements OnInit {
     }
   }
 
-  // Очищення всіх відхилених
   clearDeclinedCandidates() {
     const declined = this.declinedCandidates;
     if (declined.length === 0) return;
 
     if (confirm(`Remove all ${declined.length} declined candidates?`)) {
-      // Видаляємо по черзі (або можна зробити один запит на беку)
       declined.forEach(c => {
         this.api.removeCandidate(this.projectId, this.selectedRole.id, c.actorId).subscribe();
       });
-      // Оптимістично очищуємо список
       this.candidates = this.candidates.filter(c => c.castStatus !== 'declined');
       this.cdr.detectChanges();
     }
@@ -392,7 +410,6 @@ export class Casting implements OnInit {
     return `${birthDate.getFullYear()}   (${age} years old)`;
   }
 
-  // Helper
   parseCharacteristics(jsonString: string): string[] {
     try {
       const parsed = JSON.parse(jsonString || '{}');
@@ -402,8 +419,9 @@ export class Casting implements OnInit {
     }
   }
 
-
+  // ==========================================
   // ACTORs
+  // ==========================================
   loadActorProfile(userId: number) {
     this.api.getActorProfile(userId).subscribe(profile => {
       this.actorProfile = profile;
@@ -428,17 +446,32 @@ export class Casting implements OnInit {
     });
   }
 
+  // --- ВІДНОВЛЕНІ МЕТОДИ ---
+  addActorCharField() {
+    this.actorCharFields.push({ key: '', value: '' });
+  }
+
+  removeActorCharField(index: number) {
+    this.actorCharFields.splice(index, 1);
+  }
+
   saveActorCharacteristics() {
+    this.isActorSaving = true;
     const charObj: any = {};
     this.actorCharFields.forEach(f => {
       if (f.key?.trim()) charObj[f.key.trim()] = f.value;
     });
 
-    this.api.updateActorCharacteristics(this.actorProfile.id, JSON.stringify(charObj)).subscribe(() => {
-      alert('Profile updated successfully!');
+    this.api.updateActorCharacteristics(this.actorProfile.id, JSON.stringify(charObj)).subscribe({
+      next: () => {
+        this.isActorSaving = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.isActorSaving = false;
+        alert(this.getErrorMessage(err));
+        this.cdr.detectChanges();
+      }
     });
   }
-
-  addActorCharField() { this.actorCharFields.push({ key: '', value: '' }); }
-  removeActorCharField(i: number) { this.actorCharFields.splice(i, 1); }
 }
