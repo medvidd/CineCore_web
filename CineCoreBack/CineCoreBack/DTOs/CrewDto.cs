@@ -1,4 +1,6 @@
-﻿namespace CineCoreBack.DTOs
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace CineCoreBack.DTOs
 {
     // DTO для пошуку користувача по email під час вводу
     public class UserSearchResultDto
@@ -12,14 +14,27 @@
     // DTO для відправки запрошення з фронтенду
     public class CreateInvitationDto
     {
+        [Required]
         public int ProjectId { get; set; }
+
+        [Required(ErrorMessage = "Email is required")]
+        [EmailAddress(ErrorMessage = "Invalid email format")]
         public string Email { get; set; } = null!;
+
+        [Required(ErrorMessage = "First name is required")]
         public string? FirstName { get; set; }
+
+        [Required(ErrorMessage = "Last name is required")]
         public string? LastName { get; set; }
+
+        [Required]
         public string SysRole { get; set; } = null!;
+
         public string? JobTitle { get; set; }
         public string? Department { get; set; }
         public string? Message { get; set; }
+
+        [Required]
         public int InvitedById { get; set; } // ID того, хто зараз авторизований і робить запрошення
     }
 
@@ -52,6 +67,7 @@
     {
         public string? JobTitle { get; set; }
         public string? Department { get; set; }
+        [Required]
         public string SysRole { get; set; } = null!;
     }
 }

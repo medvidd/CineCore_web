@@ -16,8 +16,7 @@ namespace CineCoreBack.Controllers
             _context = context;
         }
 
-        // 1. ПОШУК КОРИСТУВАЧА ЗА EMAIL (для модалки запрошення)
-        // GET: api/Crew/search-user?email=test@test.com
+        // 1. ПОШУК КОРИСТУВАЧА ЗА EMAIL
         [HttpGet("search-user")]
         public async Task<ActionResult<UserSearchResultDto>> SearchUserByEmail([FromQuery] string email)
         {
@@ -40,23 +39,29 @@ namespace CineCoreBack.Controllers
         }
 
         // 2. СТВОРЕННЯ ЗАПРОШЕННЯ АБО ДОДАВАННЯ УЧАСНИКА
-        // POST: api/Crew/invite
         [HttpPost("invite")]
         public async Task<IActionResult> InviteMember(CreateInvitationDto dto)
         {
-            // 1. Перевіряємо, чи користувач ВЖЕ Є АКТИВНИМ учасником цього проекту
+            var targetEmail = dto.Email.ToLower();
+
+            // ВАЛІДАЦІЯ: Перевіряємо, чи користувач ВЖЕ Є АКТИВНИМ учасником
             var isAlreadyMember = await _context.ProjectMembers
                 .Include(pm => pm.User)
-                .AnyAsync(pm => pm.ProjectId == dto.ProjectId && pm.User.Email.ToLower() == dto.Email.ToLower());
+                .AnyAsync(pm => pm.ProjectId == dto.ProjectId && pm.User.Email.ToLower() == targetEmail);
 
-            if (isAlreadyMember) return BadRequest(new { message = "This user is already a member of the project." });
+            if (isAlreadyMember) return BadRequest(new { message = "This user is already an active member of the project." });
 
-            // 2. Шукаємо, чи зареєстрований такий email у системі загалом
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == dto.Email.ToLower());
+            // ВАЛІДАЦІЯ: Перевіряємо, чи є вже активне ЗАПРОШЕННЯ для цього email
+            var hasPendingInvite = await _context.ProjectInvitations
+                .AnyAsync(pi => pi.ProjectId == dto.ProjectId && pi.Email.ToLower() == targetEmail);
+
+            if (hasPendingInvite) return BadRequest(new { message = "An invitation has already been sent to this email." });
+
+            // Шукаємо, чи зареєстрований такий email у системі загалом
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == targetEmail);
 
             if (user != null)
             {
-                // СЦЕНАРІЙ А: Акаунт існує -> Додаємо одразу в ProjectMembers
                 var newMember = new ProjectMember
                 {
                     ProjectId = dto.ProjectId,
@@ -71,7 +76,6 @@ namespace CineCoreBack.Controllers
             }
             else
             {
-                // СЦЕНАРІЙ Б: Акаунта немає -> Створюємо Invitation (без перевірки на дублікати, щоб можна було слати ще раз)
                 var invite = new ProjectInvitation
                 {
                     ProjectId = dto.ProjectId,
@@ -94,7 +98,6 @@ namespace CineCoreBack.Controllers
         }
 
         // 3. ВИДАЛЕННЯ ЗАПРОШЕННЯ
-        // DELETE: api/Crew/invites/5
         [HttpDelete("invites/{id}")]
         public async Task<IActionResult> DeleteInvite(int id)
         {
@@ -107,8 +110,7 @@ namespace CineCoreBack.Controllers
             return NoContent();
         }
 
-        // 3. ОТРИМАННЯ СПИСКІВ УЧАСНИКІВ ТА ЗАПРОШЕНЬ
-        // GET: api/Crew/project/5
+        // 4. ОТРИМАННЯ СПИСКІВ УЧАСНИКІВ ТА ЗАПРОШЕНЬ
         [HttpGet("project/{projectId}")]
         public async Task<IActionResult> GetProjectCrew(int projectId)
         {
@@ -133,7 +135,6 @@ namespace CineCoreBack.Controllers
                 })
                 .ToListAsync();
 
-            // ДОДАНО: Перевірка, чи є власник у списку. Якщо немає - додаємо його вручну
             if (!activeMembers.Any(m => m.UserId == project.OwnerId))
             {
                 activeMembers.Insert(0, new ActiveMemberResponseDto
@@ -149,7 +150,6 @@ namespace CineCoreBack.Controllers
             }
             else
             {
-                // Якщо він там є, переконуємось, що роль встановлена як "owner"
                 var ownerInList = activeMembers.First(m => m.UserId == project.OwnerId);
                 ownerInList.SysRole = "owner";
             }
@@ -172,13 +172,10 @@ namespace CineCoreBack.Controllers
             return Ok(new { ActiveMembers = activeMembers, PendingInvites = pendingInvites });
         }
 
-        // Додайте ці методи в CrewController.cs
-
-        // 4. РЕДАГУВАННЯ ДАНИХ УЧАСНИКА (Тільки для Owner/Manager)
+        // 5. РЕДАГУВАННЯ ДАНИХ УЧАСНИКА
         [HttpPut("project/{projectId}/member/{targetUserId}")]
         public async Task<IActionResult> UpdateMember(int projectId, int targetUserId, [FromQuery] int currentUserId, [FromBody] UpdateMemberDto dto)
         {
-            // Перевірка прав того, хто редагує
             var currentUserRole = await GetUserRoleInProject(projectId, currentUserId);
             if (currentUserRole != "owner" && currentUserRole != "manager")
             {
@@ -192,13 +189,13 @@ namespace CineCoreBack.Controllers
 
             member.JobTitle = dto.JobTitle;
             member.Department = dto.Department;
-            member.SysRole = dto.SysRole; // Можна також змінити системну роль
+            member.SysRole = dto.SysRole;
 
             await _context.SaveChangesAsync();
             return NoContent();
         }
 
-        // 5. ВИДАЛЕННЯ УЧАСНИКА (Тільки для Owner/Manager)
+        // 6. ВИДАЛЕННЯ УЧАСНИКА
         [HttpDelete("project/{projectId}/member/{targetUserId}")]
         public async Task<IActionResult> RemoveMember(int projectId, int targetUserId, [FromQuery] int currentUserId)
         {
@@ -208,7 +205,6 @@ namespace CineCoreBack.Controllers
                 return Forbid();
             }
 
-            // Не можна видалити власника проекту
             var project = await _context.Projects.FindAsync(projectId);
             if (project?.OwnerId == targetUserId) return BadRequest("Cannot remove the project owner.");
 
@@ -224,7 +220,6 @@ namespace CineCoreBack.Controllers
             return NoContent();
         }
 
-        // Хелпер для визначення ролі
         private async Task<string> GetUserRoleInProject(int projectId, int userId)
         {
             var project = await _context.Projects.FindAsync(projectId);

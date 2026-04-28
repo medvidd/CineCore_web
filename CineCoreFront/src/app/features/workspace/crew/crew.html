@@ -1,5 +1,6 @@
 <div class="crew-wrapper">
 
+  <!-- СТАТИСТИКА І ВЕРХНІЙ БАР -->
   <div class="crew-summary-card">
     <div class="summary-left">
       <div class="icon-box">
@@ -14,13 +15,14 @@
     </div>
 
     @if (canEdit) {
-    <button class="btn btn-primary" (click)="openInviteModal()">
-      <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-      Invite Member
-    </button>
+      <button class="btn btn-primary" (click)="openInviteModal()">
+        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        Invite Member
+      </button>
     }
   </div>
 
+  <!-- ПОШУК ТА ФІЛЬТРИ -->
   <div class="actions-bar">
     <div class="search-input">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
@@ -36,137 +38,138 @@
   </div>
 
   <div class="tabs-container">
-    <button class="tab-btn"
-            [class.active]="activeTab === 'members'"
-            (click)="switchTab('members')">
+    <button class="tab-btn" [class.active]="activeTab === 'members'" (click)="switchTab('members')">
       Active Members <span class="badge">{{ activeMembers.length }}</span>
     </button>
-    <button class="tab-btn"
-            [class.active]="activeTab === 'pending'"
-            (click)="switchTab('pending')">
+    <button class="tab-btn" [class.active]="activeTab === 'pending'" (click)="switchTab('pending')">
       Pending Invitations <span class="badge">{{ pendingInvites.length }}</span>
     </button>
   </div>
 
+  <!-- ТАБЛИЦЯ УЧАСНИКІВ -->
   @if (activeTab === 'members') {
-    <div class="table-container"> <table class="data-table">  <thead>
-    <tr>
-      <th>Name</th>
-      <th>System Role</th>
-      <th>Job Title</th>
-      <th>Department</th>
-      <th>Contact</th>
-      <th>Joined</th>
-      @if (canEdit) { <th>Actions</th> }
-    </tr>
-    </thead>
-      <tbody>
-        @for (member of filteredMembers; track member.userId) {
-          <tr>
-            <td>
-              <div class="user-cell">
-                <div class="avatar">{{ member.fullName[0] }}</div> <div class="user-info">
-                <strong>{{ member.fullName }}</strong>
-                <span>{{ member.email }}</span>
-              </div>
-              </div>
-            </td>
-            <td><span class="sys-role-badge" [ngClass]="getRoleClass(member.sysRole)">{{ member.sysRole }}</span></td>
-            <td>{{ member.jobTitle || '—' }}</td>
-            <td>{{ member.department || '—' }}</td>
-            <td>
-              <div class="contact-links">
-                <div class="contact-item pointer" (click)="copyToClipboard(member.email, 'Email')">
-                  <svg class="contact-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                    <polyline points="22,6 12,13 2,6"></polyline>
-                  </svg>
-                  Email
-                </div>
-
-                @if (member.phoneNum) {
-                  <div class="contact-item pointer" (click)="copyToClipboard(member.phoneNum, 'Номер телефону')">
-                    <svg class="contact-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l2.21-2.21a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 18.92z"></path>
-                    </svg>
-                    Call
-                  </div>
-                }
-              </div>
-            </td>
-            <td>{{ member.joinedDate | date:'MMM d, yyyy' }}</td>
-
-            @if (canEdit) {
+    <div class="table-container">
+      <table class="data-table">
+        <thead>
+        <tr>
+          <th>Name</th>
+          <th>System Role</th>
+          <th>Job Title</th>
+          <th>Department</th>
+          <th>Contact</th>
+          <th>Joined</th>
+          @if (canEdit) { <th>Actions</th> }
+        </tr>
+        </thead>
+        <tbody>
+          @for (member of filteredMembers; track member.userId) {
+            <tr>
               <td>
-                <div class="action-icons">
-                  @if (member.sysRole !== 'owner') {
-                    <button class="btn-edit-icon" (click)="openEditModal(member)" title="Edit Member">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                    </button>
-                    <button class="btn-delete" (click)="removeMember(member)" title="Remove Member">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="3 6 5 6 21 6"></polyline>
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2 2v2"></path>
+                <div class="user-cell">
+                  <div class="avatar">{{ member.fullName[0] }}</div>
+                  <div class="user-info">
+                    <strong>{{ member.fullName }}</strong>
+                    <span>{{ member.email }}</span>
+                  </div>
+                </div>
+              </td>
+              <td><span class="sys-role-badge" [ngClass]="getRoleClass(member.sysRole)">{{ member.sysRole }}</span></td>
+              <td>{{ member.jobTitle || '—' }}</td>
+              <td>{{ member.department || '—' }}</td>
+              <td>
+                <div class="contact-links">
+                  <div class="contact-item pointer" (click)="copyToClipboard(member.email, 'Email')">
+                    <svg class="contact-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                      <polyline points="22,6 12,13 2,6"></polyline>
+                    </svg>
+                    Email
+                  </div>
+                  @if (member.phoneNum) {
+                    <div class="contact-item pointer" (click)="copyToClipboard(member.phoneNum, 'Phone')">
+                      <svg class="contact-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l2.21-2.21a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 18.92z"></path>
                       </svg>
-                    </button>
-                  } @else {
-                    <span style="color: rgba(255,255,255,0.2); font-size: 12px; display: flex; align-items: center; gap: 4px; padding: 4px;">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                      Locked
-                    </span>
+                      Call
+                    </div>
                   }
                 </div>
               </td>
-            }
-          </tr>
-        }
-      </tbody>
-    </table>
+              <td>{{ member.joinedDate | date:'MMM d, yyyy' }}</td>
+              @if (canEdit) {
+                <td>
+                  <div class="action-icons">
+                    @if (member.sysRole !== 'owner') {
+                      <button class="btn-edit-icon" (click)="openEditModal(member)" title="Edit Member">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                      </button>
+                      <button class="btn-delete" (click)="removeMember(member)" title="Remove Member">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <polyline points="3 6 5 6 21 6"></polyline>
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                      </button>
+                    } @else {
+                      <span style="color: rgba(255,255,255,0.2); font-size: 12px; display: flex; align-items: center; gap: 4px; padding: 4px;">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                        Locked
+                      </span>
+                    }
+                  </div>
+                </td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
     </div>
   }
 
+  <!-- ТАБЛИЦЯ ЗАПРОШЕНЬ -->
   @if (activeTab === 'pending') {
-    <div class="table-container"> <table class="data-table">  <thead>
-    <tr>
-      <th>Email</th>
-      <th>Invited As</th>
-      <th>Job Title</th>
-      <th>Department</th>
-      <th>Invited By</th>
-      <th>Date Sent</th>
-      @if (canEdit) { <th>Actions</th> }
-    </tr>
-    </thead>
-      <tbody>
-        @for (invite of pendingInvites; track invite.id) {
-          <tr>
-            <td><strong>{{ invite.email }}</strong></td>
-            <td><span class="sys-role-badge" [ngClass]="getRoleClass(invite.sysRole)">{{ invite.sysRole }}</span></td>
-            <td>{{ invite.jobTitle || '—' }}</td>
-            <td>{{ invite.department || '—' }}</td>
-            <td>{{ invite.invitedBy }}</td>
-            <td>{{ invite.dateSent | date:'MMM d, HH:mm' }}</td>
-            @if (canEdit) {
-              <td>
-                <div class="action-icons">
-                  <button class="btn-edit-icon" title="Resend Invite"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><polyline points="23 20 23 14 17 14"></polyline><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path></svg></button>
-                  <button class="btn-delete" title="Cancel Invite" (click)="deleteInvite(invite.id)">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <polyline points="3 6 5 6 21 6"></polyline>
-                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                    </svg>
-                  </button>
-                </div>
-              </td>
-            }
-          </tr>
-        }
-      </tbody>
-    </table>
+    <div class="table-container">
+      <table class="data-table">
+        <thead>
+        <tr>
+          <th>Email</th>
+          <th>Invited As</th>
+          <th>Job Title</th>
+          <th>Department</th>
+          <th>Invited By</th>
+          <th>Date Sent</th>
+          @if (canEdit) { <th>Actions</th> }
+        </tr>
+        </thead>
+        <tbody>
+          @for (invite of filteredInvites; track invite.id) {
+            <tr>
+              <td><strong>{{ invite.email }}</strong></td>
+              <td><span class="sys-role-badge" [ngClass]="getRoleClass(invite.sysRole)">{{ invite.sysRole }}</span></td>
+              <td>{{ invite.jobTitle || '—' }}</td>
+              <td>{{ invite.department || '—' }}</td>
+              <td>{{ invite.invitedBy }}</td>
+              <td>{{ invite.dateSent | date:'MMM d, HH:mm' }}</td>
+              @if (canEdit) {
+                <td>
+                  <div class="action-icons">
+                    <button class="btn-delete" title="Cancel Invite" (click)="deleteInvite(invite.id)">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                      </svg>
+                    </button>
+                  </div>
+                </td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
     </div>
   }
 </div>
 
+<!-- МОДАЛКА ЗАПРОШЕННЯ -->
 @if (isInviteModalOpen) {
   <div class="modal-overlay" (click)="closeInviteModal()">
     <div class="modal-container" (click)="$event.stopPropagation()">
@@ -175,26 +178,42 @@
         <p class="modal-subtitle">Invite someone to collaborate on this project.</p>
       </div>
 
-      <form (ngSubmit)="sendInvite()" class="modal-form">
+      <form #inviteFormNg="ngForm" (ngSubmit)="sendInvite(inviteFormNg.valid)" class="modal-form">
+
+        @if (serverError) {
+          <div class="server-error-alert">{{ serverError }}</div>
+        }
+
         <div class="form-group">
-          <label>Email Address</label>
-          <input type="email" [(ngModel)]="inviteForm.email" name="email"
+          <label>Email Address *</label>
+          <input type="email" [(ngModel)]="inviteForm.email" name="email" #emailCtrl="ngModel"
                  (input)="onEmailInput(inviteForm.email)"
-                 class="form-control" placeholder="Enter email to search..." required>
-          @if (searchError) { <span class="input-info yellow">{{ searchError }}</span> }
-          @if (isUserFoundInDb) { <span class="input-info green">User found in system!</span> }
+                 class="form-control" [class.is-invalid]="(emailCtrl.invalid && emailCtrl.touched) || isDuplicateEmail"
+                 placeholder="Enter email to search..." required email>
+
+          @if (emailCtrl.invalid && emailCtrl.touched) {
+            <span class="error-text">Valid email is required.</span>
+          }
+          @if (isDuplicateEmail) {
+            <span class="error-text">This user is already in the project or has a pending invite.</span>
+          }
+          @if (!emailCtrl.invalid && searchInfo) {
+            <span class="input-info" [ngClass]="isUserFoundInDb ? 'green' : 'yellow'">{{ searchInfo }}</span>
+          }
         </div>
 
         <div class="form-row">
           <div class="form-group">
-            <label>First Name</label>
-            <input type="text" [(ngModel)]="inviteForm.firstName" name="fName"
-                   [disabled]="isUserFoundInDb" class="form-control" required>
+            <label>First Name *</label>
+            <input type="text" [(ngModel)]="inviteForm.firstName" name="fName" #fNameCtrl="ngModel"
+                   [disabled]="isUserFoundInDb" class="form-control" [class.is-invalid]="fNameCtrl.invalid && fNameCtrl.touched" required>
+            @if (fNameCtrl.invalid && fNameCtrl.touched) { <span class="error-text">Required</span> }
           </div>
           <div class="form-group">
-            <label>Last Name</label>
-            <input type="text" [(ngModel)]="inviteForm.lastName" name="lName"
-                   [disabled]="isUserFoundInDb" class="form-control" required>
+            <label>Last Name *</label>
+            <input type="text" [(ngModel)]="inviteForm.lastName" name="lName" #lNameCtrl="ngModel"
+                   [disabled]="isUserFoundInDb" class="form-control" [class.is-invalid]="lNameCtrl.invalid && lNameCtrl.touched" required>
+            @if (lNameCtrl.invalid && lNameCtrl.touched) { <span class="error-text">Required</span> }
           </div>
         </div>
 
@@ -228,14 +247,16 @@
 
         <div class="form-actions">
           <button type="button" class="btn-cancel" (click)="closeInviteModal()">Cancel</button>
-          <button type="submit" class="btn-submit">Send Invitation</button>
+          <button type="submit" class="btn-submit" [disabled]="inviteFormNg.invalid || isDuplicateEmail || isLoading">
+            {{ isLoading ? 'Sending...' : 'Send Invitation' }}
+          </button>
         </div>
       </form>
     </div>
   </div>
 }
 
-
+<!-- МОДАЛКА РЕДАГУВАННЯ -->
 @if (isEditModalOpen) {
   <div class="modal-overlay" (click)="closeEditModal()">
     <div class="modal-container" (click)="$event.stopPropagation()">
@@ -244,10 +265,12 @@
         <p class="modal-subtitle">Update role and details for {{ editingMember?.fullName }}</p>
       </div>
 
-      <form (ngSubmit)="saveMemberChanges()" class="modal-form">
+      <form #editFormNg="ngForm" (ngSubmit)="saveMemberChanges(editFormNg.valid)" class="modal-form">
+        @if (serverError) { <div class="server-error-alert">{{ serverError }}</div> }
+
         <div class="form-group">
           <label>System Role</label>
-          <select [(ngModel)]="editForm.sysRole" name="editRole" class="form-control">
+          <select [(ngModel)]="editForm.sysRole" name="editRole" class="form-control" required>
             <option value="manager">Manager</option>
             <option value="actor">Actor</option>
           </select>
@@ -256,7 +279,7 @@
         <div class="form-row">
           <div class="form-group">
             <label>Job Title</label>
-            <input type="text" [(ngModel)]="editForm.jobTitle" name="editJob" class="form-control" placeholder="e.g. Director of Photography">
+            <input type="text" [(ngModel)]="editForm.jobTitle" name="editJob" class="form-control" placeholder="e.g. DOP">
           </div>
           <div class="form-group">
             <label>Department</label>
@@ -266,7 +289,7 @@
 
         <div class="form-actions">
           <button type="button" class="btn-cancel" (click)="closeEditModal()">Cancel</button>
-          <button type="submit" class="btn-submit">Save Changes</button>
+          <button type="submit" class="btn-submit" [disabled]="editFormNg.invalid || isLoading">Save Changes</button>
         </div>
       </form>
     </div>

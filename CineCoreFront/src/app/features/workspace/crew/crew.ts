@@ -5,7 +5,7 @@ import { ActivatedRoute } from '@angular/router';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { Api } from '../../../core/services/api';
-import { Clipboard} from '@angular/cdk/clipboard';
+import { Clipboard } from '@angular/cdk/clipboard';
 
 @Component({
   selector: 'app-crew',
@@ -21,9 +21,8 @@ export class Crew implements OnInit {
   private clipboard = inject(Clipboard);
 
   projectId: number = 0;
-  currentUserId: number = 0; // Нам потрібен ID того, хто запрошує
+  currentUserId: number = 0;
 
-  // Дані для таблиць
   activeMembers: any[] = [];
   pendingInvites: any[] = [];
 
@@ -34,24 +33,23 @@ export class Crew implements OnInit {
   roleFilter: string = 'All';
   allRoles = ['All', 'Owner', 'Manager', 'Actor'];
 
-  // Стан активної вкладки
   activeTab: 'members' | 'pending' = 'members';
 
-  // Метод для перемикання вкладок
   switchTab(tab: 'members' | 'pending') {
     this.activeTab = tab;
   }
 
   isEditModalOpen = false;
   editingMember: any = null;
-  // ==========================================
-  // СТАН МОДАЛЬНОГО ВІКНА ЗАПРОШЕННЯ
-  // ==========================================
-  isInviteModalOpen = false;
-  isUserFoundInDb = false; // Чи знайшли ми пошту в базі?
-  searchError = ''; // Повідомлення, якщо пошту не знайдено
 
-  // Форма запрошення
+  // Стани модалки запрошення
+  isInviteModalOpen = false;
+  isUserFoundInDb = false;
+  isDuplicateEmail = false; // Чи вже є в проекті?
+  searchInfo = ''; // Текст інфо під полем
+  serverError: string | null = null;
+  isLoading = false;
+
   inviteForm = {
     email: '',
     firstName: '',
@@ -68,7 +66,6 @@ export class Crew implements OnInit {
     department: ''
   };
 
-  // Subject для затримки пошуку при введенні email
   private emailSearchSubject = new Subject<string>();
 
   ngOnInit() {
@@ -82,7 +79,6 @@ export class Crew implements OnInit {
       if (user) this.currentUserId = user.id;
     });
 
-    // Отримуємо ID проекту з URL
     this.route.parent?.paramMap.subscribe(params => {
       const id = params.get('id');
       if (id) {
@@ -91,7 +87,6 @@ export class Crew implements OnInit {
       }
     });
 
-    // Налаштовуємо "розумний" пошук (чекає 500мс після останнього натискання клавіші)
     this.emailSearchSubject.pipe(
       debounceTime(500),
       distinctUntilChanged()
@@ -100,9 +95,6 @@ export class Crew implements OnInit {
     });
   }
 
-  // ==========================================
-  // ЗАВАНТАЖЕННЯ ДАНИХ
-  // ==========================================
   loadCrewData() {
     this.api.getProjectCrew(this.projectId).subscribe({
       next: (data) => {
@@ -114,32 +106,47 @@ export class Crew implements OnInit {
     });
   }
 
-  // ==========================================
-  // ЛОГІКА ПОШУКУ ПОШТИ
-  // ==========================================
   onEmailInput(email: string) {
+    this.searchInfo = '';
+    this.serverError = null;
+
     if (!email || !email.includes('@')) {
       this.isUserFoundInDb = false;
-      this.searchError = '';
+      this.isDuplicateEmail = false;
       return;
     }
-    this.emailSearchSubject.next(email);
+
+    // ЛОКАЛЬНА ПЕРЕВІРКА: чи є вже такий email в таблицях?
+    const emailLower = email.toLowerCase().trim();
+    const inActive = this.activeMembers.some(m => m.email.toLowerCase() === emailLower);
+    const inPending = this.pendingInvites.some(i => i.email.toLowerCase() === emailLower);
+
+    if (inActive || inPending) {
+      this.isDuplicateEmail = true;
+      this.isUserFoundInDb = false; // Вимикаємо пошук в базі
+      return;
+    } else {
+      this.isDuplicateEmail = false;
+    }
+
+    // Якщо все ок - шукаємо в базі даних CineCore
+    this.emailSearchSubject.next(emailLower);
   }
 
   performEmailSearch(email: string) {
+    if (this.isDuplicateEmail) return;
+
     this.api.searchUserByEmail(email).subscribe({
       next: (user) => {
-        // Користувача знайдено в БД!
         this.isUserFoundInDb = true;
-        this.searchError = '';
+        this.searchInfo = 'User found in system!';
         this.inviteForm.firstName = user.firstName || '';
         this.inviteForm.lastName = user.lastName || '';
         this.cdr.detectChanges();
       },
       error: (err) => {
-        // Користувача немає в БД — дозволяємо вводити ім'я вручну
         this.isUserFoundInDb = false;
-        this.searchError = 'User not found. They will receive an email to register.';
+        this.searchInfo = 'User not found. They will receive an email to register.';
         this.inviteForm.firstName = '';
         this.inviteForm.lastName = '';
         this.cdr.detectChanges();
@@ -147,13 +154,13 @@ export class Crew implements OnInit {
     });
   }
 
-  // ==========================================
-  // МОДАЛЬНЕ ВІКНО ТА ВІДПРАВКА
-  // ==========================================
   openInviteModal() {
     this.inviteForm = { email: '', firstName: '', lastName: '', sysRole: 'actor', jobTitle: '', department: '', message: '' };
     this.isUserFoundInDb = false;
-    this.searchError = '';
+    this.isDuplicateEmail = false;
+    this.searchInfo = '';
+    this.serverError = null;
+    this.isLoading = false;
     this.isInviteModalOpen = true;
   }
 
@@ -161,8 +168,12 @@ export class Crew implements OnInit {
     this.isInviteModalOpen = false;
   }
 
-  sendInvite() {
-    // Формуємо payload. Назви полів мають точно збігатися з CreateInvitationDto
+  sendInvite(formValid: boolean | null) {
+    if (!formValid || this.isDuplicateEmail) return;
+
+    this.isLoading = true;
+    this.serverError = null;
+
     const payload = {
       projectId: this.projectId,
       invitedById: this.currentUserId,
@@ -177,11 +188,13 @@ export class Crew implements OnInit {
 
     this.api.inviteProjectMember(payload).subscribe({
       next: (res) => {
-        this.loadCrewData(); // Оновлюємо таблиці (користувач одразу з'явиться в Active або Pending)
+        this.loadCrewData();
         this.closeInviteModal();
       },
       error: (err) => {
-        alert(err.error?.message || 'Error sending invitation');
+        this.isLoading = false;
+        this.serverError = err.error?.message || err.error || 'Error sending invitation';
+        this.cdr.detectChanges();
       }
     });
   }
@@ -200,7 +213,8 @@ export class Crew implements OnInit {
 
   openEditModal(member: any) {
     this.editingMember = member;
-    // Заповнюємо форму поточними даними учасника
+    this.serverError = null;
+    this.isLoading = false;
     this.editForm = {
       sysRole: member.sysRole || 'actor',
       jobTitle: member.jobTitle || '',
@@ -214,8 +228,11 @@ export class Crew implements OnInit {
     this.editingMember = null;
   }
 
-  saveMemberChanges() {
-    if (!this.editingMember) return;
+  saveMemberChanges(formValid: boolean | null) {
+    if (!this.editingMember || !formValid) return;
+
+    this.isLoading = true;
+    this.serverError = null;
 
     const payload = {
       sysRole: this.editForm.sysRole,
@@ -223,18 +240,20 @@ export class Crew implements OnInit {
       department: this.editForm.department
     };
 
-    // Викликаємо наш новий метод з api.ts
     this.api.updateProjectMember(this.projectId, this.editingMember.userId, this.currentUserId, payload).subscribe({
       next: () => {
-        this.loadCrewData(); // Оновлюємо таблицю, щоб побачити зміни
+        this.loadCrewData();
         this.closeEditModal();
       },
-      error: (err) => alert(err.error?.message || 'Failed to update member')
+      error: (err) => {
+        this.isLoading = false;
+        this.serverError = err.error?.message || 'Failed to update member';
+        this.cdr.detectChanges();
+      }
     });
   }
 
   removeMember(member: any) {
-    // Власника видаляти не можна (бекенд це теж перевіряє, але краще зупинити відразу на фронті)
     if (member.sysRole === 'owner') {
       alert('Cannot remove the project owner.');
       return;
@@ -242,10 +261,7 @@ export class Crew implements OnInit {
 
     if (confirm(`Are you sure you want to remove ${member.fullName} from this project?`)) {
       this.api.removeProjectMember(this.projectId, member.userId, this.currentUserId).subscribe({
-        next: () => {
-          // Оновлюємо дані таблиці після успішного видалення
-          this.loadCrewData();
-        },
+        next: () => this.loadCrewData(),
         error: (err) => alert(err.error?.message || 'Failed to remove member')
       });
     }
@@ -254,19 +270,12 @@ export class Crew implements OnInit {
   get filteredMembers() {
     const q = this.searchQuery.toLowerCase().trim();
     return this.activeMembers.filter(m => {
-      const matchesSearch = !q ||
-        m.fullName.toLowerCase().includes(q) ||
-        m.email.toLowerCase().includes(q) ||
-        (m.jobTitle && m.jobTitle.toLowerCase().includes(q));
-
-      const matchesRole = this.roleFilter === 'All' ||
-        m.sysRole.toLowerCase() === this.roleFilter.toLowerCase();
-
+      const matchesSearch = !q || m.fullName.toLowerCase().includes(q) || m.email.toLowerCase().includes(q) || (m.jobTitle && m.jobTitle.toLowerCase().includes(q));
+      const matchesRole = this.roleFilter === 'All' || m.sysRole.toLowerCase() === this.roleFilter.toLowerCase();
       return matchesSearch && matchesRole;
     });
   }
 
-// Геттер для фільтрації запрошень
   get filteredInvites() {
     const q = this.searchQuery.toLowerCase().trim();
     return this.pendingInvites.filter(i => {
@@ -278,17 +287,10 @@ export class Crew implements OnInit {
 
   copyToClipboard(text: string, label: string) {
     if (!text) return;
-
-    // Використовуємо CDK або стандартний браузерний API
-    navigator.clipboard.writeText(text).then(() => {
-      alert(`${label} скопійовано: ${text}`);
-    }).catch(err => {
-      console.error('Помилка копіювання', err);
-    });
+    this.clipboard.copy(text);
+    alert(`${label} copied to clipboard: ${text}`);
   }
-  // ==========================================
-  // HELPERS (Класи для бейджів)
-  // ==========================================
+
   getRoleClass(role: string): string {
     const r = (role || '').toLowerCase();
     if (r === 'owner') return 'role-owner';
