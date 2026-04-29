@@ -66,8 +66,7 @@
             <tr>
               <td>
                 <div class="user-cell">
-                  <div class="avatar">{{ member.fullName[0] }}</div>
-                  <div class="user-info">
+                  <div class="avatar" [ngClass]="member.avatarTheme || 'theme-teal'">{{ member.fullName[0] }}</div>                  <div class="user-info">
                     <strong>{{ member.fullName }}</strong>
                     <span>{{ member.email }}</span>
                   </div>
@@ -141,9 +140,15 @@
         </tr>
         </thead>
         <tbody>
-          @for (invite of filteredInvites; track invite.id) {
-            <tr>
-              <td><strong>{{ invite.email }}</strong></td>
+        <!-- Змінили track на $index, оскільки id тепер може бути inviteId або userId -->
+          @for (invite of filteredInvites; track $index) {
+            <tr [class.declined-row]="invite.status === 'declined'">
+              <td>
+                <strong>{{ invite.email }}</strong>
+                @if (invite.status === 'declined') {
+                  <span class="declined-badge">Declined</span>
+                }
+              </td>
               <td><span class="sys-role-badge" [ngClass]="getRoleClass(invite.sysRole)">{{ invite.sysRole }}</span></td>
               <td>{{ invite.jobTitle || '—' }}</td>
               <td>{{ invite.department || '—' }}</td>
@@ -152,7 +157,14 @@
               @if (canEdit) {
                 <td>
                   <div class="action-icons">
-                    <button class="btn-delete" title="Cancel Invite" (click)="deleteInvite(invite.id)">
+                    <!-- Кнопка перевідправки тільки для відхилених -->
+                    @if (invite.status === 'declined') {
+                      <button class="btn-resend" title="Resend Invite" (click)="resendDeclinedInvite(invite)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+                      </button>
+                    }
+                    <!-- Оновлений виклик deleteInvite -->
+                    <button class="btn-delete" title="Cancel Invite" (click)="deleteInvite(invite)">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="3 6 5 6 21 6"></polyline>
                         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>

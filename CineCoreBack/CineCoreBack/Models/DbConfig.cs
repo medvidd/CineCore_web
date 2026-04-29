@@ -228,6 +228,10 @@ public partial class DbConfig : DbContext
             entity.Property(e => e.InvitedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnName("invited_at");
+            entity.Property(e => e.MemberStatus)
+                .HasColumnName("member_status")
+                .HasColumnType("character varying(50)") // Робимо звичайним текстом
+                .HasDefaultValue("pending");            // Звичайне дефолтне значення замість SQL
             entity.Property(e => e.InvitedByUserId).HasColumnName("invited_by_user_id");
             entity.Property(e => e.JobTitle)
                 .HasMaxLength(100)

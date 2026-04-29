@@ -23,6 +23,8 @@ public partial class ProjectMember
 
     public DateTime? JoinedAt { get; set; }
 
+    public string MemberStatus { get; set; } = "pending";
+
     public virtual User? InvitedByUser { get; set; }
 
     public virtual Project Project { get; set; } = null!;

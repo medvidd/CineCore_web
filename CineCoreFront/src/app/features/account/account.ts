@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, ChangeDetectorRef } from '@angular/core';
+import {Component, inject, OnInit, ChangeDetectorRef, OnDestroy} from '@angular/core';
 import { Header } from './../../core/components/header/header';
 import { Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
@@ -6,7 +6,7 @@ import { ProjectCard } from '../../shared/components/project-card/project-card';
 import { ProjectModal } from '../../shared/components/project-modal/project-modal';
 import { Api } from '../../core/services/api'; // 1. Імпортуємо сервіс
 import { SettingsModal } from '../../shared/components/settings-modal/settings-modal';
-
+import { Subscription, interval } from 'rxjs'; // ДОДАНО
 
 @Component({
   selector: 'app-account',
@@ -15,15 +15,21 @@ import { SettingsModal } from '../../shared/components/settings-modal/settings-m
   templateUrl: './account.html',
   styleUrl: './account.scss'
 })
-export class Account implements OnInit {
+export class Account implements OnInit, OnDestroy {
   private router = inject(Router);
   private api = inject(Api); // 2. Інжектуємо сервіс
   private cdr = inject(ChangeDetectorRef);
+  private pollSubscription?: Subscription; // ДОДАНО
 
   userData: any = null;
   myProjects: any[] = [];
+  invitations: any[] = []; // ДОДАНО: масив для вхідних запрошень
+
   isModalOpen = false;
   isLoading = false;
+
+  isInviteModalOpen = false;
+  selectedInvite: any = null;
 
   isSettingsOpen = false; // Змінна для відкриття вікна
 
@@ -34,13 +40,21 @@ export class Account implements OnInit {
     const savedUser = localStorage.getItem('cinecore_user');
     if (savedUser) {
       this.userData = JSON.parse(savedUser);
-      // 3. Завантажуємо проекти відразу після отримання даних користувача
       this.loadMyProjects();
+      this.loadInvitations();
+      this.pollSubscription = interval(5000).subscribe(() => {
+        this.loadInvitations();
+        this.loadMyProjects();
+      });
     } else {
       this.router.navigate(['/login']);
     }
+  }
 
-    this.loadMyProjects();
+  ngOnDestroy() {
+    if (this.pollSubscription) {
+      this.pollSubscription.unsubscribe();
+    }
   }
 
   // Метод для завантаження проектів користувача
@@ -61,12 +75,49 @@ export class Account implements OnInit {
     }
   }
 
+  loadInvitations() {
+    if (this.userData?.id) {
+      this.api.getUserInvitations(this.userData.id).subscribe({
+        next: (res) => {
+          this.invitations = res;
+          this.cdr.detectChanges();
+        }
+      });
+    }
+  }
+
+  openInviteDetails(invite: any) {
+    this.selectedInvite = invite;
+    this.isInviteModalOpen = true;
+  }
+
+  closeInviteModal() {
+    this.isInviteModalOpen = false;
+    this.selectedInvite = null;
+  }
+
+  respondToInvite(accept: boolean) {
+    if (!this.userData?.id || !this.selectedInvite) return;
+
+    const request = accept
+      ? this.api.acceptProjectInvite(this.selectedInvite.projectId, this.userData.id)
+      : this.api.rejectProjectInvite(this.selectedInvite.projectId, this.userData.id);
+
+    request.subscribe({
+      next: () => {
+        this.closeInviteModal();
+        this.loadInvitations(); // Оновлюємо бейдж із кількістю запрошень
+        if (accept) this.loadMyProjects(); // Якщо прийняли - оновлюємо проекти
+      },
+      error: (err) => console.error('Error responding to invite', err)
+    });
+  }
+
   openModal() { this.isModalOpen = true; }
   closeModal() { this.isModalOpen = false; }
 
   // 4. Оновлюємо список, коли модалка повідомляє про успішне створення
   onProjectCreated(projectData: any) {
-    console.log('Сигнал про створення проекту отримано:', projectData);
     this.loadMyProjects(); // Перезавантажуємо список з бази
     this.closeModal();
   }
@@ -82,14 +133,17 @@ export class Account implements OnInit {
     this.router.navigate(['/login']);
   }
 
+  get recentProjects(): any[] {
+    return this.myProjects.slice(0, 3);
+  }
+
   get projectsCount(): number {
-    // Рахуємо лише ті, де ми власники або вже приєдналися
     return this.myProjects.filter(p => p.isJoined).length;
   }
 
   get invitationsCount(): number {
-    // Рахуємо лише ті, куди нас запросили, але ми ще не приєдналися
-    return this.myProjects.filter(p => !p.isJoined).length;
+    // ОНОВЛЕНО: беремо реальну кількість запрошень з нового запиту
+    return this.invitations.length;
   }
 
   navigateToProject(projectId: number) {

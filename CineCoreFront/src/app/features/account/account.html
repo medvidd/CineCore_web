@@ -3,23 +3,20 @@
     <app-header></app-header>
 
     <main class="dashboard-layout">
-
       @if (userData) {
         <aside class="profile-sidebar">
+          <!-- Існуючий код сайдбара без змін -->
           <button class="edit-btn" (click)="openSettings()">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="3"></circle>
               <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
             </svg>
           </button>
-
           <div class="avatar-gradient" [style.background]="avatarStyle">{{ userInitials }}</div>
-
           <div class="user-info">
             <h2 class="user-name">{{ userData.firstName }} {{ userData.lastName }}</h2>
             <p class="user-email">{{ userData.email }}</p>
           </div>
-
           <div class="stats-grid">
             <div class="stat-card">
               <span class="stat-value text-teal">{{ projectsCount }}</span>
@@ -30,7 +27,6 @@
               <span class="stat-label">Invitations</span>
             </div>
           </div>
-
           <button class="log-out-btn" (click)="logout()">
             <svg viewBox="0 0 20 20" fill="none" class="logout-icon"><path d="M7.5 17.5H4.17C3.25 17.5 2.5 16.75 2.5 15.83V4.17C2.5 3.25 3.25 2.5 4.17 2.5H7.5 M13.33 14.17L17.5 10L13.33 5.83 M17.5 10H7.5" stroke="white" stroke-width="1.67" stroke-linecap="round" stroke-linejoin="round"/></svg>
             Log Out
@@ -39,9 +35,10 @@
       }
 
       <section class="dashboard-content">
+        <!-- БЛОК ПРОЕКТІВ (Обмежений до 3) -->
         <div class="content-block">
           <div class="block-header">
-            <h2>My Projects</h2>
+            <h2>Recent Projects</h2>
             <a routerLink="/projects" class="see-all">See all</a>
           </div>
 
@@ -52,7 +49,8 @@
                 <p>Loading projects...</p>
               </div>
             } @else {
-              @for (project of myProjects; track project.id) {
+              <!-- ВИКОРИСТОВУЄМО recentProjects -->
+              @for (project of recentProjects; track project.id) {
                 <app-project-card
                   [project]="project"
                   (click)="navigateToProject(project.id)"
@@ -64,21 +62,78 @@
             }
           </div>
         </div>
+
+        <!-- НОВИЙ БЛОК ЗАПРОШЕНЬ -->
+        @if (invitations.length > 0) {
+          <div class="content-block invitations-section">
+            <div class="block-header">
+              <h2>Pending Invitations ({{ invitations.length }})</h2>
+            </div>
+
+            <div class="invitations-scroll">
+              @for (inv of invitations; track inv.projectId) {
+                <div class="invite-card" (click)="openInviteDetails(inv)">
+                  <div class="card-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                  </div>
+                  <div class="card-info">
+                    <h4>{{ inv.projectTitle }}</h4>
+                    <p>Invited as <strong style="text-transform: capitalize;">{{ inv.sysRole }}</strong></p>
+                  </div>
+                  <div class="new-badge">NEW</div>
+                </div>
+              }
+            </div>
+          </div>
+        }
       </section>
     </main>
   </div>
 </div>
 
-<app-project-modal
-  [isOpen]="isModalOpen"
-  (close)="closeModal()"
-  (projectCreated)="onProjectCreated($event)">
-</app-project-modal>
+<!-- Існуючі модалки -->
+<app-project-modal [isOpen]="isModalOpen" (close)="closeModal()" (projectCreated)="onProjectCreated($event)"></app-project-modal>
+<app-settings-modal [isOpen]="isSettingsOpen" [userData]="userData" (close)="closeSettings()" (profileUpdated)="onProfileUpdated($event)" (accountDeleted)="logout()"></app-settings-modal>
 
-<app-settings-modal
-  [isOpen]="isSettingsOpen"
-  [userData]="userData"
-  (close)="closeSettings()"
-  (profileUpdated)="onProfileUpdated($event)"
-  (accountDeleted)="logout()">
-</app-settings-modal>
+<!-- НОВА МОДАЛКА ДЕТАЛЕЙ ЗАПРОШЕННЯ -->
+@if (isInviteModalOpen && selectedInvite) {
+  <div class="modal-overlay" (click)="closeInviteModal()">
+    <div class="modal-container invite-details-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="icon-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#3AB9A0" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+        </div>
+        <h2>Project Invitation</h2>
+      </div>
+
+      <div class="modal-body">
+        <div class="project-info-block">
+          <h3>{{ selectedInvite.projectTitle }}</h3>
+          <p class="synopsis">{{ selectedInvite.projectSynopsis || 'No synopsis provided.' }}</p>
+        </div>
+
+        <div class="role-info-block">
+          <div class="info-row">
+            <span class="label">System Role:</span>
+            <span class="value text-teal" style="text-transform: capitalize;">{{ selectedInvite.sysRole }}</span>
+          </div>
+          @if (selectedInvite.jobTitle) {
+            <div class="info-row">
+              <span class="label">Job Title:</span>
+              <span class="value">{{ selectedInvite.jobTitle }}</span>
+            </div>
+          }
+          <div class="info-row">
+            <span class="label">Invited by:</span>
+            <span class="value">{{ selectedInvite.invitedBy }} <br> <small style="color: rgba(255,255,255,0.4)">({{ selectedInvite.inviterEmail }})</small></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer split-buttons">
+        <button class="btn-danger-outline" (click)="respondToInvite(false)">Decline</button>
+        <button class="btn-primary" (click)="respondToInvite(true)">Accept Invitation</button>
+      </div>
+    </div>
+  </div>
+}

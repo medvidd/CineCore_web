@@ -1,8 +1,8 @@
-import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import {Component, OnInit, inject, ChangeDetectorRef, OnDestroy} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
-import { Subject } from 'rxjs';
+import { Subject, Subscription, interval } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { Api } from '../../../core/services/api';
 import { Clipboard } from '@angular/cdk/clipboard';
@@ -14,11 +14,12 @@ import { Clipboard } from '@angular/cdk/clipboard';
   templateUrl: './crew.html',
   styleUrl: './crew.scss'
 })
-export class Crew implements OnInit {
+export class Crew implements OnInit, OnDestroy {
   private api = inject(Api);
   private route = inject(ActivatedRoute);
   private cdr = inject(ChangeDetectorRef);
   private clipboard = inject(Clipboard);
+  private pollSubscription?: Subscription; // ДОДАНО: підписка на таймер
 
   projectId: number = 0;
   currentUserId: number = 0;
@@ -84,6 +85,10 @@ export class Crew implements OnInit {
       if (id) {
         this.projectId = Number(id);
         this.loadCrewData();
+
+        this.pollSubscription = interval(5000).subscribe(() => {
+          this.loadCrewData();
+        });
       }
     });
 
@@ -93,6 +98,12 @@ export class Crew implements OnInit {
     ).subscribe(email => {
       this.performEmailSearch(email);
     });
+  }
+
+  ngOnDestroy() {
+    if (this.pollSubscription) {
+      this.pollSubscription.unsubscribe();
+    }
   }
 
   loadCrewData() {
@@ -199,16 +210,45 @@ export class Crew implements OnInit {
     });
   }
 
-  deleteInvite(inviteId: number) {
-    if (confirm('Are you sure you want to cancel this invitation?')) {
-      this.api.deleteProjectInvite(inviteId).subscribe({
-        next: () => {
-          this.pendingInvites = this.pendingInvites.filter(i => i.id !== inviteId);
-          this.cdr.detectChanges();
-        },
-        error: (err) => alert('Failed to delete invitation')
-      });
-    }
+  deleteInvite(invite: any) {
+      if (invite.inviteId) {
+        // Видалення зовнішнього запрошення (через email)
+        this.api.deleteProjectInvite(invite.inviteId).subscribe({
+          next: () => {
+            this.pendingInvites = this.pendingInvites.filter(i => i.inviteId !== invite.inviteId);
+            this.cdr.detectChanges();
+          },
+          error: () => alert('Failed to delete invitation')
+        });
+      } else if (invite.userId) {
+        // Видалення внутрішнього (відхиленого або очікуючого) запрошення
+        this.api.removeProjectMember(this.projectId, invite.userId, this.currentUserId).subscribe({
+          next: () => this.loadCrewData(), // Перезавантажуємо, щоб оновити списки
+          error: () => alert('Failed to remove pending member')
+        });
+      }
+
+  }
+
+  resendDeclinedInvite(invite: any) {
+    const payload = {
+      projectId: this.projectId,
+      invitedById: this.currentUserId,
+      email: invite.email,
+      firstName: '-', // ВИПРАВЛЕННЯ: заглушка для валідації DTO
+      lastName: '-',  // ВИПРАВЛЕННЯ: заглушка для валідації DTO
+      sysRole: invite.sysRole,
+      jobTitle: invite.jobTitle || '',
+      department: invite.department || ''
+    };
+
+    this.api.inviteProjectMember(payload).subscribe({
+      next: () => {
+        // Забираємо alert, щоб не дратував, просто миттєво оновлюємо дані
+        this.loadCrewData();
+      },
+      error: (err) => alert(err.error?.message || 'Error resending invite')
+    });
   }
 
   openEditModal(member: any) {

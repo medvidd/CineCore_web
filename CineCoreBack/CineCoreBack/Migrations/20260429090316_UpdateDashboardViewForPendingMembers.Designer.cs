@@ -3,6 +3,7 @@ using System;
 using CineCoreBack.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace CineCoreBack.Migrations
 {
     [DbContext(typeof(DbConfig))]
-    partial class DbConfigModelSnapshot : ModelSnapshot
+    [Migration("20260429090316_UpdateDashboardViewForPendingMembers")]
+    partial class UpdateDashboardViewForPendingMembers
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -442,9 +445,9 @@ namespace CineCoreBack.Migrations
                     b.Property<string>("MemberStatus")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("character varying(50)")
-                        .HasDefaultValue("pending")
-                        .HasColumnName("member_status");
+                        .HasColumnType("enm_member_status")
+                        .HasColumnName("member_status")
+                        .HasDefaultValueSql("'pending'::enm_member_status");
 
                     b.Property<string>("SysRole")
                         .IsRequired()

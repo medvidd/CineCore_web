@@ -138,6 +138,21 @@ export class Api {
     return this.http.delete(`${this.CREW_API_URL}/invites/${inviteId}`);
   }
 
+  // Отримання особистих запрошень користувача
+  getUserInvitations(userId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.PROJECTS_API_URL}/user/${userId}/invitations`);
+  }
+
+// Прийняти запрошення
+  acceptProjectInvite(projectId: number, userId: number): Observable<any> {
+    return this.http.post(`${this.CREW_API_URL}/project/${projectId}/member/${userId}/accept`, {});
+  }
+
+// Відхилити запрошення
+  rejectProjectInvite(projectId: number, userId: number): Observable<any> {
+    return this.http.post(`${this.CREW_API_URL}/project/${projectId}/member/${userId}/reject`, {});
+  }
+
 
   // SCRIPT ENDPOINTS
   getSceneScript(sceneId: number) {

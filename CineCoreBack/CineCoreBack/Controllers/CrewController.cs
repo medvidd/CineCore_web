@@ -44,38 +44,51 @@ namespace CineCoreBack.Controllers
         {
             var targetEmail = dto.Email.ToLower();
 
-            // ВАЛІДАЦІЯ: Перевіряємо, чи користувач ВЖЕ Є АКТИВНИМ учасником
-            var isAlreadyMember = await _context.ProjectMembers
-                .Include(pm => pm.User)
-                .AnyAsync(pm => pm.ProjectId == dto.ProjectId && pm.User.Email.ToLower() == targetEmail);
-
-            if (isAlreadyMember) return BadRequest(new { message = "This user is already an active member of the project." });
-
-            // ВАЛІДАЦІЯ: Перевіряємо, чи є вже активне ЗАПРОШЕННЯ для цього email
-            var hasPendingInvite = await _context.ProjectInvitations
-                .AnyAsync(pi => pi.ProjectId == dto.ProjectId && pi.Email.ToLower() == targetEmail);
-
-            if (hasPendingInvite) return BadRequest(new { message = "An invitation has already been sent to this email." });
-
-            // Шукаємо, чи зареєстрований такий email у системі загалом
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == targetEmail);
 
             if (user != null)
             {
-                var newMember = new ProjectMember
+                var existingMember = await _context.ProjectMembers
+                    .FirstOrDefaultAsync(pm => pm.ProjectId == dto.ProjectId && pm.UserId == user.Id);
+
+                if (existingMember != null)
                 {
-                    ProjectId = dto.ProjectId,
-                    UserId = user.Id,
-                    SysRole = dto.SysRole.ToLower(),
-                    JobTitle = dto.JobTitle,
-                    Department = dto.Department,
-                    JoinedAt = DateTime.UtcNow,
-                    InvitedEmail = user.Email
-                };
-                _context.ProjectMembers.Add(newMember);
+                    if (existingMember.MemberStatus == "active")
+                        return BadRequest(new { message = "This user is already an active member of the project." });
+                    if (existingMember.MemberStatus == "pending")
+                        return BadRequest(new { message = "An invitation is already pending for this user." });
+
+                    // Якщо був відхилений - оновлюємо статус і відправляємо знову
+                    existingMember.MemberStatus = "pending";
+                    existingMember.InvitedAt = DateTime.UtcNow;
+                    existingMember.InvitedByUserId = dto.InvitedById;
+                    existingMember.SysRole = dto.SysRole.ToLower();
+                    existingMember.JobTitle = dto.JobTitle;
+                    existingMember.Department = dto.Department;
+                }
+                else
+                {
+                    var newMember = new ProjectMember
+                    {
+                        ProjectId = dto.ProjectId,
+                        UserId = user.Id,
+                        SysRole = dto.SysRole.ToLower(),
+                        JobTitle = dto.JobTitle,
+                        Department = dto.Department,
+                        InvitedEmail = user.Email,
+                        InvitedByUserId = dto.InvitedById,
+                        InvitedAt = DateTime.UtcNow,
+                        MemberStatus = "pending" // Додаємо як очікуючого
+                    };
+                    _context.ProjectMembers.Add(newMember);
+                }
             }
             else
             {
+                var hasPendingInvite = await _context.ProjectInvitations
+                    .AnyAsync(pi => pi.ProjectId == dto.ProjectId && pi.Email.ToLower() == targetEmail);
+                if (hasPendingInvite) return BadRequest(new { message = "An invitation has already been sent to this email." });
+
                 var invite = new ProjectInvitation
                 {
                     ProjectId = dto.ProjectId,
@@ -94,7 +107,7 @@ namespace CineCoreBack.Controllers
             }
 
             await _context.SaveChangesAsync();
-            return Ok(new { message = "Invitation processed successfully." });
+            return Ok(new { message = "Invitation sent successfully." });
         }
 
         // 3. ВИДАЛЕННЯ ЗАПРОШЕННЯ
@@ -122,7 +135,7 @@ namespace CineCoreBack.Controllers
 
             var activeMembers = await _context.ProjectMembers
                 .Include(pm => pm.User)
-                .Where(pm => pm.ProjectId == projectId && pm.UserId != null)
+                .Where(pm => pm.ProjectId == projectId && pm.UserId != null && pm.MemberStatus == "active")
                 .Select(pm => new ActiveMemberResponseDto
                 {
                     UserId = pm.UserId.Value,
@@ -131,9 +144,9 @@ namespace CineCoreBack.Controllers
                     SysRole = pm.SysRole,
                     JobTitle = pm.JobTitle,
                     Department = pm.Department,
-                    JoinedDate = pm.JoinedAt ?? DateTime.UtcNow
-                })
-                .ToListAsync();
+                    JoinedDate = pm.JoinedAt ?? DateTime.UtcNow,
+                    AvatarTheme = pm.User.AvatarTheme // ДОДАНО
+                }).ToListAsync();
 
             if (!activeMembers.Any(m => m.UserId == project.OwnerId))
             {
@@ -154,22 +167,44 @@ namespace CineCoreBack.Controllers
                 ownerInList.SysRole = "owner";
             }
 
-            var pendingInvites = await _context.ProjectInvitations
+            var pendingInvites = new List<PendingInvitationResponseDto>();
+
+            var externalInvites = await _context.ProjectInvitations
                 .Include(pi => pi.InvitedBy)
                 .Where(pi => pi.ProjectId == projectId)
                 .Select(pi => new PendingInvitationResponseDto
                 {
-                    Id = pi.Id,
+                    InviteId = pi.Id,
                     Email = pi.Email,
                     SysRole = pi.SysRole,
                     JobTitle = pi.JobTitle,
                     Department = pi.Department,
                     InvitedBy = $"{pi.InvitedBy.FirstName} {pi.InvitedBy.LastName}".Trim(),
-                    DateSent = pi.DateSent
-                })
-                .ToListAsync();
+                    DateSent = pi.DateSent,
+                    Status = "pending"
+                }).ToListAsync();
+            pendingInvites.AddRange(externalInvites);
 
-            return Ok(new { ActiveMembers = activeMembers, PendingInvites = pendingInvites });
+            // Додаємо внутрішні запрошення (ProjectMembers зі статусом pending/declined)
+            var internalInvites = await _context.ProjectMembers
+                .Include(pm => pm.InvitedByUser)
+                .Include(pm => pm.User)
+                .Where(pm => pm.ProjectId == projectId && (pm.MemberStatus == "pending" || pm.MemberStatus == "declined"))
+                .Select(pm => new PendingInvitationResponseDto
+                {
+                    UserId = pm.UserId,
+                    Email = pm.InvitedEmail,
+                    SysRole = pm.SysRole,
+                    JobTitle = pm.JobTitle,
+                    Department = pm.Department,
+                    InvitedBy = pm.InvitedByUser != null ? $"{pm.InvitedByUser.FirstName} {pm.InvitedByUser.LastName}".Trim() : "Unknown",
+                    DateSent = pm.InvitedAt ?? DateTime.UtcNow,
+                    Status = pm.MemberStatus,
+                    AvatarTheme = pm.User != null ? pm.User.AvatarTheme : null // ДОДАНО
+                }).ToListAsync();
+            pendingInvites.AddRange(internalInvites);
+
+            return Ok(new { ActiveMembers = activeMembers, PendingInvites = pendingInvites.OrderByDescending(i => i.DateSent) });
         }
 
         // 5. РЕДАГУВАННЯ ДАНИХ УЧАСНИКА
@@ -229,6 +264,31 @@ namespace CineCoreBack.Controllers
                 .FirstOrDefaultAsync(pm => pm.ProjectId == projectId && pm.UserId == userId);
 
             return member?.SysRole ?? "none";
+        }
+
+        [HttpPost("project/{projectId}/member/{userId}/accept")]
+        public async Task<IActionResult> AcceptInvite(int projectId, int userId)
+        {
+            var member = await _context.ProjectMembers.FirstOrDefaultAsync(pm => pm.ProjectId == projectId && pm.UserId == userId);
+            if (member != null)
+            {
+                member.MemberStatus = "active";
+                member.JoinedAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+            }
+            return Ok();
+        }
+
+        [HttpPost("project/{projectId}/member/{userId}/reject")]
+        public async Task<IActionResult> RejectInvite(int projectId, int userId)
+        {
+            var member = await _context.ProjectMembers.FirstOrDefaultAsync(pm => pm.ProjectId == projectId && pm.UserId == userId);
+            if (member != null)
+            {
+                member.MemberStatus = "declined";
+                await _context.SaveChangesAsync();
+            }
+            return Ok();
         }
     }
 }

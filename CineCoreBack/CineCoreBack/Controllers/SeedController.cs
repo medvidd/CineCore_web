@@ -124,7 +124,8 @@ namespace CineCoreBack.Controllers
                         InvitedEmail = starUser.Email,
                         SysRole = "actor",
                         JobTitle = "Cast",
-                        JoinedAt = DateTime.UtcNow
+                        JoinedAt = DateTime.UtcNow,
+                        MemberStatus = "active" // Ось цей ключовий рядок
                     });
                 }
             }

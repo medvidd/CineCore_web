@@ -41,13 +41,16 @@ namespace CineCoreBack.DTOs
     // DTO для відображення Pending Invites у таблиці
     public class PendingInvitationResponseDto
     {
-        public int Id { get; set; }
+        public int? InviteId { get; set; } // Для зовнішніх запрошень (ProjectInvitations)
+        public int? UserId { get; set; }
         public string Email { get; set; } = null!;
         public string SysRole { get; set; } = null!;
         public string? JobTitle { get; set; }
         public string? Department { get; set; }
         public string InvitedBy { get; set; } = null!; // Ім'я того, хто запросив
         public DateTime DateSent { get; set; }
+        public string Status { get; set; } = "pending";
+        public string? AvatarTheme { get; set; } // ДОДАНО
     }
 
     // DTO для відображення Active Members у таблиці
@@ -60,6 +63,7 @@ namespace CineCoreBack.DTOs
         public string? JobTitle { get; set; }
         public string? Department { get; set; }
         public DateTime JoinedDate { get; set; }
+        public string? AvatarTheme { get; set; } // ДОДАНО
     }
 
     // DTO для редагування даних учасника проекту

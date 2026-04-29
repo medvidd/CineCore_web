@@ -232,3 +232,92 @@ $yellow: #E9A60F;
     }
   }
 }
+
+// ... ЗАЛИШТЕ ВАШ ІСНУЮЧИЙ КОД БЕЗ ЗМІН ...
+
+// ==========================================
+// НОВІ СТИЛІ ДЛЯ ЗАПРОШЕНЬ ТА МОДАЛОК
+// ==========================================
+
+// БЛОК ЗАПРОШЕНЬ (Горизонтальний скрол)
+// --- БЛОК ЗАПРОШЕНЬ (Вертикальний скрол) ---
+.invitations-section {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 24px;
+  padding: 24px;
+
+  h2 { margin: 0 0 20px 0; font-size: 20px; font-weight: 500; color: white; }
+
+  .invitations-scroll {
+    display: flex;
+    flex-direction: column; // Змінюємо напрямок на вертикальний
+    gap: 16px;
+    overflow-y: auto;       // Додаємо вертикальний скрол
+    overflow-x: hidden;     // Забороняємо горизонтальний
+    max-height: 350px;      // Обмежуємо висоту блоку (можете налаштувати під себе)
+    padding-right: 8px;     // Відступ для скроллбара
+    padding-bottom: 8px;
+
+    // Стилізація вертикального скроллбара
+    &::-webkit-scrollbar { width: 6px; }
+    &::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+
+    .invite-card {
+      width: 100%; // Картка тепер займає всю доступну ширину
+      background: $bg-main;
+      border: 1px solid rgba(58, 185, 160, 0.3);
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      position: relative;
+      cursor: pointer;
+      transition: 0.2s;
+      flex-shrink: 0; // Щоб картки не стискалися
+
+      &:hover { background: rgba(58, 185, 160, 0.05); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+
+      .card-icon { width: 48px; height: 48px; background: rgba(58, 185, 160, 0.1); border-radius: 12px; display: flex; justify-content: center; align-items: center; svg { width: 24px; color: $teal;} }
+      .card-info {
+        flex: 1; min-width: 0;
+        h4 { margin: 0 0 6px 0; font-size: 16px; font-weight: 500; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+        p { margin: 0; font-size: 14px; color: rgba(255,255,255,0.6); strong { color: white; } }
+      }
+      .new-badge { position: absolute; top: -8px; right: 16px; background: #E9A60F; color: #000B10; font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 20px; box-shadow: 0 4px 8px rgba(233, 166, 15, 0.3); }
+    }
+  }
+}
+
+// МОДАЛКА ЗАПРОШЕННЯ (Стилізована під ваш дизайн)
+.modal-overlay { position: fixed; inset: 0; background: rgba(0, 11, 16, 0.85); backdrop-filter: blur(4px); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+.modal-container { background: $bg-card; width: 100%; max-width: 500px; border-radius: 24px; padding: 32px; border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4); }
+
+.invite-details-modal {
+  .modal-header {
+    display: flex; align-items: center; gap: 16px; margin-bottom: 24px;
+    .icon-box { width: 48px; height: 48px; background: rgba(58, 185, 160, 0.1); border-radius: 12px; display: flex; justify-content: center; align-items: center; svg { width: 24px; } }
+    h2 { margin: 0; font-size: 24px; font-weight: 500; color: white; }
+  }
+
+  .project-info-block {
+    background: $bg-main; border-radius: 16px; padding: 20px; margin-bottom: 24px; border: 1px solid rgba(255,255,255,0.05);
+    h3 { margin: 0 0 12px 0; font-size: 20px; color: white; }
+    .synopsis { margin: 0; color: rgba(255,255,255,0.6); font-size: 15px; line-height: 1.6; }
+  }
+
+  .role-info-block {
+    display: flex; flex-direction: column; gap: 16px; padding: 0 8px; margin-bottom: 32px;
+    .info-row { display: flex; justify-content: space-between; align-items: center; font-size: 15px; .label { color: rgba(255,255,255,0.5); } .value { font-weight: 500; color: white; text-align: right; } }
+  }
+
+  .split-buttons {
+    display: flex; gap: 16px; padding: 0; background: transparent; border: none;
+    button { flex: 1; padding: 14px 0; border-radius: 50px; font-weight: 500; font-family: 'Space Grotesk'; font-size: 16px; cursor: pointer; transition: 0.2s;}
+    .btn-danger-outline { background: transparent; border: 1px solid rgba(229, 57, 53, 0.3); color: #E53935; &:hover { background: rgba(229, 57, 53, 0.1); border-color: #E53935; } }
+    .btn-primary { background: $teal; border: none; color: #000B10; &:hover { opacity: 0.8; transform: translateY(-2px); } }
+  }
+}
+
+

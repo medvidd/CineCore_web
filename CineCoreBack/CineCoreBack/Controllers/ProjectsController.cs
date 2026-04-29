@@ -215,11 +215,11 @@ namespace CineCoreBack.Controllers
             else if (role != "All" && !string.IsNullOrEmpty(role))
             {
                 string searchRole = role.ToLower();
-                query = query.Where(p => p.ProjectMembers.Any(pm => pm.UserId == ownerId && pm.SysRole.ToLower() == searchRole));
+                query = query.Where(p => p.ProjectMembers.Any(pm => pm.UserId == ownerId && pm.SysRole.ToLower() == searchRole && pm.MemberStatus == "active"));
             }
             else
             {
-                query = query.Where(p => p.OwnerId == ownerId || p.ProjectMembers.Any(pm => pm.UserId == ownerId));
+                query = query.Where(p => p.OwnerId == ownerId || p.ProjectMembers.Any(pm => pm.UserId == ownerId && pm.MemberStatus == "active"));
             }
 
             var projects = await query.OrderByDescending(p => p.Id).ToListAsync();
@@ -342,6 +342,28 @@ namespace CineCoreBack.Controllers
                 .FirstOrDefaultAsync(pm => pm.ProjectId == projectId && pm.UserId == userId);
 
             return Ok(new { role = member?.SysRole ?? "none" });
+        }
+
+        [HttpGet("user/{userId}/invitations")]
+        public async Task<ActionResult> GetUserInvitations(int userId)
+        {
+            var invites = await _context.ProjectMembers
+                .Include(pm => pm.Project)
+                .Include(pm => pm.InvitedByUser)
+                .Where(pm => pm.UserId == userId && pm.MemberStatus == "pending")
+                .Select(pm => new {
+                    ProjectId = pm.ProjectId,
+                    ProjectTitle = pm.Project.Title,
+                    ProjectSynopsis = pm.Project.Synopsis,
+                    SysRole = pm.SysRole,
+                    JobTitle = pm.JobTitle,
+                    InvitedBy = pm.InvitedByUser != null ? $"{pm.InvitedByUser.FirstName} {pm.InvitedByUser.LastName}" : "Unknown",
+                    InviterEmail = pm.InvitedByUser != null ? pm.InvitedByUser.Email : "",
+                    InvitedAt = pm.InvitedAt
+                })
+                .ToListAsync();
+
+            return Ok(invites);
         }
     }
 }
