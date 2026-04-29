@@ -25,7 +25,7 @@
       @if (activeActorTab === 'profile' && actorProfile) {
         <div class="actor-profile-view">
           <div class="profile-main-card">
-            <div class="avatar-circle large" [ngClass]="actorProfile.avatarTheme">
+            <div class="avatar-circle large" [ngClass]="actorProfile.avatarTheme || 'theme-teal'">
               {{ actorProfile.firstName[0] }}{{ actorProfile.lastName[0] }}
             </div>
             <div class="actor-header-info">
@@ -168,8 +168,8 @@
                   <div class="k-card" draggable="true"
                        (dragstart)="onDragStart($event, cand)"
                        (dragend)="onDragEnd($event)"
-                       (click)="viewCandidateDetails(cand)">                  <div class="avatar" [ngClass]="cand.avatarTheme">{{ cand.firstName[0] }}{{ cand.lastName[0] }}</div>
-                    <div class="k-info">
+                       (click)="viewCandidateDetails(cand)">
+                    <div class="avatar" [ngClass]="cand.avatarTheme || 'theme-teal'">{{ cand.firstName[0] }}{{ cand.lastName[0] }}</div>                    <div class="k-info">
                       <strong>{{ cand.firstName }} {{ cand.lastName }}</strong>
                       <span>Added: {{ cand.castDate }}</span>
                     </div>
@@ -190,8 +190,8 @@
                   <div class="k-card" draggable="true"
                        (dragstart)="onDragStart($event, cand)"
                        (dragend)="onDragEnd($event)"
-                       (click)="viewCandidateDetails(cand)">                  <div class="avatar" [ngClass]="cand.avatarTheme">{{ cand.firstName[0] }}{{ cand.lastName[0] }}</div>
-                    <div class="k-info">
+                       (click)="viewCandidateDetails(cand)">
+                    <div class="avatar" [ngClass]="cand.avatarTheme || 'theme-teal'">{{ cand.firstName[0] }}{{ cand.lastName[0] }}</div>                    <div class="k-info">
                       <strong>{{ cand.firstName }} {{ cand.lastName }}</strong>
                       <span>Added: {{ cand.castDate }}</span>
                     </div>
@@ -212,8 +212,8 @@
                   <div class="k-card" draggable="true"
                        (dragstart)="onDragStart($event, cand)"
                        (dragend)="onDragEnd($event)"
-                       (click)="viewCandidateDetails(cand)">                  <div class="avatar" [ngClass]="cand.avatarTheme">{{ cand.firstName[0] }}{{ cand.lastName[0] }}</div>
-                    <div class="k-info">
+                       (click)="viewCandidateDetails(cand)">
+                    <div class="avatar" [ngClass]="cand.avatarTheme || 'theme-teal'">{{ cand.firstName[0] }}{{ cand.lastName[0] }}</div>                    <div class="k-info">
                       <strong>{{ cand.firstName }} {{ cand.lastName }}</strong>
                       <span>Added: {{ cand.castDate }}</span>
                       <span class="badge-approved">Cast</span>
@@ -238,8 +238,8 @@
                   <div class="k-card" draggable="true"
                        (dragstart)="onDragStart($event, cand)"
                        (dragend)="onDragEnd($event)"
-                       (click)="viewCandidateDetails(cand)">                  <div class="avatar" [ngClass]="cand.avatarTheme">{{ cand.firstName[0] }}{{ cand.lastName[0] }}</div>
-                    <div class="k-info">
+                       (click)="viewCandidateDetails(cand)">
+                    <div class="avatar" [ngClass]="cand.avatarTheme || 'theme-teal'">{{ cand.firstName[0] }}{{ cand.lastName[0] }}</div>                    <div class="k-info">
                       <strong>{{ cand.firstName }} {{ cand.lastName }}</strong>
                       <span>Added: {{ cand.castDate }}</span>
                     </div>
@@ -381,7 +381,7 @@
     <div class="modal-container" (click)="$event.stopPropagation()">
 
       <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 24px;">
-        <div class="avatar-circle" [ngClass]="selectedCandidateDetails.avatarTheme">
+        <div class="avatar-circle" [ngClass]="selectedCandidateDetails.avatarTheme || 'theme-teal'">
           {{ selectedCandidateDetails.firstName[0] }}{{ selectedCandidateDetails.lastName[0] }}
         </div>
         <div>

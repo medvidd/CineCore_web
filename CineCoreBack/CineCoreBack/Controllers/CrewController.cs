@@ -158,7 +158,8 @@ namespace CineCoreBack.Controllers
                     SysRole = "owner",
                     JobTitle = "Project Creator",
                     Department = "Administration",
-                    JoinedDate = project.CreatedAt ?? DateTime.UtcNow
+                    JoinedDate = project.CreatedAt ?? DateTime.UtcNow,
+                    AvatarTheme = project.Owner.AvatarTheme 
                 });
             }
             else
