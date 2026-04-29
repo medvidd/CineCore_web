@@ -51,10 +51,6 @@ public partial class DbConfig : DbContext
 
     public virtual DbSet<ProjectInvitation> ProjectInvitations { get; set; }
 
-    //    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    //#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-    //        => optionsBuilder.UseNpgsql("Host=localhost;Database=cine_core_dbfirst;Username=postgres;Password=anavaz357");
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder
@@ -87,7 +83,7 @@ public partial class DbConfig : DbContext
                 .HasColumnName("characteristics");
 
             entity.HasOne(d => d.User)
-                .WithOne(u => u.Actor) 
+                .WithOne(u => u.Actor)
                 .HasForeignKey<Actor>(d => d.Id)
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("actors_user_id_fkey");
@@ -155,7 +151,7 @@ public partial class DbConfig : DbContext
 
             entity.ToTable("locations");
 
-            entity.HasIndex(e => e.LocationName, "locations_location_name_key").IsUnique();
+            // ВИДАЛЕНО ГЛОБАЛЬНИЙ ІНДЕКС: entity.HasIndex(e => e.LocationName, "locations_location_name_key").IsUnique();
 
             entity.Property(e => e.Id)
                 .ValueGeneratedNever()
@@ -189,7 +185,8 @@ public partial class DbConfig : DbContext
 
             entity.ToTable("projects");
 
-            entity.HasIndex(e => e.Title, "projects_title_key").IsUnique();
+            // ЗМІНЕНО: Тепер проєкти унікальні лише в межах одного Власника
+            entity.HasIndex(e => new { e.OwnerId, e.Title }, "uq_projects_owner_title").IsUnique();
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.CreatedAt)
@@ -256,7 +253,7 @@ public partial class DbConfig : DbContext
 
             entity.ToTable("props");
 
-            entity.HasIndex(e => e.PropName, "props_prop_name_key").IsUnique();
+            // ВИДАЛЕНО ГЛОБАЛЬНИЙ ІНДЕКС: entity.HasIndex(e => e.PropName, "props_prop_name_key").IsUnique();
 
             entity.Property(e => e.Id)
                 .ValueGeneratedNever()
@@ -288,7 +285,7 @@ public partial class DbConfig : DbContext
             entity.HasOne(d => d.Project)
                 .WithMany(p => p.Resources)
                 .HasForeignKey(d => d.ProjectId)
-                .OnDelete(DeleteBehavior.Cascade) 
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("resources_project_id_fkey");
         });
 
@@ -555,14 +552,12 @@ public partial class DbConfig : DbContext
             entity.Property(e => e.DateSent).HasColumnName("date_sent").HasDefaultValueSql("CURRENT_TIMESTAMP");
             entity.Property(e => e.Token).HasColumnName("token");
 
-            // Зв'язок з Проектом
             entity.HasOne(d => d.Project)
                 .WithMany(p => p.ProjectInvitations)
                 .HasForeignKey(d => d.ProjectId)
-                .OnDelete(DeleteBehavior.Cascade) // Якщо видаляють проект, видаляються і всі запрошення
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("project_invitations_project_id_fkey");
 
-            // Зв'язок з Користувачем (тим, хто запросив)
             entity.HasOne(d => d.InvitedBy)
                 .WithMany()
                 .HasForeignKey(d => d.InvitedById)

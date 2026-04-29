@@ -293,6 +293,7 @@
         <textarea class="notes-card editable-notes"
                   [(ngModel)]="sceneNotes"
                   [disabled]="!canEdit"
+                  maxlength="2000"
                   (ngModelChange)="notesAutosaveSubject.next($event)"
                   placeholder="Add scene notes here..."></textarea>
       </div>
@@ -301,16 +302,21 @@
   </aside>
 </div>
 
+<!-- МОДАЛКА РЕСУРСІВ З ВАЛІДАЦІЄЮ -->
 @if (isResourceModalOpen) {
-  <div class="modal-overlay" (click)="isResourceModalOpen = false">
+  <div class="modal-overlay" (click)="closeResourceModal()">
     <div class="modal-container" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h2 style="text-transform: capitalize;">Add {{ resourceModalType }}</h2>
       </div>
 
+      @if (resourceServerError) {
+        <div class="server-error-alert">{{ resourceServerError }}</div>
+      }
+
       <div class="modal-search">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-        <input type="text" [(ngModel)]="resourceSearch" placeholder="Search resources...">
+        <input type="text" [(ngModel)]="resourceSearch" placeholder="Search resources..." (input)="resourceServerError = null">
       </div>
 
       <div class="resource-list scrollable-list" style="max-height: 300px;">

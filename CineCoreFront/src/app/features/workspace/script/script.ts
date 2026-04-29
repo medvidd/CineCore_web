@@ -72,6 +72,7 @@ export class Script implements OnInit {
   availableResources: { roles: any[], locations: any[], props: any[] } = { roles: [], locations: [], props: [] };
 
   isResourceModalOpen = false;
+  resourceServerError: string | null = null;
   resourceModalType: 'role' | 'location' | 'prop' = 'role';
   resourceSearch = '';
 
@@ -125,7 +126,11 @@ export class Script implements OnInit {
 
     this.notesAutosaveSubject.pipe(debounceTime(2000)).subscribe((notes) => {
       if (this.canEdit) { // Зберігаємо нотатки тільки якщо є права
-        this.api.updateSceneNotes(this.sceneId, notes).subscribe();
+        this.api.updateSceneNotes(this.sceneId, notes).subscribe({
+          error: (err) => {
+            if (err.error?.message) alert(err.error.message);
+          }
+        });
       }
     });
   }
@@ -668,7 +673,13 @@ export class Script implements OnInit {
     if (!this.canEdit) return;
     this.resourceModalType = type;
     this.resourceSearch = '';
+    this.resourceServerError = null;
     this.isResourceModalOpen = true;
+  }
+
+  closeResourceModal() {
+    this.isResourceModalOpen = false;
+    this.resourceServerError = null;
   }
 
   getFilteredResources() {
@@ -692,7 +703,7 @@ export class Script implements OnInit {
   linkResource(resourceId: number) {
     this.api.linkResource(this.sceneId, resourceId).subscribe({
       next: () => {
-        this.isResourceModalOpen = false;
+        this.closeResourceModal();
 
         if (this.resourceModalType === 'role') {
           // Одразу додаємо роль у праву панель без перезавантаження всього скрипту
@@ -715,7 +726,17 @@ export class Script implements OnInit {
     });
   }
 
+  private getErrorMessage(err: any): string {
+    if (err.error && err.error.message) return err.error.message;
+    if (err.error && err.error.errors) {
+      const firstKey = Object.keys(err.error.errors)[0];
+      return err.error.errors[firstKey][0];
+    }
+    return typeof err.error === 'string' ? err.error : "An unknown error occurred.";
+  }
+
   quickCreateResource() {
+    this.resourceServerError = null;
     this.api.quickCreateResource(this.projectId, this.resourceModalType, this.resourceSearch.trim()).subscribe({
       next: (newRes) => {
         // ... (ваш існуючий код додавання)
@@ -726,7 +747,8 @@ export class Script implements OnInit {
         this.linkResource(newRes.id);
       },
       error: (err) => {
-        alert(err.error?.message || 'Error creating resource.');
+        this.resourceServerError = this.getErrorMessage(err);
+        this.cdr.detectChanges();
       }
     });
   }

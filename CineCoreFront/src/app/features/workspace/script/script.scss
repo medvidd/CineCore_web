@@ -419,3 +419,22 @@ $teal: #3AB9A0;
   &:hover { color: $teal; transform: scale(1.1); }
   svg { width: 16px; height: 16px; }
 }
+
+.server-error-alert {
+  width: 100%;
+  padding: 10px 14px;
+  background: rgba(255, 59, 48, 0.1);
+  border: 1px solid rgba(255, 59, 48, 0.3);
+  border-radius: 12px;
+  color: #FF3B30;
+  font-size: 13px;
+  text-align: center;
+  font-weight: 500;
+  margin-bottom: 16px;
+  box-sizing: border-box;
+}
+
+textarea.editable-notes:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
