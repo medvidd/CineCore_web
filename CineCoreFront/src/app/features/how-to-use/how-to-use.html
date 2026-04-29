@@ -79,7 +79,7 @@
           </div>
           <div class="feature-line">
             <svg class="check-icon" viewBox="0 0 20 20" fill="none"><path d="M3 10L8 15L17 5" stroke="#3AB9A0" stroke-width="2" stroke-linecap="round"/></svg>
-            <span>Different roles: Owner, Manager, Actor, Crew</span>
+            <span>Different roles: Owner, Manager, Actor</span>
           </div>
           <div class="feature-line">
             <svg class="check-icon" viewBox="0 0 20 20" fill="none"><path d="M3 10L8 15L17 5" stroke="#3AB9A0" stroke-width="2" stroke-linecap="round"/></svg>
@@ -108,14 +108,97 @@
         </div>
       </div>
 
-      <div class="bottom-cta">
-        <p>Ready to organize your film project?</p>
-        <button class="btn btn-primary">
-          Create Account
-          <svg class="arrow-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M8 5L13 10L8 15" stroke="#000B10" stroke-width="1.67" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
+      <div class="bottom-cta" style="gap: 16px;">
+        <p>Do you want to initialize the system with demo data?</p>
+        <button class="btn btn-primary" style="width: 280px;" (click)="openSeedModal()">
+          Initialize Database
         </button>
+      </div>
+
+      <!-- Модальне вікно імпорту -->
+      <div *ngIf="isSeedModalOpen" class="modal-overlay" (click)="(!isImporting && !isFinished) ? closeSeedModal() : null">
+        <div class="modal-container seed-modal" (click)="$event.stopPropagation()">
+
+          <div class="modal-header" style="justify-content: center; margin-bottom: 24px;">
+            <h2 style="margin: 0;">Database Initialization</h2>
+          </div>
+
+          <!-- 1. Етап: Перед стартом -->
+          <div *ngIf="!isImporting && !isFinished && progress === 0" class="seed-intro">
+            <p style="color: rgba(255,255,255,0.7); text-align: center; margin-bottom: 24px;">
+              This action will import data from the IMDb Top 1000 dataset into your database.
+              It will create Users, Projects, Actors, and Crew relations.
+            </p>
+            <div style="display: flex; gap: 16px;">
+              <button class="btn btn-cancel" style="flex: 1; padding: 12px;" (click)="closeSeedModal()">Cancel</button>
+              <button class="btn btn-primary" style="flex: 1; padding: 12px;" (click)="startImport()">Start Import</button>
+            </div>
+          </div>
+
+          <!-- 2. Етап: Процес імпорту (Progress Bar) -->
+          <div *ngIf="isImporting" class="seed-progress-area">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+              <span style="color: rgba(255,255,255,0.8); font-weight: 500;">{{ currentStatus }}</span>
+              <span style="color: #3AB9A0; font-weight: bold;">{{ progress }}%</span>
+            </div>
+
+            <div class="progress-track">
+              <div class="progress-fill" [style.width.%]="progress"></div>
+            </div>
+
+            <div class="live-stats" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 24px;">
+              <div class="stat-mini">
+                <small>Rows Processed</small>
+                <span>{{ processedRows }} / {{ totalRows }}</span>
+              </div>
+              <div class="stat-mini">
+                <small>Current Batch</small>
+                <span>#{{ currentBatch }} of {{ totalBatches }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. Етап: Завершення (Результати) -->
+          <div *ngIf="isFinished && seedResult" class="seed-results-area">
+            <div style="text-align: center; margin-bottom: 24px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#3AB9A0" stroke-width="2" style="width: 48px; height: 48px; margin-bottom: 12px;">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              </svg>
+              <h3 style="color: #3AB9A0; margin: 0 0 8px 0; font-size: 20px;">Import Successful!</h3>
+              <p style="color: rgba(255,255,255,0.7); margin: 0; font-size: 14px;">{{ seedResult.message }}</p>
+            </div>
+
+            <div class="live-stats" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px;">
+              <div class="stat-mini">
+                <small>Projects Created</small>
+                <span style="color: #E9A60F;">{{ seedResult.projectsCount }}</span>
+              </div>
+              <div class="stat-mini">
+                <small>Genres Added</small>
+                <span style="color: #FF517B;">{{ seedResult.genresCount }}</span>
+              </div>
+              <div class="stat-mini">
+                <small>Users Generated</small>
+                <span style="color: #51A2FF;">{{ seedResult.usersCount }}</span>
+              </div>
+              <div class="stat-mini">
+                <small>Actors Mapped</small>
+                <span style="color: #C27AFF;">{{ seedResult.actorsCount }}</span>
+              </div>
+              <!-- Блок команди займає дві колонки для краси -->
+              <div class="stat-mini" style="grid-column: span 2; text-align: center;">
+                <small>Crew Relations Mapped</small>
+                <span style="color: #3AB9A0;">{{ seedResult.crewCount }}</span>
+              </div>
+            </div>
+
+            <button class="btn btn-primary" style="width: 100%; padding: 12px;" (click)="closeSeedModal()">
+              Close it
+            </button>
+          </div>
+
+        </div>
       </div>
     </main>
 

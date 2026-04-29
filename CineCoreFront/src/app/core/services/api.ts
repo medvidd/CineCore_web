@@ -272,4 +272,8 @@ export class Api {
   updateProject(id: number, projectData: any): Observable<any> {
     return this.http.put(`${this.PROJECTS_API_URL}/${id}`, projectData);
   }
+
+  runSeedDatabase() {
+    return this.http.post(`${this.USERS_API_URL.replace('/users', '/seed')}/run`, {});
+  }
 }
