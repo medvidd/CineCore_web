@@ -161,3 +161,32 @@ button:disabled {
   cursor: not-allowed !important;
   pointer-events: none;
 }
+
+@media (max-width: 1200px) {
+  .figma-canvas {
+    width: min(100%, 1179.2px);
+    padding: 0 16px;
+    box-sizing: border-box;
+  }
+}
+
+@media (max-width: 768px) {
+  .auth-section {
+    padding-top: 110px;
+    padding-bottom: 48px;
+    gap: 20px;
+
+    .auth-card.login-card {
+      width: 100%;
+      max-width: 460px;
+      padding: 20px;
+      border-radius: 16px;
+    }
+
+    .card-header {
+      margin-bottom: 20px;
+      h1 { font-size: 24px; }
+      p { font-size: 14px; }
+    }
+  }
+}

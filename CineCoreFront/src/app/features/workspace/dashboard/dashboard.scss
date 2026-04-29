@@ -179,4 +179,47 @@ $blue: #2B7FFF;
   }
 }
 
+@media (max-width: 1024px) {
+  .widgets-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .quick-stats-section .quick-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .project-summary-card {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-wrapper {
+    gap: 20px;
+  }
+
+  .project-summary-card {
+    padding: 16px;
+    gap: 16px;
+
+    .poster-placeholder {
+      width: 100%;
+      height: 140px;
+    }
+
+    .summary-info h1 {
+      font-size: 22px;
+    }
+  }
+
+  .widget-card {
+    padding: 16px;
+  }
+
+  .quick-stats-section .quick-stats-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
 

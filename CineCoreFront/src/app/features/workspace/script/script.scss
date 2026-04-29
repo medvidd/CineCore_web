@@ -22,6 +22,7 @@ $teal: #3AB9A0;
   border-radius: 24px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.5);
+  position: relative;
 }
 
 // =====================================
@@ -437,4 +438,104 @@ $teal: #3AB9A0;
 textarea.editable-notes:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+@media (max-width: 1200px) {
+  .left-panel, .right-panel {
+    width: 280px;
+  }
+}
+
+@media (max-width: 1024px) {
+  :host {
+    height: auto;
+    min-height: calc(100vh - 128px);
+    overflow: visible;
+  }
+
+  .script-wrapper {
+    height: calc(100vh - 148px);
+    border-radius: 16px;
+  }
+
+  .left-panel, .right-panel {
+    width: 240px;
+  }
+}
+
+@media (max-width: 768px) {
+  .script-wrapper {
+    height: calc(100vh - 148px);
+    min-height: 560px;
+    overflow: hidden;
+  }
+
+  .left-panel, .right-panel {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: min(86vw, 340px);
+    height: 100%;
+    z-index: 35;
+    border: none;
+    background: $bg-main;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
+    transition: transform 0.25s ease;
+  }
+
+  .left-panel {
+    left: 0;
+    transform: translateX(0);
+    border-right: 1px solid rgba(255,255,255,0.1);
+    &.closed {
+      transform: translateX(-105%);
+      width: min(86vw, 340px);
+      opacity: 1;
+      pointer-events: none;
+      height: 100%;
+    }
+  }
+
+  .right-panel {
+    right: 0;
+    transform: translateX(0);
+    border-left: 1px solid rgba(255,255,255,0.1);
+    &.closed {
+      transform: translateX(105%);
+      width: min(86vw, 340px);
+      opacity: 1;
+      pointer-events: none;
+      height: 100%;
+    }
+  }
+
+  .center-panel {
+    min-height: 100%;
+  }
+
+  .editor-toolbar {
+    height: auto;
+    padding: 10px 12px;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .editor-toolbar .toolbar-center .mode-tabs button {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .editor-toolbar .toolbar-center .mode-tabs {
+    overflow-x: auto;
+    max-width: 100%;
+  }
+
+  .script-content-area {
+    padding: 16px 0 24px;
+  }
+
+  .script-paper {
+    padding: 0 12px;
+    font-size: 14px;
+  }
 }

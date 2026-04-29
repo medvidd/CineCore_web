@@ -390,3 +390,117 @@ button:disabled {
   cursor: not-allowed !important;
   pointer-events: none;
 }
+
+@media (max-width: 1024px) {
+  .crew-summary-card {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .table-container {
+    overflow-x: auto;
+    .data-table {
+      min-width: 980px;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .crew-wrapper {
+    gap: 16px;
+  }
+
+  .crew-summary-card {
+    padding: 16px;
+
+    .summary-left h1 {
+      font-size: 20px;
+    }
+
+    .summary-center {
+      width: 100%;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+  }
+
+  .actions-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .tabs-container {
+    gap: 12px;
+    overflow-x: auto;
+    .tab-btn {
+      flex: 0 0 auto;
+      font-size: 14px;
+      padding-bottom: 12px;
+    }
+  }
+
+  .table-container {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    overflow: visible;
+
+    .data-table {
+      min-width: 0;
+
+      thead {
+        display: none;
+      }
+
+      tbody, tr, td {
+        display: block;
+        width: 100%;
+      }
+
+      tr {
+        background: $bg-card;
+        border: 0.8px solid rgba(255,255,255,0.1);
+        border-radius: 14px;
+        padding: 8px 0;
+        margin-bottom: 12px;
+      }
+
+      td {
+        border-bottom: none;
+        padding: 8px 12px;
+      }
+
+      td::before {
+        display: block;
+        font-size: 11px;
+        color: rgba(255,255,255,0.45);
+        margin-bottom: 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      td:nth-child(1)::before { content: 'Name / Email'; }
+      td:nth-child(2)::before { content: 'System Role'; }
+      td:nth-child(3)::before { content: 'Job Title'; }
+      td:nth-child(4)::before { content: 'Department'; }
+      td:nth-child(5)::before { content: 'Contact / Invited By'; }
+      td:nth-child(6)::before { content: 'Date'; }
+      td:nth-child(7)::before { content: 'Actions'; }
+
+      .user-cell {
+        align-items: flex-start;
+      }
+    }
+  }
+
+  .modal-container {
+    max-width: calc(100vw - 24px);
+    padding: 20px;
+    border-radius: 16px;
+  }
+
+  .modal-form .form-row {
+    flex-direction: column;
+    gap: 0;
+  }
+}

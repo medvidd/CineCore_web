@@ -381,3 +381,114 @@ button:disabled {
   cursor: not-allowed !important;
   pointer-events: none;
 }
+
+@media (max-width: 1024px) {
+  .resource-summary-card {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .table-container {
+    overflow-x: auto;
+    .data-table { min-width: 920px; }
+  }
+}
+
+@media (max-width: 768px) {
+  .resource-wrapper {
+    gap: 16px;
+  }
+
+  .resource-summary-card {
+    padding: 16px;
+    .summary-left h1 { font-size: 20px; }
+  }
+
+  .tabs-container {
+    overflow-x: auto;
+    .tab-btn {
+      flex: 0 0 auto;
+      padding: 10px 14px;
+      font-size: 14px;
+    }
+  }
+
+  .actions-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .locations-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .table-container {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    overflow: visible;
+
+    .data-table {
+      min-width: 0;
+      thead { display: none; }
+      tbody, tr, td {
+        display: block;
+        width: 100%;
+      }
+
+      tr {
+        background: $bg-card;
+        border: 0.8px solid rgba(255,255,255,0.1);
+        border-radius: 14px;
+        padding: 8px 0;
+        margin-bottom: 12px;
+      }
+
+      td {
+        border-bottom: none;
+        padding: 8px 12px;
+      }
+
+      td::before {
+        display: block;
+        font-size: 11px;
+        color: rgba(255,255,255,0.45);
+        margin-bottom: 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      td:nth-child(1)::before { content: 'Name'; }
+      td:nth-child(2)::before { content: 'Description'; }
+      td:nth-child(3)::before { content: 'Type'; }
+      td:nth-child(4)::before { content: 'Acquisition'; }
+      td:nth-child(5)::before { content: 'Status'; }
+      td:nth-child(6)::before { content: 'Scenes'; }
+      td:nth-child(7)::before { content: 'Actions'; }
+
+      .desc-text {
+        max-width: 100%;
+        white-space: normal;
+      }
+
+      .inline-actions {
+        justify-content: flex-start;
+        flex-wrap: wrap;
+      }
+    }
+  }
+
+  .modal-container {
+    max-width: calc(100vw - 24px);
+    max-height: calc(100vh - 24px);
+    overflow-y: auto;
+    padding: 20px;
+    border-radius: 16px;
+  }
+
+  .modal-form .form-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}

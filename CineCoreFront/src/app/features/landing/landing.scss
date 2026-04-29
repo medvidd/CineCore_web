@@ -227,3 +227,101 @@ $yellow: #E9A60F;
     color: rgba(255, 255, 255, 0.60); text-align: center; font-size: 14px; margin: 0;
   }
 }
+
+@media (max-width: 1200px) {
+  .figma-canvas {
+    width: min(100%, 1179.2px);
+    padding: 0 16px;
+    box-sizing: border-box;
+  }
+
+  .hero-section .hero-title {
+    font-size: 72px;
+    line-height: 1.05;
+  }
+
+  .hero-section .hero-subtitle {
+    width: 100%;
+    max-width: 760px;
+  }
+
+  .features-section .features-grid {
+    grid-template-columns: repeat(2, minmax(280px, 1fr));
+
+    .feature-card {
+      width: auto;
+      height: auto;
+      min-height: 210px;
+    }
+  }
+
+  .cta-section {
+    padding: 96px 24px 0;
+    .cta-box {
+      width: 100%;
+      max-width: 894px;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .hero-section {
+    padding-top: 110px;
+
+    .hero-title {
+      font-size: 44px;
+      line-height: 1.1;
+    }
+
+    .hero-subtitle {
+      font-size: 16px;
+      line-height: 1.6;
+      margin: 16px 0 28px;
+    }
+
+    .hero-buttons {
+      width: 100%;
+      flex-direction: column;
+      .btn-primary,
+      .btn-outline {
+        width: 100%;
+        max-width: 420px;
+      }
+    }
+
+    .scroll-indicator {
+      margin-top: 36px;
+    }
+  }
+
+  .features-section {
+    padding: 72px 0 0;
+
+    .features-header {
+      margin-bottom: 36px;
+      .features-title { font-size: 30px; }
+      .features-subtitle { font-size: 15px; }
+    }
+
+    .features-grid {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+  }
+
+  .cta-section {
+    padding-top: 64px;
+    .cta-box {
+      height: auto;
+      padding: 28px 16px;
+      border-radius: 16px;
+      .cta-title { font-size: 28px; text-align: center; }
+      .cta-subtitle { font-size: 15px; text-align: center; }
+    }
+  }
+
+  .footer {
+    margin-top: 56px;
+    padding: 28px 0;
+  }
+}

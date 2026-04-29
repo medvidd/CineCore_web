@@ -99,3 +99,71 @@ $yellow: #E9A60F;
     color: rgba(255, 255, 255, 0.60); text-align: center; font-size: 14px; margin: 0;
   }
 }
+
+@media (max-width: 1200px) {
+  .figma-canvas {
+    width: min(100%, 1179.2px);
+    padding: 0 16px;
+    box-sizing: border-box;
+  }
+
+  .content-section {
+    padding: 140px 24px 72px;
+  }
+}
+
+@media (max-width: 768px) {
+  .content-section {
+    padding: 100px 0 40px;
+
+    .page-header {
+      margin-bottom: 48px;
+      .title { font-size: 34px; }
+      .subtitle {
+        padding-left: 0;
+        font-size: 16px;
+      }
+    }
+
+    .steps-list {
+      gap: 24px;
+
+      .step-item {
+        gap: 14px;
+        .step-number {
+          width: 48px;
+          height: 48px;
+          min-width: 48px;
+          font-size: 18px;
+          border-radius: 12px;
+        }
+        .step-text {
+          padding-top: 0;
+          h2 { font-size: 20px; line-height: 1.35; }
+          p { font-size: 14px; line-height: 1.6; }
+        }
+      }
+    }
+
+    .features-box {
+      padding: 16px;
+      border-radius: 16px;
+      .features-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .bottom-cta {
+      padding-top: 24px;
+      .btn-primary {
+        width: 100%;
+        max-width: 420px;
+      }
+    }
+  }
+
+  .footer {
+    margin-top: 56px;
+    padding: 28px 0;
+  }
+}

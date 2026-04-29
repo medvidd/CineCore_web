@@ -151,3 +151,65 @@ $teal: #3AB9A0;
 
   .empty-state { display: flex; justify-content: center; align-items: center; height: 100%; color: rgba(255, 255, 255, 0.5); }
 }
+
+@media (max-width: 1200px) {
+  .figma-canvas {
+    width: min(100%, 1179px);
+    padding: 0 16px;
+    box-sizing: border-box;
+  }
+
+  .projects-layout {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .projects-list-panel {
+    width: 360px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .page-title-area {
+    .title-text h1 { font-size: 36px; }
+  }
+
+  .split-view {
+    flex-direction: column;
+  }
+
+  .projects-list-panel {
+    width: 100%;
+    max-height: 360px;
+  }
+
+  .project-details-panel {
+    min-height: 420px;
+  }
+}
+
+@media (max-width: 768px) {
+  .projects-layout {
+    gap: 16px;
+    padding-top: 90px;
+    padding-bottom: 16px;
+  }
+
+  .page-title-area {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+
+    .title-text h1 { font-size: 28px; }
+    .btn-new { width: 100%; }
+  }
+
+  .projects-list-panel {
+    border-radius: 16px;
+    .filter-header { padding: 16px; }
+  }
+
+  .project-details-panel {
+    border-radius: 16px;
+  }
+}

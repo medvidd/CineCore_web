@@ -1496,3 +1496,93 @@ button:disabled {
   pointer-events: none;
   filter: none !important;
 }
+
+@media (max-width: 1024px) {
+  .planner-wrapper {
+    flex-direction: column;
+    overflow: auto;
+  }
+
+  .scene-pool-panel {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid $border;
+    padding: 12px 0;
+
+    .scenes-scroll-area {
+      max-height: 260px;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .planner-wrapper {
+    overflow: hidden;
+  }
+
+  .scene-pool-panel {
+    padding: 10px 0;
+
+    .pool-header {
+      padding: 0 12px;
+    }
+
+    .scenes-scroll-area {
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: minmax(220px, 75vw);
+      gap: 10px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      max-height: none;
+      padding: 0 12px 8px;
+    }
+  }
+
+  .board-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .board-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .view-toggle {
+    width: 100%;
+    button { flex: 1; }
+  }
+
+  .days-scroll-container {
+    padding: 12px;
+    gap: 10px;
+    scroll-snap-type: x mandatory;
+  }
+
+  .shoot-day-column {
+    width: min(88vw, 320px);
+    scroll-snap-align: start;
+  }
+
+  .auto-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+  }
+
+  .modal-content {
+    max-width: calc(100vw - 12px);
+    max-height: calc(100vh - 12px);
+    padding: 20px;
+    border-radius: 16px;
+  }
+
+  .modal-content .form-row {
+    flex-direction: column;
+    gap: 0;
+  }
+}
