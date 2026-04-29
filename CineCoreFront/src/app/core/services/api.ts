@@ -186,6 +186,9 @@ export class Api {
   quickCreateResource(projectId: number, type: string, name: string) {
     return this.http.post<any>(`${this.SCRIPT_API_URL}/project/${projectId}/${type}`, { name });
   }
+  mergeSceneIntoPrevious(sceneId: number): Observable<any> {
+    return this.http.post(`${this.SCRIPT_API_URL}/scene/${sceneId}/merge-into-previous`, {});
+  }
 
 
   // CASTING

@@ -635,5 +635,74 @@ namespace CineCoreBack.Controllers
 
             return TimeSpan.FromSeconds(Math.Round(totalSeconds));
         }
+
+        [HttpPost("scene/{sceneId}/merge-into-previous")]
+        public async Task<IActionResult> MergeIntoPrevious(int sceneId)
+        {
+            var scene = await _context.Scenes
+                .Include(s => s.ScriptElements)
+                .Include(s => s.SceneResources)
+                .FirstOrDefaultAsync(s => s.Id == sceneId);
+
+            if (scene == null) return NotFound();
+
+            var prevScene = await _context.Scenes
+                .Include(s => s.ScriptElements)
+                .Include(s => s.SceneResources)
+                .FirstOrDefaultAsync(s => s.ProjectId == scene.ProjectId
+                                       && s.SequenceNum == scene.SequenceNum - 1);
+
+            if (prevScene == null)
+                return BadRequest(new { message = "Cannot merge: this is the first scene." });
+
+            // Крок 1: переносимо ScriptElements
+            int maxOrder = prevScene.ScriptElements.Any()
+                ? prevScene.ScriptElements.Max(e => e.OrderIndex)
+                : -1;
+
+            foreach (var el in scene.ScriptElements.OrderBy(e => e.OrderIndex))
+            {
+                el.SceneId = prevScene.Id;
+                el.OrderIndex = ++maxOrder;
+            }
+
+            // Крок 2: переносимо SceneResources (без дублів)
+            foreach (var sr in scene.SceneResources.ToList())
+            {
+                bool alreadyLinked = prevScene.SceneResources.Any(x => x.ResourceId == sr.ResourceId);
+                if (!alreadyLinked)
+                {
+                    _context.SceneResources.Add(new SceneResource
+                    {
+                        SceneId = prevScene.Id,
+                        ResourceId = sr.ResourceId
+                    });
+                }
+                _context.SceneResources.Remove(sr);
+            }
+
+            // ✅ Зберігаємо переміщення ДО видалення — інакше EF скасує зміни
+            await _context.SaveChangesAsync();
+
+            // Крок 3: видаляємо порожню сцену
+            int deletedSeqNum = scene.SequenceNum;
+            int projectId = scene.ProjectId;
+            _context.Scenes.Remove(scene);
+            await _context.SaveChangesAsync();
+
+            // Крок 4: перенумеровуємо сцени після видаленої
+            var trailingScenes = await _context.Scenes
+                .Where(s => s.ProjectId == projectId && s.SequenceNum > deletedSeqNum)
+                .OrderBy(s => s.SequenceNum)
+                .ToListAsync();
+
+            foreach (var s in trailingScenes)
+            {
+                s.SequenceNum--;
+            }
+            await _context.SaveChangesAsync();
+
+            return Ok(new { mergedIntoSceneId = prevScene.Id });
+        }
     }
 }

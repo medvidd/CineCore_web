@@ -211,7 +211,7 @@
                       <div class="dot"></div><div class="dot"></div>
                     </div>
 
-                    @if (openCharMenuId === char.id) {
+                    @if (openCharMenuId !== null && openCharMenuId === char.id) {
                       <div class="popover-menu"
                            [style.top.px]="menuTop"
                            [style.right.px]="menuRight"

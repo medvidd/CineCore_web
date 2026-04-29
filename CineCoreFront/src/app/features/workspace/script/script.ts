@@ -261,24 +261,22 @@ export class Script implements OnInit {
       this.parseRawTextToBlocks();
     }
 
-    // НОВЕ: Перевіряємо локально, чи є в цій сцені більше одного заголовка
-    const willSplit = this.blocks.filter(b => b.type === 'scene_heading').length > 1;
+    // Збираємо ТІЛЬКИ блоки цієї сцени
+    const blocksToSave = this.sceneViewMode === 'all'
+      ? this.blocks.filter(b => b.sceneId === sceneId)
+      : this.blocks;
 
-    this.api.autoSaveScript(sceneId, this.projectId, this.blocks).subscribe({
+    const willSplit = blocksToSave.filter(b => b.type === 'scene_heading').length > 1;
+
+    // ✅ передаємо blocksToSave, а не this.blocks
+    this.api.autoSaveScript(sceneId, this.projectId, blocksToSave).subscribe({
       next: (res: any) => {
-        // НОВЕ: Якщо бекенд розрізав сцену АБО ми передбачили це локально
         if (res.wasSplit || willSplit) {
-          // 1. Оновлюємо ліву панель (з'явилися нові сцени зі зсунутими номерами)
           this.loadScenesList();
-
-          // 2. Перемикаємо режими, щоб показати користувачу результат
-          this.sceneViewMode = 'all';  // Вмикаємо Full Script
-          this.viewMode = 'breakdown'; // Виходимо з режиму набору тексту
-
-          // 3. Завантажуємо весь оновлений сценарій
+          this.sceneViewMode = 'all';
+          this.viewMode = 'breakdown';
           this.loadData();
         } else {
-          // Стара логіка: звичайне збереження без розрізання
           this.patchSceneDuration(sceneId, res.estimatedDuration);
         }
       }
@@ -286,12 +284,16 @@ export class Script implements OnInit {
   }
 
   // Оновлює назву сцени у списку зліва на основі блоку scene_heading
-  private syncSidebarTitle() {
-    // Знаходимо блок заголовка (зазвичай він перший)
-    const headingBlock = this.blocks.find(b => b.type === 'scene_heading');
+  private syncSidebarTitle(targetSceneId?: number) {
+    const sceneId = targetSceneId ?? this.sceneId;
+
+    const relevantBlocks = this.sceneViewMode === 'all'
+      ? this.blocks.filter(b => b.sceneId === sceneId)
+      : this.blocks;
+
+    const headingBlock = relevantBlocks.find(b => b.type === 'scene_heading');
     if (headingBlock) {
-      // Знаходимо цю ж сцену у списку зліва
-      const sidebarScene = this.scenes.find(s => s.id === this.sceneId);
+      const sidebarScene = this.scenes.find(s => s.id === sceneId);
       if (sidebarScene) {
         sidebarScene.sluglineText = headingBlock.content;
       }
@@ -624,20 +626,62 @@ export class Script implements OnInit {
   }
 
   setBlockType(block: ScriptBlock, newType: BlockType) {
+    // зберігаємо ДО зміни
+    const oldType = block.type;
     block.type = newType;
     this.openTypeMenuId = null;
+
+    const targetSceneId = block.sceneId || this.sceneId;
+
     this.updateColors();
-    this.syncSidebarTitle();
+    this.syncSidebarTitle(targetSceneId); // передаємо правильну сцену
 
-    // НОВЕ: Рахуємо, скільки заголовків стало у сцені після зміни типу
-    const headingsCount = this.blocks.filter(b => b.type === 'scene_heading').length;
+    // --- MERGE: прибрали scene_heading ---
+    if (oldType === 'scene_heading' && newType !== 'scene_heading') {
+      const sceneIndex = this.scenes.findIndex(s => s.id === targetSceneId);
 
-    if (headingsCount > 1) {
-      // Якщо ми створили другий заголовок — примусово відправляємо на бекенд,
-      // щоб він миттєво розрізав сцену і перевів нас у Full Script
-      this.performManualSave();
+      // Перша сцена — немає попередньої, просто зберігаємо
+      if (sceneIndex <= 0) {
+        this.autosaveSubject.next();
+        return;
+      }
+
+      const prevScene = this.scenes[sceneIndex - 1];
+
+      // Локально: переносимо всі блоки цієї сцени до попередньої
+      this.blocks = this.blocks.map(b =>
+        b.sceneId === targetSceneId ? { ...b, sceneId: prevScene.id } : b
+      );
+      this.scenes = this.scenes.filter(s => s.id !== targetSceneId);
+      this.sceneId = prevScene.id;
+
+      // Відправляємо на бекенд і після успіху синхронізуємо стан
+      this.api.mergeSceneIntoPrevious(targetSceneId).subscribe({
+        next: () => {
+          this.api.getProjectScenes(this.projectId).subscribe({
+            next: (data) => {
+              this.scenes = data;
+              this.loadData();
+            }
+          });
+        },
+        error: (err) => console.error('Merge failed', err)
+      });
+
+      return;
+    }
+
+    // --- SPLIT: з'явився другий заголовок у сцені ---
+    const sceneBlocks = this.sceneViewMode === 'all'
+      ? this.blocks.filter(b => b.sceneId === targetSceneId)
+      : this.blocks;
+
+    const headingsCount = sceneBlocks.filter(b => b.type === 'scene_heading').length;
+
+    if (headingsCount > 1 || this.sceneViewMode === 'all') {
+      // У Full Script — завжди зберігаємо вручну одразу (autosave там заблокований)
+      this.performManualSave(targetSceneId);
     } else {
-      // Інакше — просто ставимо в чергу на звичайне автозбереження
       this.autosaveSubject.next();
     }
   }
@@ -788,6 +832,8 @@ export class Script implements OnInit {
 
   // ОНОВІТЬ ЦЕЙ МЕТОД
   toggleCharMenu(event: MouseEvent, id: string) {
+    if (id == null) return; // не відкриваємо меню для ще не збережених персонажів
+
     if (this.openCharMenuId === id) {
       this.openCharMenuId = null;
     } else {
