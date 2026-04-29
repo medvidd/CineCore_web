@@ -113,13 +113,29 @@ public class PlannerController : ControllerBase
     public async Task<IActionResult> CreateShootDay(int projectId, [FromBody] CreateShootDayDto dto)
     {
         if (!DateTime.TryParse(dto.ShootDate, out var baseDate))
-            return BadRequest("Недійсний формат дати (ShootDate).");
+            return BadRequest(new { message = "Invalid date format." });
+
+        if (baseDate.Date < DateTime.UtcNow.Date)
+        {
+            return BadRequest(new { message = "Shoot date cannot be in the past." });
+        }
 
         TimeSpan start = TimeSpan.TryParse(dto.ShiftStart, out var s) ? s : new TimeSpan(9, 0, 0);
         TimeSpan end = TimeSpan.TryParse(dto.ShiftEnd, out var e) ? e : new TimeSpan(19, 0, 0);
 
         DateTime shiftStartUtc = DateTime.SpecifyKind(baseDate.Date.Add(start), DateTimeKind.Utc);
         DateTime shiftEndUtc = DateTime.SpecifyKind(baseDate.Date.Add(end), DateTimeKind.Utc);
+
+        // ВАЛІДАЦІЯ БД: Перевірка на унікальність Unit + Date + Time
+        bool duplicateExists = await _context.ShootDays.AnyAsync(sd =>
+            sd.ProjectId == projectId &&
+            sd.UnitName == dto.Unit &&
+            sd.ShiftStart == shiftStartUtc);
+
+        if (duplicateExists)
+        {
+            return BadRequest(new { message = $"A shoot day for '{dto.Unit}' starting at {dto.ShiftStart} on this date already exists." });
+        }
 
         var shootDay = new ShootDay
         {
@@ -150,22 +166,18 @@ public class PlannerController : ControllerBase
 
         if (day == null) return NotFound();
 
-        if (!string.IsNullOrEmpty(dto.Unit)) day.UnitName = dto.Unit;
-        if (!string.IsNullOrEmpty(dto.Status)) day.Status = dto.Status;
-        day.GeneralNotes = dto.GeneralNotes;
-
-        if (dto.BaseLocationId.HasValue)
-            day.BaseLocationId = dto.BaseLocationId;
-
-        // Визначаємо базову дату: або передана нова, або залишаємо стару
+        // Визначаємо базову дату
         DateTime baseDate = day.ShiftStart.Date;
         if (!string.IsNullOrEmpty(dto.ShootDate) &&
             DateTime.TryParse(dto.ShootDate, out var parsedDate))
         {
+            if (parsedDate.Date != baseDate.Date && parsedDate.Date < DateTime.UtcNow.Date)
+            {
+                return BadRequest(new { message = "New shoot date cannot be in the past." });
+            }
             baseDate = parsedDate.Date;
         }
 
-        // Визначаємо час початку: або передано нове значення, або залишаємо старе
         TimeSpan newStart = day.ShiftStart.TimeOfDay;
         if (!string.IsNullOrEmpty(dto.ShiftStart) &&
             TimeSpan.TryParse(dto.ShiftStart, out var parsedStart))
@@ -173,7 +185,6 @@ public class PlannerController : ControllerBase
             newStart = parsedStart;
         }
 
-        // Визначаємо час кінця: або передано нове значення, або залишаємо старе
         TimeSpan newEnd = day.ShiftEnd.TimeOfDay;
         if (!string.IsNullOrEmpty(dto.ShiftEnd) &&
             TimeSpan.TryParse(dto.ShiftEnd, out var parsedEnd))
@@ -181,8 +192,31 @@ public class PlannerController : ControllerBase
             newEnd = parsedEnd;
         }
 
-        day.ShiftStart = DateTime.SpecifyKind(baseDate.Add(newStart), DateTimeKind.Utc);
-        day.ShiftEnd = DateTime.SpecifyKind(baseDate.Add(newEnd), DateTimeKind.Utc);
+        DateTime proposedShiftStart = DateTime.SpecifyKind(baseDate.Add(newStart), DateTimeKind.Utc);
+        DateTime proposedShiftEnd = DateTime.SpecifyKind(baseDate.Add(newEnd), DateTimeKind.Utc);
+        string proposedUnit = string.IsNullOrEmpty(dto.Unit) ? day.UnitName : dto.Unit;
+
+        // ВАЛІДАЦІЯ БД: Перевірка на унікальність при оновленні
+        bool duplicateExists = await _context.ShootDays.AnyAsync(sd =>
+            sd.ProjectId == projectId &&
+            sd.Id != dayId && // Виключаємо поточний день
+            sd.UnitName == proposedUnit &&
+            sd.ShiftStart == proposedShiftStart);
+
+        if (duplicateExists)
+        {
+            return BadRequest(new { message = $"Another shoot day for '{proposedUnit}' starting at {newStart:hh\\:mm} on this date already exists." });
+        }
+
+        day.UnitName = proposedUnit;
+        day.ShiftStart = proposedShiftStart;
+        day.ShiftEnd = proposedShiftEnd;
+
+        if (!string.IsNullOrEmpty(dto.Status)) day.Status = dto.Status;
+        day.GeneralNotes = dto.GeneralNotes;
+
+        if (dto.BaseLocationId.HasValue)
+            day.BaseLocationId = dto.BaseLocationId;
 
         await _context.SaveChangesAsync();
         return Ok(day);
@@ -252,7 +286,14 @@ public class PlannerController : ControllerBase
     {
         var result = new AutoScheduleResultDto();
 
-        // 1. Завантажуємо всі незаплановані сцени з усіма зв'язками
+        if (req.Mode == "generate" && !string.IsNullOrEmpty(req.StartDate))
+        {
+            if (DateTime.TryParse(req.StartDate, out var sDate) && sDate.Date < DateTime.UtcNow.Date)
+            {
+                return BadRequest(new { message = "Auto-schedule start date cannot be in the past." });
+            }
+        }
+
         var unscheduledScenes = await _context.Scenes
             .Where(s => s.ProjectId == projectId && !s.SceneSchedules.Any())
             .Include(s => s.SceneResources)
@@ -269,7 +310,6 @@ public class PlannerController : ControllerBase
             return Ok(result);
         }
 
-        // 2. Розділяємо сцени: з локацією та без неї
         var scenesWithLocation = unscheduledScenes
             .Where(s => GetPrimaryLocationId(s) != null)
             .ToList();
@@ -280,13 +320,11 @@ public class PlannerController : ControllerBase
 
         if (!scenesWithLocation.Any())
         {
-            result.Message = "No scenes with assigned location resources found. " +
-                             "Assign locations to scenes before auto-scheduling.";
+            result.Message = "No scenes with assigned location resources found. Assign locations to scenes before auto-scheduling.";
             result.UnscheduledCount = unscheduledScenes.Count;
             return Ok(result);
         }
 
-        // 3. Формуємо список цільових знімальних днів
         List<ShootDay> targetDays;
 
         if (req.Mode == "fill")
@@ -299,7 +337,6 @@ public class PlannerController : ControllerBase
                         .ThenInclude(s => s.SceneResources)
                             .ThenInclude(sr => sr.Resource)
                                 .ThenInclude(r => r.Location)
-                // ДОДАНО: Завантажуємо ролі для вже існуючих сцен, щоб враховувати їх при перетині акторів
                 .Include(sd => sd.SceneSchedules)
                     .ThenInclude(ss => ss.Scene)
                         .ThenInclude(s => s.ScriptElements)
@@ -320,15 +357,13 @@ public class PlannerController : ControllerBase
             }
             await _context.SaveChangesAsync();
         }
-        else // generate
+        else
         {
             if (!DateTime.TryParse(req.StartDate, out var startDate))
                 startDate = DateTime.UtcNow.Date;
 
-            TimeSpan shiftStart = TimeSpan.TryParse(req.DefaultShiftStart, out var ss)
-                ? ss : new TimeSpan(9, 0, 0);
-            TimeSpan shiftEnd = TimeSpan.TryParse(req.DefaultShiftEnd, out var se)
-                ? se : new TimeSpan(19, 0, 0);
+            TimeSpan shiftStart = TimeSpan.TryParse(req.DefaultShiftStart, out var ss) ? ss : new TimeSpan(9, 0, 0);
+            TimeSpan shiftEnd = TimeSpan.TryParse(req.DefaultShiftEnd, out var se) ? se : new TimeSpan(19, 0, 0);
 
             double effectiveShiftMinutes = (shiftEnd - shiftStart).TotalMinutes;
             if (effectiveShiftMinutes <= 0) effectiveShiftMinutes = 600;
@@ -346,11 +381,32 @@ public class PlannerController : ControllerBase
 
             for (int i = 0; i < daysNeeded; i++)
             {
-                if (req.SkipWeekends)
+                // РОЗУМНА ПЕРЕВІРКА ДАТИ ДЛЯ ГЕНЕРАТОРА: Пропускаємо зайняті дні
+                bool isUniqueDate = false;
+                while (!isUniqueDate)
                 {
-                    while (currentDate.DayOfWeek == DayOfWeek.Saturday ||
-                           currentDate.DayOfWeek == DayOfWeek.Sunday)
-                        currentDate = currentDate.AddDays(1);
+                    if (req.SkipWeekends)
+                    {
+                        while (currentDate.DayOfWeek == DayOfWeek.Saturday ||
+                               currentDate.DayOfWeek == DayOfWeek.Sunday)
+                            currentDate = currentDate.AddDays(1);
+                    }
+
+                    var proposedStart = DateTime.SpecifyKind(currentDate.Add(shiftStart), DateTimeKind.Utc);
+
+                    bool existsInDb = await _context.ShootDays.AnyAsync(sd =>
+                        sd.ProjectId == projectId &&
+                        sd.UnitName == "MAIN UNIT" &&
+                        sd.ShiftStart == proposedStart);
+
+                    if (existsInDb)
+                    {
+                        currentDate = currentDate.AddDays(1); // День зайнятий, пробуємо наступний
+                    }
+                    else
+                    {
+                        isUniqueDate = true;
+                    }
                 }
 
                 var newDay = new ShootDay
@@ -371,7 +427,6 @@ public class PlannerController : ControllerBase
             await _context.SaveChangesAsync();
         }
 
-        // 4. ОРИГІНАЛЬНЕ СОРТУВАННЯ: Зберігаємо сценарний порядок (Continuity)
         IEnumerable<Scene> sortedScenes;
 
         if (req.GroupBy == "location")
@@ -379,14 +434,13 @@ public class PlannerController : ControllerBase
             sortedScenes = scenesWithLocation
                 .GroupBy(s => GetPrimaryLocationId(s))
                 .OrderByDescending(g => g.Sum(s => GetShootMinutes(s)))
-                .SelectMany(g => g.OrderBy(s => s.SequenceNum)); // Жодного сортування за розміром! Тільки порядок.
+                .SelectMany(g => g.OrderBy(s => s.SequenceNum));
         }
         else
         {
             sortedScenes = scenesWithLocation.OrderBy(s => s.SequenceNum);
         }
 
-        // 5. Ініціалізація стану кожного дня перед розподілом
         double maxShiftMinutes = req.MaxShiftMinutes > 0 ? req.MaxShiftMinutes : 600;
 
         var usedMinutesPerDay = new Dictionary<int, double>();
@@ -420,7 +474,6 @@ public class PlannerController : ControllerBase
             lastLocationPerDay[day.Id] = lastLocId;
         }
 
-        // 6. ОСНОВНИЙ АЛГОРИТМ РОЗПОДІЛУ З УРАХУВАННЯМ АКТОРІВ
         var newSchedules = new List<SceneSchedule>();
         int scheduledCount = 0;
 
@@ -429,7 +482,6 @@ public class PlannerController : ControllerBase
             double shootMins = GetShootMinutes(scene);
             int? sceneLocId = GetPrimaryLocationId(scene);
 
-            // Отримуємо список ID ролей (акторів) для поточної сцени
             var sceneRoleIds = scene.ScriptElements
                 .Where(se => se.Role != null)
                 .Select(se => se.Role!.Id)
@@ -456,7 +508,6 @@ public class PlannerController : ControllerBase
                 daySearchOrder = targetDays.OrderBy(d => d.ShiftStart);
             }
 
-            // ЗМІНА: Замість foundDay шукаємо bestDay за кількістю спільних акторів
             ShootDay? bestDay = null;
             int maxActorOverlap = -1;
 
@@ -485,10 +536,8 @@ public class PlannerController : ControllerBase
 
                 if (fitsInDay || isFirstSceneInDay)
                 {
-                    // РАХУЄМО ПЕРЕТИН АКТОРІВ
                     var dayActors = new HashSet<int>();
 
-                    // 1. Актори з уже існуючих у дні сцен (для fill-режиму)
                     if (day.SceneSchedules != null)
                     {
                         foreach (var ss in day.SceneSchedules.Where(x => x.Scene != null && x.Scene.ScriptElements != null))
@@ -500,7 +549,6 @@ public class PlannerController : ControllerBase
                         }
                     }
 
-                    // 2. Актори зі сцен, які ми щойно додали в цей день під час поточної генерації
                     var newlyAddedScenesForDay = newSchedules
                         .Where(ss => ss.ShootDayId == day.Id)
                         .Select(ss => ss.SceneId)
@@ -514,10 +562,8 @@ public class PlannerController : ControllerBase
 
                     foreach (var a in newActors) dayActors.Add(a);
 
-                    // Кількість акторів поточної сцени, які ВЖЕ працюють у цей день
                     int actorOverlap = sceneRoleIds.Intersect(dayActors).Count();
 
-                    // Якщо це найкращий збіг по акторах — запам'ятовуємо цей день
                     if (bestDay == null || actorOverlap > maxActorOverlap)
                     {
                         bestDay = day;
@@ -528,12 +574,9 @@ public class PlannerController : ControllerBase
 
             if (bestDay == null)
             {
-                // Повертаємо оригінальний break. 
-                // Якщо йдемо по порядку і сцена не влізла — зупиняємось, щоб не ламати послідовність.
                 break;
             }
 
-            // Додаємо сцену в НАЙКРАЩИЙ знайдений день
             newSchedules.Add(new SceneSchedule
             {
                 SceneId = scene.Id,
@@ -541,7 +584,6 @@ public class PlannerController : ControllerBase
                 SceneOrder = nextOrderPerDay[bestDay.Id]++
             });
 
-            // Оновлюємо стан дня
             int? prevLocId = lastLocationPerDay[bestDay.Id];
             bool locSwitch = prevLocId.HasValue && sceneLocId.HasValue && prevLocId.Value != sceneLocId.Value
                              && nextOrderPerDay[bestDay.Id] > 1;
@@ -553,11 +595,9 @@ public class PlannerController : ControllerBase
             scheduledCount++;
         }
 
-        // 7. Зберігаємо нові записи розкладу
         _context.SceneSchedules.AddRange(newSchedules);
         await _context.SaveChangesAsync();
 
-        // 8. GENERATE-режим: видаляємо порожні дні
         var usedDayIds = newSchedules.Select(ss => ss.ShootDayId).Distinct().ToHashSet();
 
         if (req.Mode == "generate")
@@ -573,7 +613,6 @@ public class PlannerController : ControllerBase
             }
         }
 
-        // 9. Формуємо відповідь (як в оригіналі)
         result.TotalScenesScheduled = scheduledCount;
 
         int failedToSchedule = scenesWithLocation.Count - scheduledCount;
@@ -626,9 +665,6 @@ public class PlannerController : ControllerBase
         return Ok(result);
     }
 
-    // --------------------------------------------------------
-    // CONFIRM / REJECT GENERATED DAY
-    // --------------------------------------------------------
     [HttpPost("project/{projectId}/confirm-day")]
     public async Task<IActionResult> ConfirmDay(int projectId, [FromBody] ConfirmDayDto dto)
     {
@@ -655,9 +691,6 @@ public class PlannerController : ControllerBase
         return NoContent();
     }
 
-    // --------------------------------------------------------
-    // CONFIRM ALL GENERATED
-    // --------------------------------------------------------
     [HttpPost("project/{projectId}/confirm-all-generated")]
     public async Task<IActionResult> ConfirmAllGenerated(int projectId)
     {
@@ -680,13 +713,6 @@ public class PlannerController : ControllerBase
     // --------------------------------------------------------
     // ДОПОМІЖНІ МЕТОДИ
     // --------------------------------------------------------
-
-    /// <summary>
-    /// Повертає час зйомки сцени в хвилинах.
-    /// Shoot time = screen time × ShootingRatio (6x).
-    /// Мінімум DefaultScreenMinutes якщо duration не задано.
-    /// </summary>
-    /// 
     private static double GetShootMinutes(Scene scene)
     {
         double screenMinutes = scene.EstimatedDuration.HasValue
@@ -719,7 +745,6 @@ public class PlannerController : ControllerBase
         if (scene.EstimatedDuration.HasValue)
             durationStr = FormatDuration(scene.EstimatedDuration.Value);
 
-        // Location: спочатку з resources, fallback — зі Slugline
         string locationName = scene.SceneResources
             .Where(sr => sr.Resource?.Location != null)
             .Select(sr => sr.Resource.Location.LocationName)
@@ -728,7 +753,6 @@ public class PlannerController : ControllerBase
         if (string.IsNullOrEmpty(locationName))
             locationName = ParseLocationFromSlugline(scene.SluglineText);
 
-        // Cast
         var uniqueRoles = scene.ScriptElements
             .Where(se => se.Role != null && !string.IsNullOrEmpty(se.Role.RoleName))
             .Select(se => se.Role)

@@ -34,6 +34,8 @@ export class Planner implements OnInit {
 
   // Модалка СТВОРЕННЯ
   isModalOpen = false;
+  isDayLoading = false;
+  dayServerError: string | null = null;
   newDayForm = {
     unit: 'MAIN UNIT', shootDate: '',
     shiftStart: '09:00', shiftEnd: '19:00',
@@ -42,6 +44,7 @@ export class Planner implements OnInit {
 
   // Модалка РЕДАГУВАННЯ
   isEditModalOpen = false;
+  editDayServerError: string | null = null;
   editingDay: any = null;
   editDayForm = {
     unit: '', shootDate: '',
@@ -60,6 +63,7 @@ export class Planner implements OnInit {
   // AUTO-SCHEDULE MODAL
   isAutoModalOpen = false;
   isAutoLoading = false;
+  autoServerError: string | null = null;
   autoScheduleResult: any = null;
 
   autoForm = {
@@ -100,9 +104,12 @@ export class Planner implements OnInit {
       this.cdr.detectChanges();
     });
     const today = new Date();
-    this.displayMonth = today.getMonth(); this.displayYear = today.getFullYear();
-    this.editDisplayMonth = today.getMonth(); this.editDisplayYear = today.getFullYear();
-    this.generateCalendar(); this.generateEditCalendar();
+    this.displayMonth = today.getMonth();
+    this.displayYear = today.getFullYear();
+    this.editDisplayMonth = today.getMonth();
+    this.editDisplayYear = today.getFullYear();
+    this.generateCalendar();
+    this.generateEditCalendar();
   }
 
   checkActorRoles() {
@@ -138,10 +145,16 @@ export class Planner implements OnInit {
     });
   }
 
-  // ВИПРАВЛЕННЯ: фільтр локацій тепер показує лише:
-  //   - "All Locations" (завжди перший)
-  //   - реальні назви локацій тільки з scenes що мають hasLocationResource === true
-  //   - "No Location" (для сцен без прив'язаного location-ресурсу)
+  // Обробка помилок
+  private getErrorMessage(err: any): string {
+    if (err.error && err.error.message) return err.error.message;
+    if (err.error && err.error.errors) {
+      const firstKey = Object.keys(err.error.errors)[0];
+      return err.error.errors[firstKey][0];
+    }
+    return typeof err.error === 'string' ? err.error : "An unknown error occurred.";
+  }
+
   get uniqueLocations(): string[] {
     const locs = this.board.scenePool
       .filter((s: any) => s.hasLocationResource === true)
@@ -165,7 +178,6 @@ export class Planner implements OnInit {
         || scene.title?.toLowerCase().includes(q)
         || scene.displayId?.toLowerCase().includes(q);
 
-      // ВИПРАВЛЕННЯ: фільтр за локацією з підтримкою "No Location"
       let matchesLoc: boolean;
       if (this.selectedLocation === 'All Locations') {
         matchesLoc = true;
@@ -202,17 +214,39 @@ export class Planner implements OnInit {
     });
   }
 
-  openModal() { this.isModalOpen = true; }
-  closeModal() { this.isModalOpen = false; }
-  submitNewDay() {
-    if (!this.newDayForm.shootDate) return;
+  openModal() {
+    this.newDayForm = { unit: 'MAIN UNIT', shootDate: '', shiftStart: '09:00', shiftEnd: '19:00', baseLocationId: null, notes: '' };
+    this.selectedDateObj = null;
+    this.dayServerError = null;
+    this.isDayLoading = false;
+    this.isModalOpen = true;
+  }
+
+  closeModal() {
+    this.isModalOpen = false;
+  }
+
+  submitNewDay(isValid: boolean | null) {
+    if (!isValid || !this.newDayForm.shootDate) return;
+    this.isDayLoading = true;
+    this.dayServerError = null;
     this.api.createShootDay(this.projectId, this.newDayForm).subscribe({
-      next: () => { this.closeModal(); this.loadBoard(); }
+      next: () => {
+        this.closeModal();
+        this.loadBoard();
+      },
+      error: (err) => {
+        this.isDayLoading = false;
+        this.dayServerError = this.getErrorMessage(err);
+        this.cdr.detectChanges();
+      }
     });
   }
 
   openEditModal(day: any) {
     this.editingDay = day;
+    this.editDayServerError = null;
+    this.isDayLoading = false;
     const shootDateStr: string = day.shootDateIso ?? '';
     if (shootDateStr) {
       const [year, month, dayNum] = shootDateStr.split('-').map(Number);
@@ -238,10 +272,15 @@ export class Planner implements OnInit {
     this.isEditModalOpen = true;
   }
 
-  closeEditModal() { this.isEditModalOpen = false; this.editingDay = null; }
+  closeEditModal() {
+    this.isEditModalOpen = false;
+    this.editingDay = null;
+  }
 
-  submitEditDay() {
-    if (!this.editingDay) return;
+  submitEditDay(isValid: boolean | null) {
+    if (!this.editingDay || !isValid) return;
+    this.isDayLoading = true;
+    this.editDayServerError = null;
 
     const payload: any = { unit: this.editDayForm.unit, generalNotes: this.editDayForm.notes };
 
@@ -251,12 +290,20 @@ export class Planner implements OnInit {
     if (this.editDayForm.baseLocationId) payload.baseLocationId = this.editDayForm.baseLocationId;
 
     this.api.updateShootDay(this.projectId, this.editingDay.id, payload).subscribe({
-      next: () => { this.closeEditModal(); this.loadBoard(); }
+      next: () => {
+        this.closeEditModal();
+        this.loadBoard();
+      },
+      error: (err) => {
+        this.isDayLoading = false;
+        this.editDayServerError = this.getErrorMessage(err);
+        this.cdr.detectChanges();
+      }
     });
   }
 
   deleteDay(dayId: number) {
-    if (confirm('Видалити цей знімальний день? Усі сцени повернуться в пул.')) {
+    if (confirm('Delete this shoot day? All scenes will return to the pool.')) {
       this.api.deleteShootDay(this.projectId, dayId).subscribe(() => this.loadBoard());
     }
   }
@@ -331,24 +378,114 @@ export class Planner implements OnInit {
     return weeks;
   }
 
-  generateCalendar() { this.calendarWeeks = this.buildCalendarWeeks(this.displayYear, this.displayMonth); }
-  generateEditCalendar() { this.editCalendarWeeks = this.buildCalendarWeeks(this.editDisplayYear, this.editDisplayMonth); }
-  prevMonth() { if (this.displayMonth === 0) { this.displayMonth = 11; this.displayYear--; } else { this.displayMonth--; } this.generateCalendar(); }
-  nextMonth() { if (this.displayMonth === 11) { this.displayMonth = 0; this.displayYear++; } else { this.displayMonth++; } this.generateCalendar(); }
-  prevEditMonth() { if (this.editDisplayMonth === 0) { this.editDisplayMonth = 11; this.editDisplayYear--; } else { this.editDisplayMonth--; } this.generateEditCalendar(); }
-  nextEditMonth() { if (this.editDisplayMonth === 11) { this.editDisplayMonth = 0; this.editDisplayYear++; } else { this.editDisplayMonth++; } this.generateEditCalendar(); }
+  generateCalendar() {
+    this.calendarWeeks = this.buildCalendarWeeks(this.displayYear, this.displayMonth);
+  }
+  generateEditCalendar() {
+    this.editCalendarWeeks = this.buildCalendarWeeks(this.editDisplayYear, this.editDisplayMonth);
+  }
+
+  prevMonth() {
+    if (this.displayMonth === 0) {
+      this.displayMonth = 11;
+      this.displayYear--;
+    } else {
+      this.displayMonth--;
+    }
+    this.generateCalendar();
+  }
+
+  nextMonth() {
+    if (this.displayMonth === 11) {
+      this.displayMonth = 0;
+      this.displayYear++;
+    } else {
+      this.displayMonth++;
+    }
+    this.generateCalendar();
+  }
+
+  prevEditMonth() {
+    if (this.editDisplayMonth === 0) {
+      this.editDisplayMonth = 11;
+      this.editDisplayYear--;
+    } else {
+      this.editDisplayMonth--;
+    }
+    this.generateEditCalendar();
+  }
+
+  nextEditMonth() {
+    if (this.editDisplayMonth === 11) {
+      this.editDisplayMonth = 0;
+      this.editDisplayYear++;
+    } else {
+      this.editDisplayMonth++;
+    }
+    this.generateEditCalendar();
+  }
 
   private formatDate(date: Date): string {
     return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
   }
 
-  selectDate(day: number | null) { if (!day) return; this.selectedDateObj = new Date(this.displayYear, this.displayMonth, day); this.newDayForm.shootDate = this.formatDate(this.selectedDateObj); }
-  selectEditDate(day: number | null) { if (!day) return; this.editSelectedDateObj = new Date(this.editDisplayYear, this.editDisplayMonth, day); this.editDayForm.shootDate = this.formatDate(this.editSelectedDateObj); }
-  isToday(day: number): boolean { const t = new Date(); return day === t.getDate() && this.displayMonth === t.getMonth() && this.displayYear === t.getFullYear(); }
-  isEditToday(day: number): boolean { const t = new Date(); return day === t.getDate() && this.editDisplayMonth === t.getMonth() && this.editDisplayYear === t.getFullYear(); }
-  isSelected(day: number): boolean { if (!this.selectedDateObj) return false; return day === this.selectedDateObj.getDate() && this.displayMonth === this.selectedDateObj.getMonth() && this.displayYear === this.selectedDateObj.getFullYear(); }
-  isEditSelected(day: number): boolean { if (!this.editSelectedDateObj) return false; return day === this.editSelectedDateObj.getDate() && this.editDisplayMonth === this.editSelectedDateObj.getMonth() && this.editDisplayYear === this.editSelectedDateObj.getFullYear(); }
-  formatTimeInput(event: any) { let val = event.target.value.replace(/\D/g, ''); if (val.length > 2) val = val.substring(0,2) + ':' + val.substring(2,4); event.target.value = val; }
+  selectDate(day: number | null) {
+    if (!day) return;
+    this.selectedDateObj = new Date(this.displayYear, this.displayMonth, day);
+    this.newDayForm.shootDate = this.formatDate(this.selectedDateObj);
+  }
+
+  selectEditDate(day: number | null) {
+    if (!day) return;
+    this.editSelectedDateObj = new Date(this.editDisplayYear, this.editDisplayMonth, day);
+    this.editDayForm.shootDate = this.formatDate(this.editSelectedDateObj);
+  }
+
+  isToday(day: number): boolean {
+    const t = new Date();
+    return day === t.getDate() && this.displayMonth === t.getMonth() && this.displayYear === t.getFullYear();
+  }
+
+  isEditToday(day: number): boolean {
+    const t = new Date();
+    return day === t.getDate() && this.editDisplayMonth === t.getMonth() && this.editDisplayYear === t.getFullYear();
+  }
+
+  isSelected(day: number): boolean {
+    if (!this.selectedDateObj) return false;
+    return day === this.selectedDateObj.getDate() && this.displayMonth === this.selectedDateObj.getMonth() && this.displayYear === this.selectedDateObj.getFullYear();
+  }
+
+  isEditSelected(day: number): boolean {
+    if (!this.editSelectedDateObj) return false;
+    return day === this.editSelectedDateObj.getDate() && this.editDisplayMonth === this.editSelectedDateObj.getMonth() && this.editDisplayYear === this.editSelectedDateObj.getFullYear();
+  }
+
+  // ПЕРЕВІРКА НА МИНУЛЕ
+  isPast(year: number, month: number, day: number): boolean {
+    const checkDate = new Date(year, month, day);
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    return checkDate < today;
+  }
+
+  isEditPast(year: number, month: number, day: number): boolean {
+    const checkDate = new Date(year, month, day);
+    const today = new Date();
+    today.setHours(0,0,0,0);
+
+    // Якщо це поточна дата дня (навіть якщо вона в минулому) - дозволяємо
+    if (this.editingDay && this.editingDay.shootDateIso) {
+      if (this.formatDate(checkDate) === this.editingDay.shootDateIso) return false;
+    }
+    return checkDate < today;
+  }
+
+  formatTimeInput(event: any) {
+    let val = event.target.value.replace(/\D/g, '');
+    if (val.length > 2) val = val.substring(0,2) + ':' + val.substring(2,4);
+    event.target.value = val;
+  }
 
   openAutoModal() {
     const today = new Date();
@@ -356,6 +493,8 @@ export class Planner implements OnInit {
     this.autoDisplayYear = today.getFullYear();
     this.generateAutoCalendar();
     this.autoScheduleResult = null;
+    this.autoServerError = null;
+    this.isAutoLoading = false;
     this.isAutoModalOpen = true;
   }
 
@@ -365,26 +504,32 @@ export class Planner implements OnInit {
   }
 
   generateAutoCalendar() {
-    this.autoCalendarWeeks = this.buildCalendarWeeks(
-      this.autoDisplayYear, this.autoDisplayMonth
-    );
+    this.autoCalendarWeeks = this.buildCalendarWeeks(this.autoDisplayYear, this.autoDisplayMonth);
   }
 
   prevAutoMonth() {
     if (this.autoDisplayMonth === 0) {
-      this.autoDisplayMonth = 11; this.autoDisplayYear--;
-    } else { this.autoDisplayMonth--; }
+      this.autoDisplayMonth = 11;
+      this.autoDisplayYear--;
+    } else {
+      this.autoDisplayMonth--;
+    }
     this.generateAutoCalendar();
   }
 
   nextAutoMonth() {
     if (this.autoDisplayMonth === 11) {
-      this.autoDisplayMonth = 0; this.autoDisplayYear++;
-    } else { this.autoDisplayMonth++; }
+      this.autoDisplayMonth = 0;
+      this.autoDisplayYear++;
+    } else {
+      this.autoDisplayMonth++;
+    }
     this.generateAutoCalendar();
   }
 
-  get autoCurrentMonthName() { return this.monthNames[this.autoDisplayMonth]; }
+  get autoCurrentMonthName() {
+    return this.monthNames[this.autoDisplayMonth];
+  }
 
   selectAutoDate(day: number | null) {
     if (!day) return;
@@ -394,21 +539,20 @@ export class Planner implements OnInit {
 
   isAutoSelected(day: number): boolean {
     if (!this.autoSelectedDateObj) return false;
-    return day === this.autoSelectedDateObj.getDate()
-      && this.autoDisplayMonth === this.autoSelectedDateObj.getMonth()
-      && this.autoDisplayYear === this.autoSelectedDateObj.getFullYear();
+    return day === this.autoSelectedDateObj.getDate() && this.autoDisplayMonth === this.autoSelectedDateObj.getMonth() && this.autoDisplayYear === this.autoSelectedDateObj.getFullYear();
   }
 
   isAutoToday(day: number): boolean {
     const t = new Date();
-    return day === t.getDate()
-      && this.autoDisplayMonth === t.getMonth()
-      && this.autoDisplayYear === t.getFullYear();
+    return day === t.getDate() && this.autoDisplayMonth === t.getMonth() && this.autoDisplayYear === t.getFullYear();
   }
 
-  submitAutoSchedule() {
+  submitAutoSchedule(isValid: boolean | null) {
+    if (!isValid) return;
     if (this.autoForm.mode === 'generate' && !this.autoForm.startDate) return;
+
     this.isAutoLoading = true;
+    this.autoServerError = null;
 
     const payload = {
       mode: this.autoForm.mode,
@@ -419,7 +563,6 @@ export class Planner implements OnInit {
       groupBy: this.autoForm.groupBy,
       defaultShiftStart: this.autoForm.defaultShiftStart,
       defaultShiftEnd: this.autoForm.defaultShiftEnd,
-      // Нові параметри алгоритму
       setupMinutes: this.autoForm.setupMinutes,
       locationSwitchMinutes: this.autoForm.locationSwitchMinutes,
     };
@@ -431,8 +574,9 @@ export class Planner implements OnInit {
         this.loadBoard();
         this.cdr.detectChanges();
       },
-      error: () => {
+      error: (err) => {
         this.isAutoLoading = false;
+        this.autoServerError = this.getErrorMessage(err);
         this.cdr.detectChanges();
       }
     });
@@ -454,7 +598,10 @@ export class Planner implements OnInit {
   // Масове підтвердження
   confirmAllGeneratedDays() {
     this.api.confirmAllGenerated(this.projectId).subscribe({
-      next: () => { this.closeAutoModal(); this.loadBoard(); }
+      next: () => {
+        this.closeAutoModal();
+        this.loadBoard();
+      }
     });
   }
 
