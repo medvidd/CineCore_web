@@ -164,6 +164,21 @@ export class Casting implements OnInit {
     this.api.getProjectRoles(this.projectId).subscribe({
       next: (data) => {
         this.roles = data;
+
+        // 1. ПЕРЕВІРЯЄМО, чи прийшов roleId через URL (глибоке посилання)
+        const params = this.route.snapshot.queryParams;
+        const targetRoleId = params['roleId'] ? Number(params['roleId']) : null;
+
+        if (targetRoleId) {
+          const role = this.roles.find(r => r.id === targetRoleId);
+          if (role) {
+            this.selectRole(role); // Обираємо роль з посилання
+            this.cdr.detectChanges();
+            return; // Виходимо, щоб не спрацювала логіка за замовчуванням
+          }
+        }
+
+        // 2. Якщо переходу за посиланням немає, працює стандартна логіка
         if (this.selectedRole) {
           this.selectedRole = this.roles.find(r => r.id === this.selectedRole.id) || this.roles[0];
         } else if (this.roles.length > 0) {

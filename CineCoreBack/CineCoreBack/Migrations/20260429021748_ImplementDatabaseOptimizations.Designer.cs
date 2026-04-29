@@ -3,6 +3,7 @@ using System;
 using CineCoreBack.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace CineCoreBack.Migrations
 {
     [DbContext(typeof(DbConfig))]
-    partial class DbConfigModelSnapshot : ModelSnapshot
+    [Migration("20260429021748_ImplementDatabaseOptimizations")]
+    partial class ImplementDatabaseOptimizations
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -196,42 +199,6 @@ namespace CineCoreBack.Migrations
                     b.ToTable("locations", (string)null);
                 });
 
-            modelBuilder.Entity("CineCoreBack.Models.PlannerSceneViewItem", b =>
-                {
-                    b.Property<string>("CastNames")
-                        .HasColumnType("text")
-                        .HasColumnName("cast_names");
-
-                    b.Property<TimeSpan?>("EstimatedDuration")
-                        .HasColumnType("interval")
-                        .HasColumnName("estimated_duration");
-
-                    b.Property<string>("PrimaryLocationName")
-                        .HasColumnType("text")
-                        .HasColumnName("primary_location_name");
-
-                    b.Property<int>("ProjectId")
-                        .HasColumnType("integer")
-                        .HasColumnName("project_id");
-
-                    b.Property<int>("SceneId")
-                        .HasColumnType("integer")
-                        .HasColumnName("scene_id");
-
-                    b.Property<int>("SequenceNum")
-                        .HasColumnType("integer")
-                        .HasColumnName("sequence_num");
-
-                    b.Property<string>("SluglineText")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("slugline_text");
-
-                    b.ToTable((string)null);
-
-                    b.ToView("vw_planner_scenes", (string)null);
-                });
-
             modelBuilder.Entity("CineCoreBack.Models.Project", b =>
                 {
                     b.Property<int>("Id")
@@ -272,45 +239,6 @@ namespace CineCoreBack.Migrations
                         .IsUnique();
 
                     b.ToTable("projects", (string)null);
-                });
-
-            modelBuilder.Entity("CineCoreBack.Models.ProjectDashboardStat", b =>
-                {
-                    b.Property<long>("CastRoles")
-                        .HasColumnType("bigint")
-                        .HasColumnName("cast_roles");
-
-                    b.Property<long>("CompletedScenes")
-                        .HasColumnType("bigint")
-                        .HasColumnName("completed_scenes");
-
-                    b.Property<long>("PendingInvites")
-                        .HasColumnType("bigint")
-                        .HasColumnName("pending_invites");
-
-                    b.Property<int>("ProjectId")
-                        .HasColumnType("integer")
-                        .HasColumnName("project_id");
-
-                    b.Property<long>("TotalLocations")
-                        .HasColumnType("bigint")
-                        .HasColumnName("total_locations");
-
-                    b.Property<long>("TotalProps")
-                        .HasColumnType("bigint")
-                        .HasColumnName("total_props");
-
-                    b.Property<long>("TotalRoles")
-                        .HasColumnType("bigint")
-                        .HasColumnName("total_roles");
-
-                    b.Property<long>("TotalScenes")
-                        .HasColumnType("bigint")
-                        .HasColumnName("total_scenes");
-
-                    b.ToTable((string)null);
-
-                    b.ToView("vw_project_dashboard_stats", (string)null);
                 });
 
             modelBuilder.Entity("CineCoreBack.Models.ProjectGenre", b =>

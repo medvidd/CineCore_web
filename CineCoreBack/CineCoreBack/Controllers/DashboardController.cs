@@ -23,65 +23,27 @@ namespace CineCoreBack.Controllers
         public async Task<ActionResult<DashboardDto>> GetDashboardStats(int projectId)
         {
             var project = await _context.Projects.FirstOrDefaultAsync(p => p.Id == projectId);
-            if (project == null)
-            {
-                return NotFound(new { message = "Project not found" });
-            }
+            if (project == null) return NotFound(new { message = "Project not found" });
 
-            // 1. Project Summary5
             var teamMembersCount = await _context.ProjectMembers.CountAsync(pm => pm.ProjectId == projectId) + 1;
 
-            // 2. Script Progress
-            // Сцена вважається "completed" якщо:
-            //   - має прив'язану локацію (Location через Resources)
-            //   - І була запланована у підтвердженому (IsConfirmed == true) shoot day
-            var allScenes = await _context.Scenes
-                .Include(s => s.SceneSchedules)
-                    .ThenInclude(ss => ss.ShootDay)
-                .Include(s => s.SceneResources)
-                    .ThenInclude(sr => sr.Resource)
-                        .ThenInclude(r => r.Location) // <--- ДОДАЙТЕ ЦЕЙ РЯДОК
-                .Where(s => s.ProjectId == projectId)
-                .ToListAsync();
+            // ВИКОРИСТОВУЄМО НАШЕ VIEW!
+            var stats = await _context.ProjectDashboardStats.FirstOrDefaultAsync(s => s.ProjectId == projectId)
+                        ?? new ProjectDashboardStat();
 
-            var totalScenes = allScenes.Count;
+            var draftScenes = (int)(stats.TotalScenes - stats.CompletedScenes);
+            var scriptProgressPct = stats.TotalScenes > 0
+                ? (int)Math.Round((double)stats.CompletedScenes / stats.TotalScenes * 100) : 0;
 
-            var completedScenes = allScenes.Count(s =>
-            {
-                // Перевірка 1: чи є прив'язана локація (якщо Location != null, значить це локація)
-                bool hasLocation = s.SceneResources != null &&
-                    s.SceneResources.Any(sr => sr.Resource != null && sr.Resource.Location != null);
+            var pendingRoles = (int)(stats.TotalRoles - stats.CastRoles);
+            var castingProgressPct = stats.TotalRoles > 0
+                ? (int)Math.Round((double)stats.CastRoles / stats.TotalRoles * 100) : 0;
 
-                // Перевірка 2: чи є у підтвердженому shoot day (шукаємо статус "confirmed")
-                bool isScheduledInConfirmedDay = s.SceneSchedules != null &&
-                    s.SceneSchedules.Any(ss => ss.ShootDay != null && ss.ShootDay.Status == "published");
-
-                return hasLocation && isScheduledInConfirmedDay;
-            });
-
-            var draftScenes = totalScenes - completedScenes;
-            var scriptProgressPct = totalScenes > 0
-                ? (int)Math.Round((double)completedScenes / totalScenes * 100)
-                : 0;
-
-            // 3. Casting
-            var totalRoles = await _context.Roles.CountAsync(r => r.ProjectId == projectId);
-            var castRoles = await _context.Roles
-                .Where(r => r.ProjectId == projectId && r.Castings.Any(c => c.CastStatus == "approved"))
-                .CountAsync();
-            var pendingRoles = totalRoles - castRoles;
-            var castingProgressPct = totalRoles > 0
-                ? (int)Math.Round((double)castRoles / totalRoles * 100)
-                : 0;
-
-            // 4. Upcoming Shoot — ТІЛЬКИ підтверджені дні (IsConfirmed == true)
+            // Upcoming Shoot залишаємо, він витягує зв'язки для конкретного дня
             var upcomingShoot = await _context.ShootDays
                 .Include(sd => sd.BaseLocation)
                 .Include(sd => sd.SceneSchedules)
-                .Where(sd =>
-                    sd.ProjectId == projectId &&
-                    sd.ShiftStart > DateTime.UtcNow &&
-                    sd.Status == "published") // <--- ЗМІНЕНО ТУТ
+                .Where(sd => sd.ProjectId == projectId && sd.ShiftStart > DateTime.UtcNow && sd.Status == "published")
                 .OrderBy(sd => sd.ShiftStart)
                 .FirstOrDefaultAsync();
 
@@ -98,55 +60,14 @@ namespace CineCoreBack.Controllers
                 };
             }
 
-            // 5. Quick Stats
-            var totalLocations = await _context.Locations
-                .CountAsync(l => l.IdNavigation.ProjectId == projectId);
-
-            var totalProps = await _context.Props
-                .CountAsync(p => p.IdNavigation.ProjectId == projectId);
-
-            var unscheduledScenes = await _context.Scenes
-                .Where(s => s.ProjectId == projectId && !s.SceneSchedules.Any())
-                .CountAsync();
-
-            var pendingInvites = await _context.ProjectInvitations
-                .CountAsync(pi => pi.ProjectId == projectId);
-
-            var dashboardData = new DashboardDto
+            return Ok(new DashboardDto
             {
-                ProjectSummary = new ProjectSummaryDto
-                {
-                    Title = project.Title,
-                    Synopsis = project.Synopsis ?? "No synopsis available.",
-                    TeamMembersCount = teamMembersCount
-                },
-                ScriptProgress = new ScriptProgressDto
-                {
-                    CompletedScenes = completedScenes,
-                    DraftScenes = draftScenes,
-                    TotalScenes = totalScenes,
-                    ProgressPercentage = scriptProgressPct
-                },
-                CastingProgress = new CastingProgressDto
-                {
-                    CastRoles = castRoles,
-                    PendingRoles = pendingRoles,
-                    TotalRoles = totalRoles,
-                    ProgressPercentage = castingProgressPct
-                },
+                ProjectSummary = new ProjectSummaryDto { Title = project.Title, Synopsis = project.Synopsis ?? "", TeamMembersCount = teamMembersCount },
+                ScriptProgress = new ScriptProgressDto { CompletedScenes = (int)stats.CompletedScenes, DraftScenes = draftScenes, TotalScenes = (int)stats.TotalScenes, ProgressPercentage = scriptProgressPct },
+                CastingProgress = new CastingProgressDto { CastRoles = (int)stats.CastRoles, PendingRoles = pendingRoles, TotalRoles = (int)stats.TotalRoles, ProgressPercentage = castingProgressPct },
                 UpcomingShoot = upcomingShootDto,
-                QuickStats = new QuickStatsDto
-                {
-                    TotalScenes = totalScenes,
-                    TotalRoles = totalRoles,
-                    TotalLocations = totalLocations,
-                    TotalProps = totalProps,
-                    UnscheduledScenes = unscheduledScenes,
-                    PendingInvites = pendingInvites
-                }
-            };
-
-            return Ok(dashboardData);
+                QuickStats = new QuickStatsDto { TotalScenes = (int)stats.TotalScenes, TotalRoles = (int)stats.TotalRoles, TotalLocations = (int)stats.TotalLocations, TotalProps = (int)stats.TotalProps, UnscheduledScenes = draftScenes, PendingInvites = (int)stats.PendingInvites }
+            });
         }
     }
 }

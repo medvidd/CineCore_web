@@ -51,6 +51,9 @@ public partial class DbConfig : DbContext
 
     public virtual DbSet<ProjectInvitation> ProjectInvitations { get; set; }
 
+    public virtual DbSet<ProjectDashboardStat> ProjectDashboardStats { get; set; }
+    public virtual DbSet<PlannerSceneViewItem> PlannerSceneViewItems { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder
@@ -65,7 +68,7 @@ public partial class DbConfig : DbContext
             .HasPostgresEnum("enm_role_type", new[] { "lead", "supporting", "extra" })
             .HasPostgresEnum("enm_scene_status", new[] { "draft", "complete" })
             .HasPostgresEnum("enm_script_element", new[] { "action", "character", "dialogue", "parenthetical", "transition", "shot" })
-            .HasPostgresEnum("enm_shoot_day_status", new[] { "draft", "generated", "published", "completed" })
+            .HasPostgresEnum("enm_shoot_day_status", new[] { "draft", "generated", "published", "completed", "cancelled" })
             .HasPostgresEnum("enm_system_role", new[] { "owner", "manager", "actor" });
 
         modelBuilder.Entity<Actor>(entity =>
@@ -563,6 +566,35 @@ public partial class DbConfig : DbContext
                 .HasForeignKey(d => d.InvitedById)
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("project_invitations_invited_by_id_fkey");
+        });
+
+        modelBuilder.Entity<ProjectDashboardStat>(entity =>
+        {
+            entity.HasNoKey();
+            entity.ToView("vw_project_dashboard_stats");
+
+            entity.Property(e => e.ProjectId).HasColumnName("project_id");
+            entity.Property(e => e.TotalScenes).HasColumnName("total_scenes");
+            entity.Property(e => e.CompletedScenes).HasColumnName("completed_scenes");
+            entity.Property(e => e.TotalRoles).HasColumnName("total_roles");
+            entity.Property(e => e.CastRoles).HasColumnName("cast_roles");
+            entity.Property(e => e.TotalLocations).HasColumnName("total_locations");
+            entity.Property(e => e.TotalProps).HasColumnName("total_props");
+            entity.Property(e => e.PendingInvites).HasColumnName("pending_invites");
+        });
+
+        modelBuilder.Entity<PlannerSceneViewItem>(entity =>
+        {
+            entity.HasNoKey();
+            entity.ToView("vw_planner_scenes");
+
+            entity.Property(e => e.SceneId).HasColumnName("scene_id");
+            entity.Property(e => e.ProjectId).HasColumnName("project_id");
+            entity.Property(e => e.SequenceNum).HasColumnName("sequence_num");
+            entity.Property(e => e.SluglineText).HasColumnName("slugline_text");
+            entity.Property(e => e.EstimatedDuration).HasColumnName("estimated_duration");
+            entity.Property(e => e.PrimaryLocationName).HasColumnName("primary_location_name");
+            entity.Property(e => e.CastNames).HasColumnName("cast_names");
         });
 
         OnModelCreatingPartial(modelBuilder);

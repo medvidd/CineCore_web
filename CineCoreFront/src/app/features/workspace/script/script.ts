@@ -153,6 +153,7 @@ export class Script implements OnInit {
   selectScene(id: number) {
     // Перевіряємо, чи це перше завантаження (коли sceneId ще 0)
     const isInitialLoad = this.sceneId === 0;
+    this.openCharMenuId = null;
 
     if (this.sceneViewMode === 'all') {
       this.sceneId = id;
@@ -389,6 +390,7 @@ export class Script implements OnInit {
 
     // НОВЕ: Перевіряємо, чи з'явився другий заголовок під час набору тексту
     const willSplit = this.blocks.filter(b => b.type === 'scene_heading').length > 1;
+    this.openCharMenuId = null;
 
     this.api.autoSaveScript(this.sceneId, this.projectId, this.blocks).subscribe({
       next: (res: any) => {
